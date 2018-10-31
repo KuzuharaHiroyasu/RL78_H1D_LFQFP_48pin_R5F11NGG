@@ -56,6 +56,7 @@ extern volatile uint16_t  g_iica0_tx_cnt;              /* iica0 send data count 
 /* End user code. Do not edit comment generated here */
 
 extern int i2c_cmplete;
+extern void err_info( int id );
 
 /***********************************************************************************************************************
 * Function Name: r_iica0_interrupt
@@ -183,6 +184,7 @@ static void r_iica0_callback_master_error(MD_STATUS flag)
     NOP();
     NOP();
     NOP();
+    err_info(1);
     i2c_cmplete = 1;
 }
 /***********************************************************************************************************************
@@ -195,9 +197,8 @@ static void r_iica0_callback_master_receiveend(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-    NOP();
-    NOP();
-    NOP();
+//    SPT0 = 1U;      /* stop condition is generated */
+//    NOP();
     i2c_cmplete = 1;
 }
 /***********************************************************************************************************************
@@ -210,9 +211,8 @@ static void r_iica0_callback_master_sendend(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-    NOP();
-    NOP();
-    NOP();
+//    SPT0 = 1U;      /* stop condition is generated */
+//    NOP();
     i2c_cmplete = 1;
 }
 

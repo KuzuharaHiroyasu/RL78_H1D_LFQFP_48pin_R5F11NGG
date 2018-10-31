@@ -121,6 +121,8 @@ typedef struct{
 	UH ibiki_val;		
 	W sekishoku_val;	// 差動入力の為に符号あり
 	W sekigaival;		// 差動入力の為に符号あり
+	
+	UW err_cnt;			//異常回数(デバッグ用途)
 }T_UNIT;
 
 
@@ -138,8 +140,8 @@ typedef struct{
 //#define EEP_RECORD_1P_MAX			( 4096 )					// 1レコードサイズ(1ページ目)
 //#define EEP_RECORD_2P_MAX			( 4096  )					// 1レコードサイズ(2ページ目)
 // 4096までいけない
-#define EEP_RECORD_1P_MAX			( 4096 / 2 )					// 1レコードサイズ(1ページ目)
-#define EEP_RECORD_2P_MAX			( 4096 / 2 )					// 1レコードサイズ(2ページ目)
+#define EEP_RECORD_1P_MAX			( 4096  )					// 1レコードサイズ(1ページ目)
+#define EEP_RECORD_2P_MAX			( 8192  )					// 1レコードサイズ(2ページ目)
 
 
 #endif
@@ -198,10 +200,16 @@ void main_send_uart1(void);
 void main_send_uart1_powon(void);
 MD_STATUS R_IICA0_Master_Send(uint8_t adr, uint8_t * const tx_buf, uint16_t tx_num, uint8_t wait);
 MD_STATUS R_IICA0_Master_Receive(uint8_t adr, uint8_t * const rx_buf, uint16_t rx_num, uint8_t wait);
-void main_eep_write_sub( UB device_adrs, UB* wr_data, UH len );
+void main_eep_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg );
 int main_eep_read(void);
 int main_eep_write(void);
 void main_eep_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len );
+void wait_ms( int ms );
+void err_info( int id );
+void main_send_uart1_start(void);
+void main_send_uart1_end(void);
+void get_mode( void );
+void main_eep_erase_all( void );
 
 
 
@@ -217,18 +225,89 @@ extern void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 );
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
 
+const B		version_product_tbl[]= {0, 0, 0, 2};				/* ソフトウェアバージョン */
+																/* バージョン表記ルール */
+																/* ①メジャーバージョン：[0 ～ 9] */
+																/* ②マイナーバージョン：[0 ～ 9]  */
+																/* ③リビジョン：[0 ～ 9] */
+																/* ④ビルドバージョン：[0 ～ 9] */
+
 void main(void)
 {
 	
 	UW work_uw = 0;
     UB sw = OFF;
     UB last_sw = OFF;
-    int i = 0;
     
     R_MAIN_UserInit();
     /* Start user code. Do not edit comment generated here */
     main_send_uart1_powon();
-    
+
+#if 0
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 0;
+	eep_tx_data[2] = 11;
+	eep_tx_data[3] = 22;
+	main_eep_write_sub( 0xA0, &eep_tx_data[0], 4 );
+	
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 5;
+	eep_tx_data[2] = 33;
+	eep_tx_data[3] = 44;
+	main_eep_write_sub( 0xA0, &eep_tx_data[0], 4 );
+
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 8;
+	eep_tx_data[2] = 55;
+	eep_tx_data[3] = 66;
+	main_eep_write_sub( 0xA0, &eep_tx_data[0], 4 );
+
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 13;
+	eep_tx_data[2] = 77;
+	eep_tx_data[3] = 88;
+	main_eep_write_sub( 0xA0, &eep_tx_data[0], 4 );
+	
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 0;
+//	main_eep_write_sub( 0xA0, &eep_tx_data[0], 2 );
+
+	main_eep_read_sub( 0xA0, 0, &eep_rx_data[0], 2 );
+
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 5;
+//	main_eep_write_sub( 0xA0, &eep_tx_data[0], 2 );
+
+	main_eep_read_sub( 0xA0, 5, &eep_rx_data[2], 2 );
+
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 8;
+///	main_eep_write_sub( 0xA0, &eep_tx_data[0], 2 );
+
+	main_eep_read_sub( 0xA0, 8, &eep_rx_data[4], 2 );
+
+	eep_tx_data[0] = 0;
+	eep_tx_data[1] = 13;
+//	main_eep_write_sub( 0xA0, &eep_tx_data[0], 2 );
+
+	main_eep_read_sub( 0xA0, 13, &eep_rx_data[6], 2 );
+
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	
+
+#endif
+
 #if 0
 	//デバッグコード
 	s_unit.eep_wr_record_cnt = 0;
@@ -241,8 +320,16 @@ void main(void)
 	for(i = 0; i < 500; i++ ){
 		WAIT_10US()
 	}
-	s_unit.eep_rd_record_cnt = 0;
-    main_eep_read();
+	s_unit.eep_wr_record_cnt = 4096;
+	
+	s_unit.kokyu_val  = 3333;		
+	s_unit.ibiki_val  = 4444;		
+	s_unit.sekishoku_val = 555555;	// 差動入力の為に符号あり
+	s_unit.sekigaival = -666666;		// 差動入力の為に符号あり
+    main_eep_write();
+	for(i = 0; i < 500; i++ ){
+		WAIT_10US()
+	}
 
 
 
@@ -257,6 +344,10 @@ void main(void)
 	for(i = 0; i < 500; i++ ){
 		WAIT_10US()
 	}
+	s_unit.eep_rd_record_cnt = 0;
+    main_eep_read();
+	s_unit.eep_rd_record_cnt = 4096;
+    main_eep_read();
 	s_unit.eep_rd_record_cnt = 4095;
     main_eep_read();
 #endif
@@ -273,14 +364,18 @@ void main(void)
 			// 終了
 			break;
 		}
-		for(i = 0; i < 500; i++ ){
-			WAIT_10US()
-		}
+		wait_ms(5);
+//		for(i = 0; i < 500; i++ ){
+//			WAIT_10US()
+//		}
 	}	
 	
-	// 有効レコードチェック探索
+#endif
+
 	s_unit.eep_rd_record_cnt = 0;
 	s_unit.eep_wr_record_cnt = 0;
+#if 0
+	// 有効レコードチェック探索  ※しない
 	while(1){
 		if( INVALID == main_eep_read() ){
 			// 終了
@@ -331,6 +426,10 @@ void main(void)
 			/* 何もしない */
 		}else if( SYSTEM_MODE_GET_MODE == s_unit.system_mode ){
 			// ゲットモード
+			
+			get_mode();
+			
+			
 			NOP();
 		
 		}else{
@@ -385,8 +484,12 @@ void main(void)
 				// 1レコード送信
 				main_send_uart1();
 				
+				wait_ms(5);			//すぐに書き込むと送信が乱れる
+//				for(i = 0; i < 500; i++ ){
+//					WAIT_10US()
+//				}
 				// 1レコード書き込み	//暫定
-//				main_eep_write();
+				main_eep_write();
 				
 				s_unit.main_cyc_req  = OFF;
 			}
@@ -423,14 +526,16 @@ void set_req_main_cyc(void)
 #define UART1_STR_MAX		50
 void main_send_uart1(void)
 {
-	char tx_data[UART1_STR_MAX] = {0};
-//	const char* s = tx_data[0];
+	uint8_t tx_data[UART1_STR_MAX] = {0};
+//	uint8_t * const s = &tx_data[0];
 	int len;
 
 //	len = sprintf(tx_data, "%d,%d,%ld,%ld\r\n", s_unit.kokyu_val, s_unit.ibiki_val, s_unit.sekishoku_val, s_unit.sekigaival );
 	len = sprintf(tx_data, "%ld,%ld,%d,%d\r\n", s_unit.sekishoku_val, s_unit.sekigaival, s_unit.kokyu_val, s_unit.ibiki_val  );
 	
+//	len = strlen( s );		//RD8001暫定：strlenが使えない理由が不明
 	R_UART1_Send( &tx_data[0], len );
+//	R_UART1_Send( s, len );
 }
 
 // debug
@@ -444,10 +549,34 @@ void main_send_uart1_powon(void)
 	R_UART1_Send( &tx_data[0], len );
 }
 
+void main_send_uart1_start(void)
+{
+	int len;
+	char tx_data[UART1_STR_MAX] = {0};
+	
+	len = sprintf(tx_data, "START\r\n" );
+	
+	R_UART1_Send( &tx_data[0], len );
+
+	wait_ms(1);			//RD8001暫定：すぐに書き込むと送信が乱れる
+}
+
+void main_send_uart1_end(void)
+{
+	int len;
+	char tx_data[UART1_STR_MAX] = {0};
+	
+	len = sprintf(tx_data, "END\r\n" );
+	
+	R_UART1_Send( &tx_data[0], len );
+
+	wait_ms(1);			//RD8001暫定：すぐに書き込むと送信が乱れる
+}
+
 //================================
 //EEP関連
 //================================
-#define			EEP_WAIT		500		//RD8001暫定値
+#define			EEP_WAIT		255		//RD8001暫定値
 
 int main_eep_write(void)
 {
@@ -455,6 +584,7 @@ int main_eep_write(void)
 	UH wr_adrs;
 	UB device_adrs;
 	int ret = INVALID;
+	UH record_offset = 0;
 
 #if 0
 	UB adrs[2];
@@ -470,7 +600,8 @@ int main_eep_write(void)
 	if( s_unit.eep_wr_record_cnt < EEP_RECORD_1P_MAX ){
 		device_adrs = EEP_DEVICE_ADR;
 	}else if( s_unit.eep_wr_record_cnt < EEP_RECORD_2P_MAX ){
-		device_adrs = EEP_DEVICE_ADR | 0x20;
+		device_adrs = EEP_DEVICE_ADR | 0x02;
+		record_offset = EEP_RECORD_1P_MAX;
 	}else{
 		return ret;
 	}
@@ -487,28 +618,19 @@ int main_eep_write(void)
 		device_adrs = EEP_DEVICE_ADR | 0x02;
 	}
 #endif
-	wr_adrs = s_unit.eep_wr_record_cnt * EEP_RECORD_SIZE;
+	wr_adrs = ( s_unit.eep_wr_record_cnt - record_offset ) * EEP_RECORD_SIZE;
 //	wr.record.data.wr_adrs				 = s_unit.eep_wr_record_cnt * EEP_RECORD_SIZE;
-	wr.record.byte[1] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
 	wr.record.byte[0] = (UB)(( wr_adrs >> 8 ) & 0xff );		//アドレス上位
+	wr.record.byte[1] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
 	wr.record.data.valid				 = ON;			/* レコード有効/無効				*/
 	
-#if 1
 	wr.record.data.kokyu_val			 = s_unit.kokyu_val;		
 	wr.record.data.ibiki_val			 = s_unit.ibiki_val;		
 	wr.record.data.sekishoku_val		 = s_unit.sekishoku_val;	// 差動入力の為に符号あり
 	wr.record.data.sekigaival			 = s_unit.sekigaival;		// 差動入力の為に符号あり
-#else
-	wr.record.data.kokyu_val			 = 1111;		
-	wr.record.data.ibiki_val			 = 2222;		
-	wr.record.data.sekishoku_val		 = -333333;	// 差動入力の為に符号あり
-	wr.record.data.sekigaival			 = -444444;		// 差動入力の為に符号あり
-
-
-#endif
 	
 	//書き込み
-	main_eep_write_sub( device_adrs, &wr.record.byte[0], sizeof(wr) );
+	main_eep_write_sub( device_adrs, &wr.record.byte[0], sizeof(wr), ON );
 //	eep_tx_data[0] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
 //	eep_tx_data[1] = (UB)(( wr_adrs >> 8 ) & 0xff );		//アドレス上位
 //	eep_tx_data[14]  = 1;
@@ -521,11 +643,11 @@ int main_eep_write(void)
 	return ret;
 }
 
-void main_eep_write_sub( UB device_adrs, UB* wr_data, UH len )
+void main_eep_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg )
 {
 	i2c_cmplete = 0;
 	if( 0 != R_IICA0_Master_Send( device_adrs, wr_data, len, EEP_WAIT)){
-		NOP();
+		err_info(2);
 	}else{
 		while(1){
 			if( 1 == i2c_cmplete ){
@@ -534,10 +656,12 @@ void main_eep_write_sub( UB device_adrs, UB* wr_data, UH len )
 		}
 		R_IICA0_StopCondition();
 	}
-	while(1U == IICBSY0)
+	while(0U == SPD0)
 
 	/* ストップコンディション後の待ち */
-	WAIT_5US();		//RD8001暫定
+	if( wait_flg == ON ){
+		wait_ms(5);
+	}
 }
 
 int main_eep_read(void)
@@ -546,18 +670,20 @@ int main_eep_read(void)
 	UH read_adrs;
 	RD_EEP_RECORD		rd;
 	UB device_adrs;
+	UH record_offset = 0;
 	
 	// レコード最大
 	if( s_unit.eep_rd_record_cnt < EEP_RECORD_1P_MAX ){
 		device_adrs = EEP_DEVICE_ADR;
 	}else if( s_unit.eep_rd_record_cnt < EEP_RECORD_2P_MAX ){
-		device_adrs = EEP_DEVICE_ADR | 0x20;
+		device_adrs = EEP_DEVICE_ADR | 0x02;
+		record_offset = EEP_RECORD_1P_MAX;
 	}else{
 		return ret;
 	}
 	
-	read_adrs = s_unit.eep_rd_record_cnt * EEP_RECORD_SIZE;
-	main_eep_read_sub( EEP_DEVICE_ADR, read_adrs, &s_eep_read.record.byte[0], sizeof(rd) );
+	read_adrs = ( s_unit.eep_rd_record_cnt - record_offset ) * EEP_RECORD_SIZE;
+	main_eep_read_sub( device_adrs, read_adrs, &s_eep_read.record.byte[0], sizeof(rd) );
 //	main_eep_read_sub( EEP_DEVICE_ADR, read_adrs, &eep_rx_data[0], 32 );
 	
 	s_unit.eep_rd_record_cnt++;
@@ -570,28 +696,39 @@ int main_eep_read(void)
 void main_eep_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len )
 {
 	UB adrs[2];
-	UW lcok_cnt;
-	
+
+#if 0
 	adrs[0] = (UB)(( read_adrs >> 8 ) & 0xff );		//アドレス上位
 	adrs[1] = (UB)( read_adrs & 0x00ff );		//アドレス下位
 		
 	i2c_cmplete = 0;
 	if( 0 != R_IICA0_Master_Send( device_adrs, &adrs[0], 2, EEP_WAIT )){
-		NOP();
+		err_info(3);
 	}else{
+#if 1
 		while(1){
 			if(( 1 == i2c_cmplete ) || ( lcok_cnt++ >= 10000 )){		//RD8001暫定
+//			if( 1 == i2c_cmplete ){		//RD8001暫定
 				break;
 			}
 		}
-		R_IICA0_StopCondition();
+//		R_IICA0_StopCondition();
+#endif
 	}
 	/* ストップコンディション後の待ち */
-	WAIT_5US();		//RD8001暫定
-	
+//	WAIT_5US();		//RD8001暫定
+//	WAIT_5US();		//RD8001暫定
+	wait_ms(5);
+#else
+	//RD8001暫定：ストップコンディションを送らないと読み出し失敗する
+	adrs[0] = (UB)(( read_adrs >> 8 ) & 0xff );		//アドレス上位
+	adrs[1] = (UB)( read_adrs & 0x00ff );		//アドレス下位
+		
+	main_eep_write_sub(device_adrs, &adrs[0], 2 , OFF );
+#endif
 	i2c_cmplete = 0;
 	if( 0 != R_IICA0_Master_Receive(device_adrs, read_data, len, EEP_WAIT)){
-		NOP();
+		err_info(4);
 	}else{
 		while(1){
 			if( 1 == i2c_cmplete ){
@@ -600,11 +737,120 @@ void main_eep_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len )
 		}
 		R_IICA0_StopCondition();
 	}
+	while(0U == SPD0)
 	/* ストップコンディション後の待ち */
+	wait_ms(5);
 	WAIT_5US();		//RD8001暫定
 }
 
 void getmode_in(void)
 {
 	s_unit.system_mode = SYSTEM_MODE_GET_MODE;
+}
+
+void wait_ms( int ms )
+{
+	int i,j;
+	
+	for(i = 0; i < ms; i++ ){
+		for(j = 0; j < 100; j++ ){
+			WAIT_10US()
+		}
+	}
+}
+
+
+
+//void err_info( ERR_ID id )
+void err_info( int id )
+{
+	s_unit.err_cnt++;
+#if 0
+	while(1){
+		// 異常による永久ループ
+	}
+#endif
+}
+
+void get_mode( void )
+{
+	main_send_uart1_start();	// START送信
+	wait_ms(10);
+
+	// ゲットモードループ
+	s_unit.eep_rd_record_cnt = 0;
+	while(1){
+		if( INVALID == main_eep_read() ){
+			// 終了
+			break;
+		}
+		if( 1 == s_eep_read.record.data.valid ){
+			// 有効レコード
+			s_unit.kokyu_val	 = s_eep_read.record.data.kokyu_val;		
+			s_unit.ibiki_val	 = s_eep_read.record.data.ibiki_val;		
+			s_unit.sekishoku_val = s_eep_read.record.data.sekishoku_val;	// 差動入力の為に符号あり
+			s_unit.sekigaival	 = s_eep_read.record.data.sekigaival;		// 差動入力の為に符号あり
+			
+			wait_ms(5);
+			main_send_uart1();
+			wait_ms(5);
+		}else{
+			// 終了
+			break;
+		}
+	}
+	main_eep_erase_all();
+
+	s_unit.eep_rd_record_cnt = 0;
+	s_unit.eep_wr_record_cnt  =0;
+	s_unit.system_mode = SYSTEM_MODE_NON;
+	
+	main_send_uart1_end();	// END送信
+}
+
+
+void main_eep_erase_all(void)
+{
+	WR_EEP_RECORD wr;
+	UB device_adrs =0;
+	UH record_offset = 0;
+	UH wr_adrs = 0;
+	
+	s_unit.eep_wr_record_cnt = 0;
+	
+	while(1){
+		// レコード最大
+		if( s_unit.eep_wr_record_cnt < EEP_RECORD_1P_MAX ){
+			device_adrs = EEP_DEVICE_ADR;
+		}else if( s_unit.eep_wr_record_cnt < EEP_RECORD_2P_MAX ){
+			device_adrs = EEP_DEVICE_ADR | 0x02;
+			record_offset = EEP_RECORD_1P_MAX;
+		}else{
+			return;
+		}
+		
+		// 使用分のみで終了
+#if 0
+		if( s_unit.eep_rd_record_cnt < s_unit.eep_wr_record_cnt ){
+			return;
+		}
+#endif
+		
+		wr_adrs = ( s_unit.eep_wr_record_cnt - record_offset ) * EEP_RECORD_SIZE;
+		wr.record.byte[0] = (UB)(( wr_adrs >> 8 ) & 0xff );		//アドレス上位
+		wr.record.byte[1] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
+		wr.record.data.valid				 = OFF;			/* レコード有効/無効				*/
+		
+		wr.record.data.kokyu_val			 = 0;
+		wr.record.data.ibiki_val			 = 0;
+		wr.record.data.sekishoku_val		 = 0;
+		wr.record.data.sekigaival			 = 0;
+			
+		//書き込み
+		main_eep_write_sub( device_adrs, &wr.record.byte[0], sizeof(wr), ON );	
+		wait_ms(5);
+	
+		s_unit.eep_wr_record_cnt++;
+	}
+	
 }

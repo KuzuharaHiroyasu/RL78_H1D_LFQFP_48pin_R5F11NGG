@@ -72,9 +72,17 @@ void R_IICA0_Create(void)
     /* Set SCLA0, SDAA0 pin */
     P6 &= 0xFCU;
     PM6 |= 0x03U;
+#if 1
+	// çÇë¨400Kbps
     SMC0 = 1U;      /* operates in fast mode */
     IICWL0 = _10_IICA0_LOW_WIDTH;
     IICWH0 = _0F_IICA0_HIGH_WIDTH;
+#else
+	// ïWèÄ100Kbps
+    SMC0 = 0U;      /* operates in standard mode */
+    IICWL0 = _39_IICA0_LOW_WIDTH;
+    IICWH0 = _40_IICA0_HIGH_WIDTH;
+#endif
     DFC0 = 0U;      /* digital filter off */
     IICCTL01 = _00_IICA_FCLK_SELECTED;
     SVA0 = _10_IICA0_MASTERADDRESS;

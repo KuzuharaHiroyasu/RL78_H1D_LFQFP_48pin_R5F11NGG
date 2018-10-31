@@ -135,8 +135,12 @@ Macro definitions (Register bit)
 Macro definitions
 ***********************************************************************************************************************/
 #define _10_IICA0_MASTERADDRESS                       (0x10U) /* set the master address value */
+// çÇë¨400Kbps
 #define _10_IICA0_LOW_WIDTH                           (0x10U) /* set the low-level width (tLOW) of the SCLAn pin signal */
 #define _0F_IICA0_HIGH_WIDTH                          (0x0FU) /* set the high-level width of the SCLAn pin signal */
+// ïWèÄ100Kbps
+#define _39_IICA0_LOW_WIDTH                           (0x39U) /* set the low-level width (tLOW) of the SCLAn pin signal */
+#define _40_IICA0_HIGH_WIDTH                          (0x40U) /* set the high-level width of the SCLAn pin signal */
 
 /***********************************************************************************************************************
 Typedef definitions

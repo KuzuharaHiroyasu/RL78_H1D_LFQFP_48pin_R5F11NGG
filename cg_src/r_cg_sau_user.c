@@ -176,6 +176,7 @@ static void r_uart1_callback_error(uint8_t err_type)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
+    NOP();
 }
 
 /* Start user code for adding. Do not edit comment generated here */
