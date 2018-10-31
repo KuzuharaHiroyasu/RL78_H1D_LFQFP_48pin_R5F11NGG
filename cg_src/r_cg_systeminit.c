@@ -29,6 +29,8 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
+
 #include "r_cg_macrodriver.h"
 #include "r_cg_cgc.h"
 #include "r_cg_port.h"
@@ -37,6 +39,9 @@ Includes
 #include "r_cg_dac.h"
 #include "r_cg_sau.h"
 #include "r_cg_intp.h"
+#include "r_cg_it.h"
+#include "r_cg_iica.h"
+#include "r_cg_rtc.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -68,9 +73,11 @@ void R_Systeminit(void)
     R_CAMP_Create();
     R_DAC_Create();
     R_SAU0_Create();
-//    R_INTC_Create();		ŠO•”Š„‚è‚İ–¢g—p
+//    R_INTC_Create();		ï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½èï¿½İ–ï¿½ï¿½gï¿½p
     R_IT_Create();
     R_IICA0_Create();
+    R_RTC_Create();
+    
     IAWCTL = 0x00U;
     DFLCTL = 0x01U;
 }

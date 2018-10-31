@@ -18,19 +18,19 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_it_user.c
+* File Name    : r_cg_rtc_user.c
 * Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
 * Device(s)    : R5F11FLJ
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for IT module.
-* Creation Date: 2017/12/20
+* Description  : This file implements device driver for RTC module.
+* Creation Date: 2018/01/22
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
 #include "r_cg_macrodriver.h"
-#include "r_cg_it.h"
+#include "r_cg_rtc.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -38,7 +38,7 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_it_interrupt(vect=INTIT)
+
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -48,25 +48,6 @@ Global variables and functions
 /* Start user code for global. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
-/***********************************************************************************************************************
-* Function Name: r_it_interrupt
-* Description  : None
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-int time_10ms_cnt = 0;
-extern void set_req_main_cyc(void);
-static void __near r_it_interrupt(void)
-{
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-//    P5 = ~P5;	
-	time_10ms_cnt++;
-	if( time_10ms_cnt >= 5 ){
-		time_10ms_cnt = 0;
-		set_req_main_cyc();
-	}
-}
 
 /* Start user code for adding. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */

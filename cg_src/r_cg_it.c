@@ -62,7 +62,7 @@ void R_IT_Create(void)
     /* Set INTIT low priority */
     TMKAPR1 = 1U;
     TMKAPR0 = 1U;
-    ITMC = _0095_ITCMP_VALUE;
+    ITMC = _0147_ITCMP_VALUE;
     
     R_IT_Start();
 }

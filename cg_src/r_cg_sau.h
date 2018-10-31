@@ -278,6 +278,11 @@ Macro definitions
 #define _0006_SCR03_DEFAULT_VALUE               (0x0006U) /* SCR03 default value */
 #define IIC_WAITTIME                            (14U) /* change the waiting time according to the system */
 
+
+#define	DRV_UART1_DATA_LENGH					100									/* RS232C通信データ長(送受、共通) ヘッダ８バイト＋オプションデータ６バイト */
+#define	DRV_UART1_RCV_RING_LENGTH				( DRV_UART1_DATA_LENGH * 1 + 1 )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
+#define	DRV_UART1_SND_RING_LENGTH				( DRV_UART1_DATA_LENGH * 1 + 1 )		/* リングバッファ長(3メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
+
 /***********************************************************************************************************************
 Typedef definitions
 ***********************************************************************************************************************/
@@ -289,12 +294,21 @@ void R_SAU0_Create(void);
 void R_UART1_Create(void);
 void R_UART1_Start(void);
 void R_UART1_Stop(void);
-MD_STATUS R_UART1_Send(uint8_t * const tx_buf, uint16_t tx_num);
-MD_STATUS R_UART1_Receive(uint8_t * const rx_buf, uint16_t rx_num);
-static void r_uart1_callback_receiveend(void);
-static void r_uart1_callback_sendend(void);
-static void r_uart1_callback_error(uint8_t err_type);
-static void r_uart1_callback_softwareoverrun(uint16_t rx_data);
+//MD_STATUS R_UART1_Send(uint8_t * const tx_buf, uint16_t tx_num);
+//MD_STATUS R_UART1_Receive(uint8_t * const rx_buf, uint16_t rx_num);
+//static void r_uart1_callback_receiveend(void);
+//static void r_uart1_callback_sendend(void);
+//static void r_uart1_callback_error(uint8_t err_type);
+//static void r_uart1_callback_softwareoverrun(uint16_t rx_data);
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
+
+
+RING_BUF* drv_uart1_get_snd_ring( void );
+RING_BUF* drv_uart1_get_rcv_ring( void );
+void drv_uart1_send_start( void );
+
+
+
+
 #endif

@@ -42,7 +42,7 @@ Macro definitions (Register bit)
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-#define _0095_ITCMP_VALUE                 (0x0095U) /* specification of the 12-bit interval timer compare value */
+#define _0147_ITCMP_VALUE                 (0x0147U) /* specification of the 12-bit interval timer compare value */
 
 /***********************************************************************************************************************
 Typedef definitions

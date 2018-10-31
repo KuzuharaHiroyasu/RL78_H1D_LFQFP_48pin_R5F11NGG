@@ -2,7 +2,7 @@
 /* システム名   : RD8001														*/
 /* ファイル名   : sys.h															*/
 /* 機能         : システム共通(マクロ定義、型定義、関数の外部参照宣言)			*/
-/* 変更履歴     : 2017.12.20 Axia Soft Design 西島		初版差					*/
+/* 変更履歴     : 2017.12.20 Axia Soft Design 西島		初版作成				*/
 /* 注意事項     : なし															*/
 /********************************************************************************/
 #ifndef		_SYS_H_			/* 二重定義防止 */
@@ -377,10 +377,50 @@ typedef struct{
 	H	y;			/* y座標 ポジション情報またはAD変換値 */
 }POS_INFO;
 
+
+/* マスカブル割り込み禁止/許可 */
+/* 割込みの禁止/許可は#pragma拡張機能でサポートされている */
+//#ifndef __RL78__
+//#define	DI()	asm("FCLR I")
+//#define	EI()	asm("FSET I")
+//#endif
+
+/* マスカブル割り込み禁止/許可(前回状態への復帰) */
+/* 注意事項：前回状態への復帰となるためかならず同一関数内でセットで使用して下さい */
+#if 0
+#define DI_RET()		\
+{						\
+	__asm("PUSH PSW");	\
+	DI();				\
+}
+#define EI_RET()		\
+{						\
+	__asm("POP  PSW");	\
+}
+#else
+// RD8001暫定 上記でエラーが出る。
+#define DI_RET()		\
+{						\
+}
+#define EI_RET()		\
+{						\
+}
+
+
+
+#endif
+
 /************************************************************/
 /* 外部参照宣言												*/
 /************************************************************/
-
+void ring_buf_init( RING_BUF* p_ring, UB* p_data, UH size);
+INT read_ring_buf( RING_BUF* p_ring, UB* p_data );
+INT write_ring_buf( RING_BUF* p_ring ,UB data );
+UB	hex2bin(UB num);
+UB	uwhex2bin(UW *bin, UB *pstr);
+UB bcdbin( UB bin );
+INT bcd2bin( UB *bin, const UB *src_bcd );
+void dummy( void );
 
 #endif
 /************************************************************/

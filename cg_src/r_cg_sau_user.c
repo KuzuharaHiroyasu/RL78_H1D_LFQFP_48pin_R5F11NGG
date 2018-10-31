@@ -29,155 +29,225 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
 #include "r_cg_macrodriver.h"
 #include "r_cg_sau.h"
+
+#include <stdio.h>
+#include <string.h>
+
+
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
-#include "r_cg_userdefine.h"
+//#include "r_cg_userdefine.h"
 
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_uart1_interrupt_send(vect=INTST1)
-#pragma interrupt r_uart1_interrupt_receive(vect=INTSR1)
+#pragma interrupt drv_uart1_snd_int(vect=INTST1)
+#pragma interrupt drv_uart1_rcv_int(vect=INTSR1)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
-/***********************************************************************************************************************
-Global variables and functions
-***********************************************************************************************************************/
-extern volatile uint8_t * gp_uart1_tx_address;         /* uart1 send buffer address */
-extern volatile uint16_t  g_uart1_tx_count;            /* uart1 send data number */
-extern volatile uint8_t * gp_uart1_rx_address;         /* uart1 receive buffer address */
-extern volatile uint16_t  g_uart1_rx_count;            /* uart1 receive data number */
-extern volatile uint16_t  g_uart1_rx_length;           /* uart1 receive data length */
-/* Start user code for global. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
-extern void getmode_in(void);
 
-/***********************************************************************************************************************
-* Function Name: r_uart1_interrupt_receive
-* Description  : None
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-int get_state = 0;
-static void __near r_uart1_interrupt_receive(void)
+
+/********************/
+/*     内部変数     */
+/********************/
+UB drv_uart1_send_buf[DRV_UART1_RCV_RING_LENGTH];				/* 送信バッファ(リング用) */
+UB drv_uart1_rcv_buf[DRV_UART1_SND_RING_LENGTH];				/* 受信バッファ(リング用) */
+RING_BUF drv_uart1_send_ring;									/* 送信リングバッファ用コントローラ */
+RING_BUF drv_uart1_rcv_ring;									/* 受信リングバッファ用コントローラ */
+
+/********************/
+/* プロトタイプ宣言 */
+/********************/
+
+/************************************************************************/
+/* 関数     : drv_uart1_init											*/
+/* 関数名   : UART1初期化処理											*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* UART1の初期化処理													*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* RX321ハードウェアマニュアルP.1386参照								*/
+/* デバッグポート有効時はSCI10、無効時はSCI1で動作、sys.hで切り替え可能 */
+/************************************************************************/
+void drv_uart1_data_init( void )
 {
-    volatile uint8_t rx_data;
-    volatile uint8_t err_type;
-    
-    err_type = (uint8_t)(SSR03 & 0x0007U);
-    SIR03 = (uint16_t)err_type;
-
-    if (err_type != 0U)
-    {
-        r_uart1_callback_error(err_type);
-    }
-    
-    rx_data = RXD1;
+	/* 送信リングバッファ初期化 */
+	memset( &drv_uart1_send_buf[0], 0x00, sizeof(drv_uart1_send_buf) );
+	ring_buf_init( &drv_uart1_send_ring, &drv_uart1_send_buf[0], DRV_UART1_SND_RING_LENGTH );
 	
-#if 1
-	//RD8001暫定コード
-	if(( rx_data == 0x47 )&&
-	   ( get_state == 0 )){
-		get_state = 1;
-	}else if(( rx_data == 0x45 )&&
-	   ( get_state == 1 )){
-		get_state = 2;
-	}else if(( rx_data == 0x54 )&&
-	   ( get_state == 2 )){
-		get_state = 0;
-		r_uart1_callback_receiveend();
-	}else{
-		get_state = 0;
-	}
-#else	
-    if (g_uart1_rx_length > g_uart1_rx_count)
-    {
-        *gp_uart1_rx_address = rx_data;
-        gp_uart1_rx_address++;
-        g_uart1_rx_count++;
+	/* 受信リングバッファ初期化 */
+	memset( &drv_uart1_rcv_buf[0], 0x00, sizeof(drv_uart1_rcv_buf) );
+	ring_buf_init( &drv_uart1_rcv_ring, &drv_uart1_rcv_buf[0], DRV_UART1_RCV_RING_LENGTH );	
+}
 
-        if (g_uart1_rx_length == g_uart1_rx_count)
-        {
-            r_uart1_callback_receiveend();
-        }
-    }
-    else
-    {
-        r_uart1_callback_softwareoverrun(rx_data);
-    }
+
+/************************************************************************/
+/* 関数     : drv_uart1_clear_err										*/
+/* 関数名   : ドライバエラークリア処理									*/
+/* 引数     : 															*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* ドライバエラークリア処理												*/
+/* CPUマニュアルP.656に基づき処理を行う									*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+STATIC void drv_uart1_clear_err( void )
+{
+#if 0
+	UB tmp;
+	/**************/
+	/* エラー処理 */
+	/**************/
+	// (1)シリアルデータレジスタ(SDR)をリードする。(受信バッファビットをクリアしオーバーランエラー発生を防ぐ)
+	// (2)シリアルステータスレジスタ(SSR)をリードする。(エラー種別の判断を行う)
+	// (3)シリアルフラグクリアレジスタ(SLR)に"1"をライトする。(リードしたSSRをそのままライトする)
+	tmp = DRV_UART_232C_RX_BUF_REG;
+	DRV_UART_232C_ERR_CLEAR_REG = DRV_UART_232C_RX_ERR_FLG;
 #endif
 }
-/***********************************************************************************************************************
-* Function Name: r_uart1_interrupt_send
-* Description  : None
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-static void __near r_uart1_interrupt_send(void)
+
+
+/************************************************************************/
+/* 関数     : drv_uart1_snd_int											*/
+/* 関数名   : UART1送信割り込み処理										*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* UART1送信割り込み処理												*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+void __near drv_uart1_snd_int(void)
 {
-    if (g_uart1_tx_count > 0U)
-    {
-        TXD1 = *gp_uart1_tx_address;
-        gp_uart1_tx_address++;
-        g_uart1_tx_count--;
-    }
-    else
-    {
-        r_uart1_callback_sendend();
-    }
-}
-/***********************************************************************************************************************
-* Function Name: r_uart1_callback_receiveend
-* Description  : This function is a callback function when UART1 finishes reception.
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-static void r_uart1_callback_receiveend(void)
-{
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-    getmode_in();
-    NOP();
-}
-/***********************************************************************************************************************
-* Function Name: r_uart1_callback_softwareoverrun
-* Description  : This function is a callback function when UART1 receives an overflow data.
-* Arguments    : rx_data -
-*                    receive data
-* Return Value : None
-***********************************************************************************************************************/
-static void r_uart1_callback_softwareoverrun(uint16_t rx_data)
-{
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-}
-/***********************************************************************************************************************
-* Function Name: r_uart1_callback_sendend
-* Description  : This function is a callback function when UART1 finishes transmission.
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-static void r_uart1_callback_sendend(void)
-{
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-}
-/***********************************************************************************************************************
-* Function Name: r_uart1_callback_error
-* Description  : This function is a callback function when UART1 reception error occurs.
-* Arguments    : err_type -
-*                    error type value
-* Return Value : None
-***********************************************************************************************************************/
-static void r_uart1_callback_error(uint8_t err_type)
-{
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-    NOP();
+	UB snd_data;
+	INT	ercd;
+	
+	ercd = read_ring_buf( &drv_uart1_send_ring, &snd_data );
+	if(ercd == E_OK){
+		TXD1 = snd_data;
+	}
 }
 
-/* Start user code for adding. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
+/************************************************************************/
+/* 関数     : drv_uart1_rcv_int											*/
+/* 関数名   : UART1受信割り込み処理										*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* UART1受信割り込み処理												*/
+/************************************************************************/
+/* 注意事項 :															*/
+/************************************************************************/
+void __near drv_uart1_rcv_int(void)
+{
+    volatile UB rx_data;
+    volatile UB err_type;
+    
+    err_type = (UB)(SSR03 & 0x0007U);
+    SIR03 = (UH)err_type;
+
+#if 1
+	// エラーでも継続
+    if (err_type != 0U){
+		drv_uart1_clear_err();
+	}
+	rx_data = RXD1;
+	if( E_QOVR == write_ring_buf( &drv_uart1_rcv_ring, rx_data )){
+//			err_info(ERR_ID_RING_OVER_LOG);		/* リングバッファオーバーを異常管理へ通知 */
+	}
+#else
+	// エラーの場合停止
+    if (err_type != 0U){
+		drv_uart1_clear_err();
+	}else{
+		rx_data = RXD1;
+		if( E_QOVR == write_ring_buf( &drv_uart1_rcv_ring, rx_data )){
+//			err_info(ERR_ID_RING_OVER_LOG);		/* リングバッファオーバーを異常管理へ通知 */
+		}
+	}
+#endif
+}
+
+
+/************************************************************************/
+/* 関数     : drv_uart1_send_sart										*/
+/* 関数名   : UART1送信開始処理											*/
+/* 引数    : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* UART1送信開始処理													*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+void drv_uart1_send_start( void )
+{
+	UB snd_data;
+	
+	if(E_OK == read_ring_buf( &drv_uart1_send_ring, &snd_data )){
+        STMK1 = 1U;    /* disable INTST1 interrupt */
+		TXD1 = snd_data;
+        STMK1 = 0U;    /* enable INTST1 interrupt */
+	}
+}
+
+/************************************************************************/
+/* 関数     : drv_uart1_get_snd_ring									*/
+/* 関数名   : 送信リングバッファポインタ取得							*/
+/* 引数     : なし														*/
+/* 戻り値   : 送信リングバッファのポインタ								*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* リングバッファのポインタを返す										*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+RING_BUF* drv_uart1_get_snd_ring( void )
+{
+	return &drv_uart1_send_ring;
+
+}
+
+/************************************************************************/
+/* 関数     : drv_uart1_get_rcv_ring									*/
+/* 関数名   : 受信リングバッファポインタ取得							*/
+/* 引数     : なし														*/
+/* 戻り値   : 受信リングバッファのポインタ								*/
+/* 変更履歴 : 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* リングバッファのポインタを返す										*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+RING_BUF* drv_uart1_get_rcv_ring( void )
+{
+	return &drv_uart1_rcv_ring;
+}
+
+
+/************************************************************/
+/* END OF TEXT												*/
+/************************************************************/

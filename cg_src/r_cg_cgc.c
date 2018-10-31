@@ -55,12 +55,25 @@ Global variables and functions
 ***********************************************************************************************************************/
 void R_CGC_Create(void)
 {
-    CMC = _00_CGC_HISYS_PORT | _00_CGC_SUB_PORT | _00_CGC_SYSOSC_UNDER10M;
+    volatile uint32_t w_count;
+
+    CMC = _00_CGC_HISYS_PORT | _10_CGC_SUB_OSC | _00_CGC_SYSOSC_UNDER10M;
+//    CMC = _00_CGC_HISYS_PORT | _00_CGC_SUB_PORT | _00_CGC_SYSOSC_UNDER10M;
     /* Set fMX */
     MSTOP = 1U;     /* X1 oscillator/external clock stopped */
     /* Set fSUB */
+#if 0
     OSMC = _10_CGC_TMRJ_IT_CLK_FIL;
     XTSTOP = 1U;    /* XT1 oscillator/external clock stopped */
+#else
+    OSMC = _00_CGC_CLK_ENABLE | _00_CGC_TMRJ_IT_CLK_SUBSYSTEM_CLK;
+    XTSTOP = 0U;    /* XT1 oscillator/external clock operating */
+#endif
+    /* Change the waiting time according to the system */
+    for (w_count = 0U; w_count <= CGC_SUBWAITTIME; w_count++)
+    {
+        NOP();
+    }
     /* Set fCLK */
     CSS = 0U;       /* main system clock (fMAIN) */
     /* Set fMAIN */

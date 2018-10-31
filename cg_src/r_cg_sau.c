@@ -29,6 +29,7 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
 #include "r_cg_macrodriver.h"
 #include "r_cg_sau.h"
 /* Start user code for include. Do not edit comment generated here */
@@ -76,6 +77,7 @@ void R_SAU0_Create(void)
     SPS0 = _0000_SAU_CK01_fCLK_0 | _0000_SAU_CK00_fCLK_0;		//76800bps
 #endif
     R_UART1_Create();
+    
 }
 /***********************************************************************************************************************
 * Function Name: R_UART1_Create
@@ -163,64 +165,4 @@ void R_UART1_Stop(void)
     STIF1 = 0U;     /* clear INTST1 interrupt flag */
     SRIF1 = 0U;     /* clear INTSR1 interrupt flag */
 }
-/***********************************************************************************************************************
-* Function Name: R_UART1_Receive
-* Description  : This function receives UART1 data.
-* Arguments    : rx_buf -
-*                    receive buffer pointer
-*                rx_num -
-*                    buffer size
-* Return Value : status -
-*                    MD_OK or MD_ARGERROR
-***********************************************************************************************************************/
-MD_STATUS R_UART1_Receive(uint8_t * const rx_buf, uint16_t rx_num)
-{
-    MD_STATUS status = MD_OK;
 
-    if (rx_num < 1U)
-    {
-        status = MD_ARGERROR;
-    }
-    else
-    {
-        g_uart1_rx_count = 0U;
-        g_uart1_rx_length = rx_num;
-        gp_uart1_rx_address = rx_buf;
-    }
-
-    return (status);
-}
-/***********************************************************************************************************************
-* Function Name: R_UART1_Send
-* Description  : This function sends UART1 data.
-* Arguments    : tx_buf -
-*                    transfer buffer pointer
-*                tx_num -
-*                    buffer size
-* Return Value : status -
-*                    MD_OK or MD_ARGERROR
-***********************************************************************************************************************/
-MD_STATUS R_UART1_Send(uint8_t * const tx_buf, uint16_t tx_num)
-{
-    MD_STATUS status = MD_OK;
-
-    if (tx_num < 1U)
-    {
-        status = MD_ARGERROR;
-    }
-    else
-    {
-        gp_uart1_tx_address = tx_buf;
-        g_uart1_tx_count = tx_num;
-        STMK1 = 1U;    /* disable INTST1 interrupt */
-        TXD1 = *gp_uart1_tx_address;
-        gp_uart1_tx_address++;
-        g_uart1_tx_count--;
-        STMK1 = 0U;    /* enable INTST1 interrupt */
-    }
-
-    return (status);
-}
-
-/* Start user code for adding. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
