@@ -225,7 +225,7 @@ extern void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 );
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
 
-const B		version_product_tbl[]= {0, 0, 0, 2};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 3};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
@@ -523,13 +523,20 @@ void set_req_main_cyc(void)
 //UART関連
 //================================
 
-#define UART1_STR_MAX		50
+#define UART1_STR_MAX		100
 void main_send_uart1(void)
 {
 	uint8_t tx_data[UART1_STR_MAX] = {0};
 //	uint8_t * const s = &tx_data[0];
 	int len;
-
+	
+#if 0
+	s_unit.sekishoku_val = 1;
+	s_unit.sekigaival = 2;
+	s_unit.kokyu_val = 3;
+	s_unit.ibiki_val = 4;
+#endif
+	
 //	len = sprintf(tx_data, "%d,%d,%ld,%ld\r\n", s_unit.kokyu_val, s_unit.ibiki_val, s_unit.sekishoku_val, s_unit.sekigaival );
 	len = sprintf(tx_data, "%ld,%ld,%d,%d\r\n", s_unit.sekishoku_val, s_unit.sekigaival, s_unit.kokyu_val, s_unit.ibiki_val  );
 	
