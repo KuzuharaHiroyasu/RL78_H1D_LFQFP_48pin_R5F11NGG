@@ -261,7 +261,7 @@ extern void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 );
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
 
-const B		version_product_tbl[]= {0, 0, 0, 6};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 7};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
@@ -514,12 +514,15 @@ void main_send_ble(void)
 	uint8_t tx_data[BLE_STR_MAX] = {0};
 	int len;
 #if 0
+	//デバッグ用に連番で出力
 	len = sprintf((char*)tx_data, "%d\r\n", debug_x);
 	debug_x++;
 #else
 	len = sprintf((char*)tx_data, "%d\r\n", s_unit.eep.record.data.acl_x);
 #endif
-	VUART_Send_Data((char*)tx_data,len);
+	if( VUART_Send_Data((char*)tx_data,len) != RBLE_OK){
+		//送信できない状態（切断、バッファフル、応答待ち）
+	}
 
 //	com_srv_send( &tx_data[0], len );
 
@@ -1022,8 +1025,8 @@ void main_acl_read(void)
 	}
 
 	i2c_read_sub( ACL_DEVICE_ADR, 0x06, &rd_data[0], 6 );
-	s_unit.eep.record.data.acl_y = rd_data[1];
-	s_unit.eep.record.data.acl_x = rd_data[3];
+	s_unit.eep.record.data.acl_x = rd_data[1];
+	s_unit.eep.record.data.acl_y = rd_data[3];
 	s_unit.eep.record.data.acl_z = rd_data[5];
 	
 }

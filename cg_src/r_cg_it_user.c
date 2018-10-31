@@ -66,7 +66,8 @@ static void __near r_it_interrupt(void)
 	time_10ms_cnt++;
 //	if( time_10ms_cnt >= 5 ){	/* 50ms */
 //	if( time_10ms_cnt >= 20 ){	/* 200ms */
-	if( time_10ms_cnt >= 10 ){	/* 100ms */
+//	if( time_10ms_cnt >= 10 ){	/* 100ms */
+	if( time_10ms_cnt >= 20 ){	/* 200ms */
 		time_10ms_cnt = 0;
 		set_req_main_cyc();
 	}

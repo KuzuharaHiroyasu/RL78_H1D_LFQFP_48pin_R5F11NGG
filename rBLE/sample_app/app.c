@@ -37,9 +37,21 @@
 #include	"vuart.h"
 #include	"vuarts.h"
 
+//[RD8001]
+typedef signed char		B;
+typedef unsigned char	UB;
+#include "com_srv.h"
+//#define USE_DEBUG_UART	/* 定義時、UART1にBLEデバッグPRINT表示 */
+extern void wait_ms( int ms );
+
+
 //#ifndef char_t
 //typedef char            char_t;
 //#endif
+
+
+
+
 
 /**************************** Define Declaration **************************************/
 #define     RUN_COMMAND_QUEUE_SIZE          10
@@ -128,9 +140,16 @@ static void APP_Disp( char_t* str );
 static void APP_Disp_Status( RBLE_STATUS status );
 static void APP_Disp_PassKey( uint32_t passkey );
 #else
+#ifdef USE_DEBUG_UART
+static void APP_Disp( char_t* str );
+static void APP_Disp_Status( RBLE_STATUS status );
+static void APP_Disp_PassKey( uint32_t passkey );
+#else
 #define APP_Disp            //APP_Disp
 #define APP_Disp_Status     //APP_Disp_Status
 #define APP_Disp_PassKey    //APP_Disp_PassKey
+#endif
+
 #endif
 
 static char_t *APP_Get_Status_Str( RBLE_STATUS status );
@@ -142,7 +161,6 @@ static RBLE_STATUS APP_GATT_Permission_Command( void );
 
 static void RBLE_GATT_EVENT_callback(RBLE_GATT_EVENT *event);
 static RBLE_STATUS APP_VUART_Enable_Command( void );
-static RBLE_STATUS APP_VUART_Send_Notify_Command( void );
 static void RBLE_VUARTS_callback(RBLE_VUART_EVENT *event);
 static void cbsub_rble_vuart_event_server_enable_cmp(RBLE_VUART_EVENT *event);
 static void cbsub_rble_vuart_event_server_write_req(RBLE_VUART_EVENT *event);
@@ -177,6 +195,27 @@ static char_t           LcdPrev[9];
 static uint16_t         DataCnt  ;
 static uint8_t          DataValue;
 
+
+//[RD8001]
+enum BLE_TX_STAT_enum {
+    BLE_TX_STAT_IDLE,
+    BLE_TX_STAT_SENDING,
+    BLE_TX_STAT_ERROR
+};	/* BLE VUART 送信状態 */
+uint8_t s_ble_tx_status = BLE_TX_STAT_IDLE;		/* BLE VUART 送信状態 */
+
+#define BLE_VUART_QUE_NUM	8	/* BLE VUART 送信キュー数 */
+typedef struct{
+	char buf[BLE_VUART_QUE_NUM][VUART_SEND_BUFFER_SIZE];
+	char len[BLE_VUART_QUE_NUM];
+	uint8_t	wp;
+	uint8_t	rp;
+	uint8_t	cnt;
+} BLE_TX_QUE;
+
+BLE_TX_QUE	s_ble_tx_que;		/* BLE VUART 送信キュー管理 */
+
+
 /******************************* Program Area *****************************************/
 
 /**************************************************************************************/
@@ -191,10 +230,11 @@ BOOL APP_Init( void )
     BOOL        ret = TRUE;
     RBLE_STATUS ret_status;
 
+//[BD8001]
 DI();
 	/* BLE Reset */
 	P3.5 = 0;	//BLE Reset
-	wait_ms(5);
+	wait_ms(20);
 
     /* Initialize rBLE */
     APP_Disp("c:BLEIni");
@@ -216,9 +256,12 @@ DI();
     memset(&LocalKey  , 0, sizeof(APP_KEY_DATA));
     memset(&RemoteKey , 0, sizeof(APP_KEY_DATA));
 
-
 	ConnectionHdl = ILLEGAL_CONNECTION_HANDLE;
 
+	s_ble_tx_status = BLE_TX_STAT_IDLE;
+	s_ble_tx_que.wp = 0;
+	s_ble_tx_que.rp = 0;
+	s_ble_tx_que.cnt = 0;
 
 	P3.5 = 1;	//BLE Reset解除
 
@@ -692,11 +735,13 @@ static RBLE_STATUS APP_GATT_Permission_Command( void )
 	if( RBLE_GATT_Enable(&RBLE_GATT_EVENT_callback) == RBLE_OK){
 	    /* Go through. Because RBLE_GATT_Enable() does not occur event. */
         ret_status = RBLE_GATT_Set_Permission(&gatt_set_permission);		//[memo] 使用しないサービスを非公開に
+	    APP_Disp("c:Permit");
     }
     else{
 		//要エラー処理
 		while(1);
 	}
+
 
     return( ret_status );
 }
@@ -718,11 +763,13 @@ static RBLE_STATUS APP_VUART_Enable_Command( void )
 	if( ret_status !=  RBLE_OK ){
 		/* rBLE モードが RBLE_MODE_ACTIVE 以外のため実行不可 */
 	}
+
+    APP_Disp("c:UARTEna");
+
     return( ret_status );
 }
 
 //[RD8001]
-uint8_t s_ble_tx_status;
 /**************************************************************************************/
 /**
  *  @brief      rBLE API Call : RBLE_VUART_Server_Send_Indication 
@@ -732,22 +779,43 @@ uint8_t s_ble_tx_status;
 /******************************************************************************************/
 RBLE_STATUS VUART_Send_Data( char *str , uint16_t len )
 {
-    RBLE_STATUS ret_status;
+    RBLE_STATUS ret_status = RBLE_OK;
 
 	if( ConnectionHdl == ILLEGAL_CONNECTION_HANDLE ){	/* 切断中は受け付けない */
 		ret_status = RBLE_PRF_ERR_INEXISTENT_HDL;
 	}
 	else{
+		if( s_ble_tx_status != BLE_TX_STAT_SENDING ){	/* 送信中ではない */
 
-	/* サーバからクライアントへの文字の送信
-	   送信した文字がクライアントに受信され、クライアントが Confirmation を返却すると、
-	   文字送信完了イベント RBLE_VUART_EVENT_SERVER_INDICATION_CFM がサーバに通知されます。*/
-		ret_status = RBLE_VUART_Server_Send_Indication( str, len);
+		    APP_Disp("c:UARTSnd");
+			/* サーバからクライアントへの文字の送信
+			   送信した文字がクライアントに受信され、クライアントが Confirmation を返却すると、
+			   文字送信完了イベント RBLE_VUART_EVENT_SERVER_INDICATION_CFM がサーバに通知されます。*/
+			ret_status = RBLE_VUART_Server_Send_Indication( str, len);
 
-		if( ret_status == RBLE_OK ){
-			s_ble_tx_status = 1;
+			if( ret_status == RBLE_OK ){
+				s_ble_tx_status = BLE_TX_STAT_SENDING;	/* 送信中 */
+			}
 		}
-
+		else{
+			if( s_ble_tx_que.cnt < BLE_VUART_QUE_NUM ){
+				/* キューイング */
+				uint8_t wp = s_ble_tx_que.wp;
+				memcpy(s_ble_tx_que.buf[wp] , str ,len);
+				s_ble_tx_que.len[wp] = len;
+				s_ble_tx_que.cnt++;
+				wp++;
+				wp %= BLE_VUART_QUE_NUM;
+				s_ble_tx_que.wp = wp;
+			    APP_Disp("c:UARTSnd_enque");
+			}
+			else{
+				/* 送信バッファキューあふれ */
+				s_ble_tx_status = BLE_TX_STAT_IDLE;
+			    APP_Disp("c:UARTSnd_fail");
+				ret_status = RBLE_BUSY;
+			}
+		}
 
 	}
     return( ret_status );
@@ -793,10 +861,13 @@ static void cbsub_rble_vuart_event_server_enable_cmp(RBLE_VUART_EVENT *event)
 	
 	//仮想UARTプロファイル許可完了
 	//以降、送受信が可能に
+
+	APP_Disp("e:VUARTEna");
+
 }
 
 //[RD8001]
-char s_rcv_buff[20];
+char s_rcv_buff[21];
 uint16_t s_rcv_len;
 /******************************************************************************
 * rBLE Event        : RBLE_VUART_EVENT_SERVER_WRITE_REQ
@@ -817,7 +888,12 @@ static void cbsub_rble_vuart_event_server_write_req(RBLE_VUART_EVENT *event)
 
     if( s_rcv_len <= 20){
 		memcpy(s_rcv_buff , event->param.server_write_req.value , s_rcv_len);
+		s_rcv_buff[s_rcv_len] = '\0';
+
+	    APP_Disp(s_rcv_buff);		/* UARTで表示 */
     }
+
+
 
 
 #if 0
@@ -861,14 +937,27 @@ static void cbsub_rble_vuart_event_server_indication_cfm(RBLE_VUART_EVENT *event
 	
     if( event->param.server_indicate_cnf.status == RBLE_OK ){
 		/* 送信完了 */
-		s_ble_tx_status = 0;
+		s_ble_tx_status = BLE_TX_STAT_IDLE;
+		APP_Disp("e:VUARTsnd_OK");
 	}
 	else{
 		/* 送信失敗 */
-		s_ble_tx_status = 0xFF;
+		s_ble_tx_status = BLE_TX_STAT_ERROR;
+		APP_Disp("e:VUARTsnd_NG");
 	}
 
 	//送信完了を上位にあげる？ @@
+
+	/* 送信キューに残りあり */
+	if( s_ble_tx_que.cnt >0 ){
+		uint8_t rp = s_ble_tx_que.rp;
+		VUART_Send_Data( s_ble_tx_que.buf[rp], s_ble_tx_que.len[rp] );
+		rp++;
+		rp %= BLE_VUART_QUE_NUM;
+		s_ble_tx_que.rp = rp;
+		s_ble_tx_que.cnt--;
+	}
+
 
 }
 
@@ -936,6 +1025,7 @@ static void RBLE_GATT_EVENT_callback(RBLE_GATT_EVENT *event)
         	//[RD8001] プロファイル パーミッション設定完了
    	        /* Set Bonding Mode */
 	        APP_Set_RunCmd(GAP_SET_BONDING_MODE_CMD);
+       	    APP_Disp("e:Permit");
             break;
         case RBLE_GATT_EVENT_SET_DATA_CMP:
             break;
@@ -1174,6 +1264,12 @@ static BOOL APP_GAP_Broadcast_Enable_CallBack( RBLE_GAP_EVENT *event )
 
     APP_Disp("e:BcstEn");
     APP_Disp_Status(event->param.status);
+    
+    if(RBLE_OK != event->param.status) {
+		//[RD8001] 
+		APP_Init();
+	}
+    
     return( ret_status );
 }
 
@@ -1203,11 +1299,6 @@ static BOOL APP_GAP_Connection_CallBack( RBLE_GAP_EVENT *event )
 		//仮想UARTプロファイル許可
 		APP_Set_RunCmd(SCP_VUART_Enable_CMD);
 
-//    SCP_VUART_Enable_CMD,
-//    SCP_VUART_Disable_CMD,
- //   SCP_VUART_Send_Indicate_CMD,
-
-
 #else
         /* Enable Profile (Profile is Disabled automatically when Disconnection) */
         APP_Set_RunCmd(SCP_Sensor_Enable_CMD);
@@ -1215,10 +1306,10 @@ static BOOL APP_GAP_Connection_CallBack( RBLE_GAP_EVENT *event )
     }
 
 
-#if 0
+
     APP_Disp("e:Connct");
     APP_Disp_Status(event->param.status);
-#endif
+
     return( ret_status );
 }
 
@@ -1237,10 +1328,16 @@ static BOOL APP_GAP_Disconnection_CallBack( RBLE_GAP_EVENT *event )
 
 	//[RD8001] 切断時の処理
 #if 1
+	s_ble_tx_status = BLE_TX_STAT_IDLE;
+	s_ble_tx_que.wp = 0;
+	s_ble_tx_que.rp = 0;
+	s_ble_tx_que.cnt = 0;
 
     /* Restart Broadcast for the Next Connection */
     APP_Set_RunCmd(GAP_BROADCAST_ENABLE_CMD);
 
+    APP_Disp("e:DisCon");
+    APP_Disp_Status(event->param.disconnect.status);
 #else
     /* Disable timer for Notification trigger */
     RBLE_Clear_Timer_Id( _RBLE_TIMER_ID_APP );
@@ -1658,6 +1755,206 @@ static BOOL APP_SCPS_Send_Notify_CallBack( RBLE_SCPS_EVENT *event )
     return( TRUE );
 }
 #endif
+
+
+//[RD8001]
+/* ---------------------------------- UARTでデバッグプリント使用時 -----------------------------*/
+#ifdef USE_DEBUG_UART
+/******************************************************************************************/
+/**
+ *  @brief      LCD Display : String
+ *
+ *  @param      str     Displayed String
+ *
+ *  @retval     None
+ */
+/******************************************************************************************/
+static void APP_Disp( char_t* str )
+{
+#define DBGBUF_MAX	20
+    char_t  dbgbuf[DBGBUF_MAX+2];
+    uint8_t len;
+
+    /* cut the string (max number of character is 8) */
+    len = (uint8_t)strlen(str);
+
+    len = (len > DBGBUF_MAX) ? (DBGBUF_MAX) : (len);
+    strncpy(dbgbuf, str, len);
+	dbgbuf[len] = '\r';
+	dbgbuf[len+1] = '\n';
+
+	com_srv_send( (uint8_t*)dbgbuf , len+2 );
+}
+
+
+/******************************************************************************************/
+/**
+ *  @brief      LCD Display : Status
+ *
+ *  @param      status  rBLE API Return Status , defined by RBLE_STATUS_enum
+ *
+ *  @retval     None
+ */
+/******************************************************************************************/
+static void APP_Disp_Status( RBLE_STATUS status )
+{
+    APP_Disp(APP_Get_Status_Str(status));
+}
+
+/******************************************************************************************/
+/**
+ *  @brief      LCD Display : PassKey Number
+ *
+ *  @param      passkey PassKey
+ *
+ *  @retval     None
+ */
+/******************************************************************************************/
+static void APP_Disp_PassKey( uint32_t passkey )
+{
+    char_t  lcd_next[15];
+    uint8_t i;
+
+    /* passkey range is 6digits(000,000 - 999,999) */
+    for(i = 0; i < 6; i++)
+    {
+        lcd_next[6 - 1 - i] = '0' + (char_t)(passkey % 10);
+        passkey /= 10;
+    }
+    lcd_next[6]  = ':' ;
+    lcd_next[7]  = 'P' ;
+    lcd_next[8]  = 'a' ;
+    lcd_next[9]  = 's' ;
+    lcd_next[10] = 's' ;
+    lcd_next[11] = 'K' ;
+    lcd_next[12] = 'e' ;
+    lcd_next[13] = 'y' ;
+    lcd_next[14] = '\r';
+
+	com_srv_send( (uint8_t *)lcd_next, 15 );
+}
+
+
+/******************************************************************************************/
+/**
+ *  @brief      Search Status String Pointer for LCD Display
+ *
+ *  @param      status  rBLE API Return Status , defined by RBLE_STATUS_enum
+ *
+ *  @retval     Pointer to the Status String
+ */
+/******************************************************************************************/
+static char_t  *APP_Get_Status_Str( RBLE_STATUS status )
+{
+    typedef struct Status_String_Info_t {
+        RBLE_STATUS     rble_status;
+        char_t*         string;
+    } STATUS_STRING_INFO;
+
+    static const STATUS_STRING_INFO status_string[] = {
+        { RBLE_OK,                                  ">OK     "},
+        { RBLE_UNKNOWN_HCI_COMMAND,                 ">UN_HCI "},
+        { RBLE_UNKNOWN_CONNECTION_ID,               ">UN_CNID"},
+        { RBLE_HARDWARE_FAILURE,                    ">HW_FAIL"},
+        { RBLE_PAGE_TIMEOUT,                        ">PAGE_TO"},
+        { RBLE_AUTH_FAILURE,                        ">ATHFAIL"},
+        { RBLE_PIN_MISSING,                         ">PINMISS"},
+        { RBLE_MEMORY_CAPA_EXCEED,                  ">MEM_EXD"},
+        { RBLE_CON_TIMEOUT,                         ">CON_TO "},
+        { RBLE_CON_LIMIT_EXCEED,                    ">CON_EXD"},
+        { RBLE_COMMAND_DISALLOWED,                  ">CMD_DIS"},
+        { RBLE_CONN_REJ_LIMITED_RESOURCES,          ">REJ_RES"},
+        { RBLE_CONN_REJ_SECURITY_REASONS,           ">REJ_SEC"},
+        { RBLE_CONN_REJ_UNACCEPTABLE_BDADDR,        ">REJ_BDA"},
+        { RBLE_CONN_ACCEPT_TIMEOUT_EXCEED,          ">TO_EXD "},
+        { RBLE_UNSUPPORTED,                         ">UNSPRT "},
+        { RBLE_INVALID_HCI_PARAM,                   ">INV_PRM"},
+        { RBLE_REMOTE_USER_TERM_CON,                ">RMT_USR"},
+        { RBLE_REMOTE_DEV_TERM_LOW_RESOURCES,       ">RMT_RES"},
+        { RBLE_REMOTE_DEV_POWER_OFF,                ">RMT_PWR"},
+        { RBLE_CON_TERM_BY_LOCAL_HOST,              ">TRM_LCL"},
+        { RBLE_REPEATED_ATTEMPTS,                   ">RPT_ATP"},
+        { RBLE_PAIRING_NOT_ALLOWED,                 ">PAR_ALW"},
+        { RBLE_UNSUPPORTED_REMOTE_FEATURE,          ">RMT_FET"},
+        { RBLE_UNSPECIFIED_ERROR,                   ">ERROR  "},
+        { RBLE_LMP_RSP_TIMEOUT,                     ">RSP_TO "},
+        { RBLE_ENC_MODE_NOT_ACCEPT,                 ">ENC_NOT"},
+        { RBLE_LINK_KEY_CANT_CHANGE,                ">LINKKEY"},
+        { RBLE_INSTANT_PASSED,                      ">INST_PS"},
+        { RBLE_PAIRING_WITH_UNIT_KEY_NOT_SUP,       ">PARKEY "},
+        { RBLE_DIFF_TRANSACTION_COLLISION,          ">TRACCOL"},
+        { RBLE_CHANNEL_CLASS_NOT_SUP,               ">CH_CLS "},
+        { RBLE_INSUFFICIENT_SECURITY,               ">INS_SEC"},
+        { RBLE_PARAM_OUT_OF_MAND_RANGE,             ">PRM_OUT"},
+        { RBLE_SP_NOT_SUPPORTED_HOST,               ">SP_HOST"},
+        { RBLE_HOST_BUSY_PAIRING,                   ">HST_BSY"},
+        { RBLE_CONTROLLER_BUSY,                     ">CTL_BSY"},
+        { RBLE_UNACCEPTABLE_CONN_INT,               ">CON_INT"},
+        { RBLE_DIRECT_ADV_TO,                       ">DADV_TO"},
+        { RBLE_TERMINATED_MIC_FAILURE,              ">MICFAIL"},
+        { RBLE_CONN_FAILED_TO_BE_ES,                ">FAIL_ES"},
+        { RBLE_GAP_INVALID_PARAM_ERR,               ">GP_PRM "},
+        { RBLE_GAP_AUTO_EST_ERR,                    ">GP_AEST"},
+        { RBLE_GAP_SELECT_EST_ERR,                  ">GP_SEST"},
+        { RBLE_GAP_SET_RECON_ADDR_ERR,              ">GP_ADDR"},
+        { RBLE_GAP_SET_PRIVACY_FEAT_ERR,            ">GP_PRV "},
+        { RBLE_GATT_INVALID_PARAM_ERR,              ">GT_PRM "},
+        { RBLE_GATT_INDICATE_NOT_ALLOWED,           ">GT_IND "},
+        { RBLE_GATT_NOTIFY_NOT_ALLOWED,             ">GT_NTF "},
+        { RBLE_ATT_INVALID_PARAM_ERR,               ">AT_PRM "},
+        { RBLE_SM_INVALID_PARAM_ERR,                ">SM_PRM "},
+        { RBLE_SM_PAIR_ERR_PASSKEY_ENTRY_FAILED,    ">SM_PSKY"},
+        { RBLE_SM_PAIR_ERR_OOB_NOT_AVAILABLE,       ">SM_OOB "},
+        { RBLE_SM_PAIR_ERR_AUTH_REQUIREMENTS,       ">SM_AUTH"},
+        { RBLE_SM_PAIR_ERR_CFM_VAL_FAILED,          ">SM_CFM "},
+        { RBLE_SM_PAIR_ERR_PAIRING_NOT_SUPPORTED,   ">SM_PAIR"},
+        { RBLE_SM_PAIR_ERR_ENCRYPTION_KEY_SIZE,     ">SM_KYSZ"},
+        { RBLE_SM_PAIR_ERR_CMD_NOT_SUPPORTED,       ">SM_CMD "},
+        { RBLE_SM_PAIR_ERR_UNSPECIFIED_REASON,      ">SM_RSN "},
+        { RBLE_SM_PAIR_ERR_REPEATED_ATTEMPTS,       ">SM_ATP "},
+        { RBLE_SM_PAIR_ERR_INVALID_PARAMS,          ">SM_PRM "},
+        { RBLE_L2C_INVALID_PARAM_ERR,               ">L2C_PRM"},
+        { RBLE_PRF_ERR_INVALID_PARAM,               ">PF_PRM "},
+        { RBLE_PRF_ERR_INEXISTENT_HDL,              ">PF_HDL "},
+        { RBLE_PRF_ERR_STOP_DISC_CHAR_MISSING,      ">PF_CHAR"},
+        { RBLE_PRF_ERR_MULTIPLE_IAS,                ">PF_IAS "},
+        { RBLE_PRF_ERR_INCORRECT_PROP,              ">PF_PROP"},
+        { RBLE_PRF_ERR_MULTIPLE_CHAR,               ">PF_MT_C"},
+        { RBLE_PRF_ERR_NOT_WRITABLE,                ">PF_WR  "},
+        { RBLE_PRF_ERR_NOT_READABLE,                ">PF_RD  "},
+        { RBLE_PRF_ERR_REQ_DISALLOWED,              ">PF_REQ "},
+        { RBLE_PRF_ERR_NTF_DISABLED,                ">PF_NTF "},
+        { RBLE_PRF_ERR_IND_DISABLED,                ">PF_IND "},
+        { RBLE_PRF_ERR_ATT_NOT_SUPPORTED,           ">PF_ATT "},
+        /*------ When adding it, it's added in after a while. -----*/
+        { RBLE_TRANS_ERR,                           ">TRANS  "},
+        { RBLE_STATUS_ERROR,                        ">STATUS "},
+        { RBLE_PARAM_ERR,                           ">PARAM  "},
+        { RBLE_BUSY,                                ">BUSY   "},
+        { RBLE_SHORTAGE_OF_RESOURCE,                ">SHT_RES"},
+        { RBLE_VERSION_FAIL,                        ">VERFAIL"},
+        { RBLE_TEST_VERSION,                        ">TESTVER"},
+        { RBLE_ERR,                                 ">UNKSTAT"},
+    };
+
+    char_t*     ret_ptr = NULL;
+    uint16_t    i;
+
+    /* Search Status String Pointer */
+    for(i = 0; i < (sizeof(status_string) / sizeof(STATUS_STRING_INFO)); i++) {
+        if ( status == status_string[i].rble_status ) {
+            ret_ptr = status_string[i].string;
+            break;
+        }
+    }
+    /* Set Default Pointer when Not Found */
+    if ( NULL == ret_ptr ) {
+        ret_ptr = status_string[(sizeof(status_string) / sizeof(STATUS_STRING_INFO)) - 1].string;
+    }
+    return( ret_ptr );
+}
+#endif /* USE_DEBUG_UART */
+
 
 /* ---------------------------------- LCD Display Functions  -----------------------------*/
 

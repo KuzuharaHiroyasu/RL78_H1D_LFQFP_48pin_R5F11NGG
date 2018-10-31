@@ -248,7 +248,13 @@ enum RBLE_GAP_WR_CHAR_CODE_enum {
 
 #define RBLE_GATT_MAX_VALUE						0x18			/**< maximum value length */
 #define RBLE_GATT_MAX_HDL_LIST					0x08			/**< maximum number of handles returned */
-#define RBLE_GATT_MAX_LONG_VALUE				0x50			/**< Long value length */
+#if (1)
+    /* BLE software v1.11 */
+	#define RBLE_GATT_MAX_LONG_VALUE				0x50			/**< Long value length */
+#else
+    /* BLE software v1.20 */
+    #define RBLE_GATT_MAX_LONG_VALUE				0x48			/**< Long value length */
+#endif
 #define RBLE_GATT_MAX_NB_HDLS					0x04			/**< Maximum number of handles */
 #define RBLE_GATT_16BIT_UUID_OCTET				0x02			/**< 16-bit UUID length */
 #define RBLE_GATT_32BIT_UUID_OCTET				0x04			/**< 32-bit UUID length */

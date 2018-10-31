@@ -30,7 +30,8 @@
  * DEFINES
  ****************************************************************************************
  */
-#define SERIAL_U_DIV_2WIRE  (0)
+//[RD8001]
+#define SERIAL_U_DIV_2WIRE  (1)
 
 /*
  * FUNCTION DECLARATIONS

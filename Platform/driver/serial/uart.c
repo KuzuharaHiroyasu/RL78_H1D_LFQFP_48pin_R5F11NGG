@@ -160,7 +160,7 @@ BOOL serial_write(uint8_t *bufptr, uint16_t size)
     g_sau_to_cnt  = 0;
 
     /* transmit the request byte */
-    ret = R_UART0_Send(&g_uart_req_byte_buf, UART_REQ_BYTE_SIZE);
+    ret = R_UART0_Send((uint8_t *)&g_uart_req_byte_buf, UART_REQ_BYTE_SIZE);
 #else
     /* start UART transferring */
     ret = R_UART0_Send(bufptr, size);
@@ -272,7 +272,7 @@ static void uart_tx_timeout(void)
         {
             g_sau_tx_stat = T_REQUESTING;
 
-            R_UART0_Send(&g_uart_req_byte_buf, UART_REQ_BYTE_SIZE);
+            R_UART0_Send((uint8_t *)&g_uart_req_byte_buf, UART_REQ_BYTE_SIZE);
         }
         /* timeout discontinued */
         else
