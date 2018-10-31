@@ -955,8 +955,8 @@ void main_acl_read(void)
 	}
 
 	i2c_read_sub( ACL_DEVICE_ADR, 0x06, &rd_data[0], 6 );
-	s_unit.eep.record.data.acl_y = rd_data[1];
-	s_unit.eep.record.data.acl_x = rd_data[3];
+	s_unit.eep.record.data.acl_x = rd_data[1];
+	s_unit.eep.record.data.acl_y = rd_data[3];
 	s_unit.eep.record.data.acl_z = rd_data[5];
 	
 }
