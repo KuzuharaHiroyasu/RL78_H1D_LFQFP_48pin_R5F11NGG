@@ -225,7 +225,7 @@ extern void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 );
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
 
-const B		version_product_tbl[]= {0, 0, 0, 3};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 4};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */

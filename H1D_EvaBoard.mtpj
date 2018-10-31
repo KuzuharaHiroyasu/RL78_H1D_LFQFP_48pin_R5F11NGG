@@ -494,7 +494,7 @@
       <COptionIgnoreFilesMisra-DefaultValue />
       <COptionCheckLanguageExtension-DefaultValue>False</COptionCheckLanguageExtension-DefaultValue>
       <IsLockedByUser>False</IsLockedByUser>
-      <TimeTagModified--0>-8586876659973244821</TimeTagModified--0>
+      <TimeTagModified--0>-8586854200204048243</TimeTagModified--0>
       <COptionAnsi-0>False</COptionAnsi-0>
       <COptionAsmPath-0>False</COptionAsmPath-0>
       <COptionCharacterSet-0>Auto</COptionCharacterSet-0>
@@ -531,7 +531,7 @@ cg_src
       <COptionNestComment-0>False</COptionNestComment-0>
       <COptionOinlineLevel-0>FitToOptimization</COptionOinlineLevel-0>
       <COptionOtherAdditionalOptions-0 />
-      <COptionPack-0>True</COptionPack-0>
+      <COptionPack-0>False</COptionPack-0>
       <COptionPrepPath-0>%BuildModeName%</COptionPrepPath-0>
       <COptionMisra2004RuleNumberIgnore-0 />
       <COptionOinlineSize-0>100</COptionOinlineSize-0>
