@@ -44,12 +44,152 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
+#pragma interrupt r_uart0_interrupt_send(vect=INTST0)
+#pragma interrupt r_uart0_interrupt_receive(vect=INTSR0)
 #pragma interrupt drv_uart1_snd_int(vect=INTST1)
 #pragma interrupt drv_uart1_rcv_int(vect=INTSR1)
 /* Start user code for pragma. Do not edit comment generated here */
+extern void uart_sr_isr(void);          // defined by uart.c
+extern void uart_st_isr(void);          // defined by uart.c
+extern void uart_sre_isr(void);         // defined by uart.c
 /* End user code. Do not edit comment generated here */
 
+/***********************************************************************************************************************
+Global variables and functions
+***********************************************************************************************************************/
+extern volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
+extern volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
+extern volatile uint8_t * gp_uart0_rx_address;         /* uart0 receive buffer address */
+extern volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
+extern volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
+extern volatile uint8_t * gp_uart1_tx_address;         /* uart1 send buffer address */
+extern volatile uint16_t  g_uart1_tx_count;            /* uart1 send data number */
+extern volatile uint8_t * gp_uart1_rx_address;         /* uart1 receive buffer address */
+extern volatile uint16_t  g_uart1_rx_count;            /* uart1 receive data number */
+extern volatile uint16_t  g_uart1_rx_length;           /* uart1 receive data length */
+/* Start user code for global. Do not edit comment generated here */
+/* End user code. Do not edit comment generated here */
+extern void getmode_in(void);
 
+#define UART_DBG_LEN	40
+uint8_t	s_uart_dbg[UART_DBG_LEN];
+uint8_t	s_uart_dbg_len;
+
+/***********************************************************************************************************************
+* Function Name: r_uart0_interrupt_receive
+* Description  : None
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void __near r_uart0_interrupt_receive(void)
+{
+    volatile uint8_t rx_data;
+    volatile uint8_t err_type;
+    
+    err_type = (uint8_t)(SSR01 & 0x0007U);
+    SIR01 = (uint16_t)err_type;
+
+    if (err_type != 0U)
+    {
+        r_uart0_callback_error(err_type);
+    }
+    
+    rx_data = RXD0;
+
+
+//maeda
+s_uart_dbg[s_uart_dbg_len] = rx_data;
+s_uart_dbg_len++;
+s_uart_dbg_len %= UART_DBG_LEN;
+
+
+
+    if (g_uart0_rx_length > g_uart0_rx_count)
+    {
+        *gp_uart0_rx_address = rx_data;
+        gp_uart0_rx_address++;
+        g_uart0_rx_count++;
+
+        if (g_uart0_rx_length == g_uart0_rx_count)
+        {
+            r_uart0_callback_receiveend();
+        }
+    }
+    else
+    {
+        r_uart0_callback_softwareoverrun(rx_data);
+    }
+}
+
+/***********************************************************************************************************************
+* Function Name: r_uart0_interrupt_send
+* Description  : None
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void __near r_uart0_interrupt_send(void)
+{
+    if (g_uart0_tx_count > 0U)
+    {
+        TXD0 = *gp_uart0_tx_address;
+        gp_uart0_tx_address++;
+        g_uart0_tx_count--;
+    }
+    else
+    {
+        r_uart0_callback_sendend();
+    }
+}
+/***********************************************************************************************************************
+* Function Name: r_uart0_callback_receiveend
+* Description  : This function is a callback function when UART0 finishes reception.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void r_uart0_callback_receiveend(void)
+{
+    /* Start user code. Do not edit comment generated here */
+        uart_sr_isr();
+	/* End user code. Do not edit comment generated here */
+}
+/***********************************************************************************************************************
+* Function Name: r_uart0_callback_softwareoverrun
+* Description  : This function is a callback function when UART0 receives an overflow data.
+* Arguments    : rx_data -
+*                    receive data
+* Return Value : None
+***********************************************************************************************************************/
+static void r_uart0_callback_softwareoverrun(uint16_t rx_data)
+{
+    /* Start user code. Do not edit comment generated here */
+     uart_sre_isr();
+   /* End user code. Do not edit comment generated here */
+}
+/***********************************************************************************************************************
+* Function Name: r_uart0_callback_sendend
+* Description  : This function is a callback function when UART0 finishes transmission.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void r_uart0_callback_sendend(void)
+{
+    /* Start user code. Do not edit comment generated here */
+    uart_st_isr();
+    /* End user code. Do not edit comment generated here */
+}
+/***********************************************************************************************************************
+* Function Name: r_uart0_callback_error
+* Description  : This function is a callback function when UART0 reception error occurs.
+* Arguments    : err_type -
+*                    error type value
+* Return Value : None
+***********************************************************************************************************************/
+static void r_uart0_callback_error(uint8_t err_type)
+{
+    /* Start user code. Do not edit comment generated here */
+     uart_sre_isr();
+   /* End user code. Do not edit comment generated here */
+}
 
 /********************/
 /*     ì‡ïîïœêî     */

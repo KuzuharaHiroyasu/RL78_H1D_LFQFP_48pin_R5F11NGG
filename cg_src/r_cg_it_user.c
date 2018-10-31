@@ -46,6 +46,7 @@ Pragma directive
 Global variables and functions
 ***********************************************************************************************************************/
 /* Start user code for global. Do not edit comment generated here */
+extern void timer_isr(void);    // defined by timer.h
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
@@ -59,10 +60,13 @@ extern void set_req_main_cyc(void);
 static void __near r_it_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
+	timer_isr();	// BLE‚ÅŽg—p
     /* End user code. Do not edit comment generated here */
 //    P5 = ~P5;	
 	time_10ms_cnt++;
-	if( time_10ms_cnt >= 5 ){
+//	if( time_10ms_cnt >= 5 ){	/* 50ms */
+//	if( time_10ms_cnt >= 20 ){	/* 200ms */
+	if( time_10ms_cnt >= 10 ){	/* 100ms */
 		time_10ms_cnt = 0;
 		set_req_main_cyc();
 	}

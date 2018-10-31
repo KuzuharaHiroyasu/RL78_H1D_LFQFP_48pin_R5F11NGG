@@ -124,6 +124,11 @@ Macro definitions (Register bit)
 /* Setting of data length in CSI and UART modes (DLSmn0) */
 #define _0000_SAU_LENGTH_7                      (0x0000U) /* 7-bit data length */
 #define _0001_SAU_LENGTH_8                      (0x0001U) /* 8-bit data length */
+//2018.1.29 maeda
+/* Setting of data length in CSI and UART modes (DLSmn1, DLSmn0) */
+#define _0001_SAU_LENGTH_9                      (0x0001U) /* 9-bit data length */
+#define _0002_SAU_LENGTH_7                      (0x0002U) /* 7-bit data length */
+#define _0003_SAU_LENGTH_8                      (0x0003U) /* 8-bit data length */
 
 /*
     Serial flag clear trigger register mn (SIRmn) 
@@ -247,6 +252,9 @@ Macro definitions (Register bit)
 /* Selects inversion of the level of the transmit data of channel n in UART mode (SOLm2) */
 #define _0000_SAU_CHANNEL2_NORMAL               (0x0000U) /* communication data is output as is */
 #define _0004_SAU_CHANNEL2_INVERTED             (0x0004U) /* communication data is inverted and output */
+/* Selects inversion of the level of the transmit data of channel n in UART mode (SOLm0) */
+#define _0000_SAU_CHANNEL0_NORMAL               (0x0000U) /* communication data is output as is */
+#define _0001_SAU_CHANNEL0_INVERTED             (0x0001U) /* communication data is inverted and output */
 
 /*
     Noise filter enable register 0 (NFEN0) 
@@ -257,6 +265,9 @@ Macro definitions (Register bit)
 /* Use of noise filter of RxD1 pin (SNFEN10) */
 #define _00_SAU_RXD1_FILTER_OFF                 (0x00U) /* noise filter off */
 #define _04_SAU_RXD1_FILTER_ON                  (0x04U) /* noise filter on */
+/* Use of noise filter of RxD0 pin (SNFEN00) */
+#define _00_SAU_RXD0_FILTER_OFF                 (0x00U) /* noise filter off */
+#define _01_SAU_RXD0_FILTER_ON                  (0x01U) /* noise filter on */
 
 
 /* SAU used flag */
@@ -271,9 +282,12 @@ Macro definitions
 #define _9A00_SAU0_CH2_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
 #define _9A00_SAU0_CH3_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
 #define _0020_SMR00_DEFAULT_VALUE               (0x0020U) /* SMR00 default value */
+#define _0020_SMR01_DEFAULT_VALUE               (0x0020U) /* SMR01 default value */
 #define _0020_SMR02_DEFAULT_VALUE               (0x0020U) /* SMR02 default value */
 #define _0020_SMR03_DEFAULT_VALUE               (0x0020U) /* SMR03 default value */
-#define _0006_SCR00_DEFAULT_VALUE               (0x0006U) /* SCR00 default value */
+#define _0004_SCR00_DEFAULT_VALUE               (0x0004U) /* SCR00 default value */
+#define _0004_SCR01_DEFAULT_VALUE               (0x0004U) /* SCR01 default value */
+//#define _0006_SCR00_DEFAULT_VALUE               (0x0006U) /* SCR00 default value */
 #define _0006_SCR02_DEFAULT_VALUE               (0x0006U) /* SCR02 default value */
 #define _0006_SCR03_DEFAULT_VALUE               (0x0006U) /* SCR03 default value */
 #define IIC_WAITTIME                            (14U) /* change the waiting time according to the system */
@@ -291,6 +305,11 @@ Typedef definitions
 Global functions
 ***********************************************************************************************************************/
 void R_SAU0_Create(void);
+void R_UART0_Create(void);
+void R_UART0_Start(void);
+void R_UART0_Stop(void);
+MD_STATUS R_UART0_Send(uint8_t * const tx_buf, uint16_t tx_num);
+MD_STATUS R_UART0_Receive(uint8_t * const rx_buf, uint16_t rx_num);
 void R_UART1_Create(void);
 void R_UART1_Start(void);
 void R_UART1_Stop(void);
@@ -300,6 +319,11 @@ void R_UART1_Stop(void);
 //static void r_uart1_callback_sendend(void);
 //static void r_uart1_callback_error(uint8_t err_type);
 //static void r_uart1_callback_softwareoverrun(uint16_t rx_data);
+static void r_uart0_callback_receiveend(void);
+static void r_uart0_callback_sendend(void);
+static void r_uart0_callback_error(uint8_t err_type);
+static void r_uart0_callback_softwareoverrun(uint16_t rx_data);
+
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 

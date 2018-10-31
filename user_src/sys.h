@@ -288,7 +288,7 @@ typedef float 			FLOAT;	/* 単精度浮動小数点 */
 typedef double			DOUBLE;	/* 倍単精度浮動小数点 */
 typedef int				ER;		/* 汎用エラー(μiTRON表記) */
 
-
+#if 0
 /* ビットフィールド */
 typedef struct{
     UB bit0 : 1;
@@ -306,7 +306,7 @@ typedef union{
 	BIT_FIELD	bit;
 	UB	byte;
 }BIT_FIELD_UNION;
-
+#endif
 
 /* 日時 */
 typedef struct{

@@ -14,23 +14,23 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014, 2017 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_port.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
+* File Name    : r_cg_pclbuz.c
+* Version      : Code Generator for RL78/I1E V1.03.01.01 [08 Sep 2017]
 * Device(s)    : R5F11CCC
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for Port module.
-* Creation Date: 2017/06/01
+* Description  : This file implements device driver for PCLBUZ module.
+* Creation Date: 2018/01/29
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
 #include "r_cg_macrodriver.h"
-#include "r_cg_port.h"
+#include "r_cg_pclbuz.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -48,30 +48,39 @@ Global variables and functions
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
-* Function Name: R_PORT_Create
-* Description  : This function initializes the Port I/O.
+* Function Name: R_PCLBUZ0_Create
+* Description  : This function initializes the PCLBUZ0 module.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_PORT_Create(void)
+void R_PCLBUZ0_Create(void)
 {
-//    P1 = _00_Pn5_OUTPUT_0;
-//    POM1 = _00_POMn5_NCH_OFF;
-//    PM1 = _80_PMn7_MODE_UNUSED | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED | _10_PMn4_MODE_UNUSED | 
-//          _08_PMn3_MODE_UNUSED | _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-//    PM3 = _80_PMn7_MODE_INPUT | _40_PMn6_MODE_INPUT | _20_PMn5_MODE_UNUSED |
-//    PM3 = _80_PMn7_MODE_UNUSED | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED |
-    PM3 = _00_PMn7_MODE_OUTPUT | _40_PMn6_MODE_UNUSED | _00_PMn5_MODE_OUTPUT |
-          _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-	// 赤外線(P77)、赤色フォトダイオード(P76)ON/OFF切替
-    PM7 = _00_PMn7_MODE_OUTPUT | _00_PMn6_MODE_OUTPUT | _20_PMn5_MODE_UNUSED |
-          _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-    P7  = 0xBF;
-	
-	P3.5 = 0;	//BLE Reset
-//	P3.5 = 1;	//BLE Reset解除
-
-
+    PCLOE0 = 0U;    /* pclbuz pin output disable */
+    CKS0 = 0x08;	// fSUB 32.768KHz
+    /* Set PCLBUZ0 pin */
+    POM0 &= 0xFBU;
+    P0 &= 0xFBU;
+    PM0 &= 0xFBU;
+}
+/***********************************************************************************************************************
+* Function Name: R_PCLBUZ0_Start
+* Description  : This function starts the PCLBUZ0 module.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_PCLBUZ0_Start(void)
+{
+    PCLOE0 = 1U;    /* pclbuz pin output enable */
+}
+/***********************************************************************************************************************
+* Function Name: R_PCLBUZ0_Stop
+* Description  : This function stops the PCLBUZ0 module.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_PCLBUZ0_Stop(void)
+{
+    PCLOE0 = 0U;    /* pclbuz pin output disable */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

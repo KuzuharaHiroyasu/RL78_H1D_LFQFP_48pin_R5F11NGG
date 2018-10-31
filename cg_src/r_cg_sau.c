@@ -45,6 +45,11 @@ Pragma directive
 /***********************************************************************************************************************
 Global variables and functions
 ***********************************************************************************************************************/
+volatile uint8_t * gp_uart0_tx_address;        /* uart0 transmit buffer address */
+volatile uint16_t  g_uart0_tx_count;           /* uart0 transmit data number */
+volatile uint8_t * gp_uart0_rx_address;        /* uart0 receive buffer address */
+volatile uint16_t  g_uart0_rx_count;           /* uart0 receive data number */
+volatile uint16_t  g_uart0_rx_length;          /* uart0 receive data length */
 volatile uint8_t * gp_uart1_tx_address;        /* uart1 transmit buffer address */
 volatile uint16_t  g_uart1_tx_count;           /* uart1 transmit data number */
 volatile uint8_t * gp_uart1_rx_address;        /* uart1 receive buffer address */
@@ -76,8 +81,140 @@ void R_SAU0_Create(void)
 #else
     SPS0 = _0000_SAU_CK01_fCLK_0 | _0000_SAU_CK00_fCLK_0;		//76800bps
 #endif
+    R_UART0_Create();
     R_UART1_Create();
-    
+}
+/***********************************************************************************************************************
+* Function Name: R_UART0_Create
+* Description  : This function initializes the UART0 module.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_UART0_Create(void)
+{
+    ST0 |= _0002_SAU_CH1_STOP_TRG_ON | _0001_SAU_CH0_STOP_TRG_ON;
+    STMK0 = 1U;     /* disable INTST0 interrupt */
+    STIF0 = 0U;     /* clear INTST0 interrupt flag */
+    SRMK0 = 1U;     /* disable INTSR0 interrupt */
+    SRIF0 = 0U;     /* clear INTSR0 interrupt flag */
+    SREMK0 = 1U;    /* disable INTSRE0 interrupt */
+    SREIF0 = 0U;    /* clear INTSRE0 interrupt flag */
+    /* Set INTSR0 low priority */
+    SRPR10 = 1U;
+    SRPR00 = 1U;
+    /* Set INTST0 low priority */
+    STPR10 = 1U;
+    STPR00 = 1U;
+    SMR00 = _0020_SMR00_DEFAULT_VALUE | _0000_SAU_CLOCK_SELECT_CK00 | _0000_SAU_CLOCK_MODE_CKS | 
+            _0002_SAU_MODE_UART | _0000_SAU_TRANSFER_END;
+    SCR00 = _0004_SCR00_DEFAULT_VALUE | _8000_SAU_TRANSMISSION | _0000_SAU_TIMING_1 | _0000_SAU_INTSRE_MASK | 
+            _0000_SAU_PARITY_NONE | _0080_SAU_LSB | _0010_SAU_STOP_1 | _0003_SAU_LENGTH_8;
+    SDR00 = 0x6600;		//12MHz / 1 / 0x66+2  = 115384bps
+    //NFEN0 |= _01_SAU_RXD0_FILTER_ON;
+    SIR01 = _0004_SAU_SIRMN_FECTMN | _0002_SAU_SIRMN_PECTMN | _0001_SAU_SIRMN_OVCTMN;
+    SMR01 = _0020_SMR01_DEFAULT_VALUE | _0000_SAU_CLOCK_SELECT_CK00 | _0000_SAU_CLOCK_MODE_CKS | 
+            _0100_SAU_TRIGGER_RXD | _0000_SAU_EDGE_FALL | _0002_SAU_MODE_UART | _0000_SAU_TRANSFER_END;
+    SCR01 = _0004_SCR01_DEFAULT_VALUE | _4000_SAU_RECEPTION | _0000_SAU_TIMING_1 | _0000_SAU_INTSRE_MASK | 
+            _0000_SAU_PARITY_NONE | _0080_SAU_LSB | _0010_SAU_STOP_1 | _0003_SAU_LENGTH_8;
+    SDR01 = 0x6600;		//12MHz / 1 / 0x66+2  = 115384bps
+    SO0 |= _0001_SAU_CH0_DATA_OUTPUT_1;
+    SOL0 &= (uint16_t)~_0001_SAU_CHANNEL0_INVERTED;
+    SOE0 |= _0001_SAU_CH0_OUTPUT_ENABLE;
+    /* Set RXD0 pin */
+    PM3 |= 0x40U;
+    /* Set TXD0 pin */
+    P3 |= 0x80U;
+    PM3 &= 0x7FU;
+}
+/***********************************************************************************************************************
+* Function Name: R_UART0_Start
+* Description  : This function starts the UART0 module operation.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_UART0_Start(void)
+{
+    SO0 |= _0001_SAU_CH0_DATA_OUTPUT_1;
+    SOE0 |= _0001_SAU_CH0_OUTPUT_ENABLE;
+    SS0 |= _0002_SAU_CH1_START_TRG_ON | _0001_SAU_CH0_START_TRG_ON;
+    STIF0 = 0U;     /* clear INTST0 interrupt flag */
+    SRIF0 = 0U;     /* clear INTSR0 interrupt flag */
+    STMK0 = 0U;     /* enable INTST0 interrupt */
+    SRMK0 = 0U;     /* enable INTSR0 interrupt */
+}
+
+/***********************************************************************************************************************
+* Function Name: R_UART0_Stop
+* Description  : This function stops the UART0 module operation.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_UART0_Stop(void)
+{
+    STMK0 = 1U;     /* disable INTST0 interrupt */
+    SRMK0 = 1U;     /* disable INTSR0 interrupt */
+    ST0 |= _0002_SAU_CH1_STOP_TRG_ON | _0001_SAU_CH0_STOP_TRG_ON;
+    SOE0 &= (uint16_t)~_0001_SAU_CH0_OUTPUT_ENABLE;
+    STIF0 = 0U;     /* clear INTST0 interrupt flag */
+    SRIF0 = 0U;     /* clear INTSR0 interrupt flag */
+}
+/***********************************************************************************************************************
+* Function Name: R_UART0_Receive
+* Description  : This function receives UART0 data.
+* Arguments    : rx_buf -
+*                    receive buffer pointer
+*                rx_num -
+*                    buffer size
+* Return Value : status -
+*                    MD_OK or MD_ARGERROR
+***********************************************************************************************************************/
+MD_STATUS R_UART0_Receive(uint8_t * const rx_buf, uint16_t rx_num)
+{
+    MD_STATUS status = MD_OK;
+
+    if (rx_num < 1U)
+    {
+        status = MD_ARGERROR;
+    }
+    else
+    {
+        g_uart0_rx_count = 0U;
+        g_uart0_rx_length = rx_num;
+        gp_uart0_rx_address = rx_buf;
+    }
+
+    return (status);
+}
+/***********************************************************************************************************************
+* Function Name: R_UART0_Send
+* Description  : This function sends UART0 data.
+* Arguments    : tx_buf -
+*                    transfer buffer pointer
+*                tx_num -
+*                    buffer size
+* Return Value : status -
+*                    MD_OK or MD_ARGERROR
+***********************************************************************************************************************/
+MD_STATUS R_UART0_Send(uint8_t * const tx_buf, uint16_t tx_num)
+{
+    MD_STATUS status = MD_OK;
+
+    if (tx_num < 1U)
+    {
+        status = MD_ARGERROR;
+    }
+    else
+    {
+        gp_uart0_tx_address = tx_buf;
+        g_uart0_tx_count = tx_num;
+        STMK0 = 1U;    /* disable INTST0 interrupt */
+        TXD0 = *gp_uart0_tx_address;
+        gp_uart0_tx_address++;
+        g_uart0_tx_count--;
+        STMK0 = 0U;    /* enable INTST0 interrupt */
+    }
+
+    return (status);
 }
 /***********************************************************************************************************************
 * Function Name: R_UART1_Create
@@ -103,14 +240,16 @@ void R_UART1_Create(void)
     SMR02 = _0020_SMR02_DEFAULT_VALUE | _0000_SAU_CLOCK_SELECT_CK00 | _0000_SAU_CLOCK_MODE_CKS | 
             _0002_SAU_MODE_UART | _0000_SAU_TRANSFER_END;
     SCR02 = _0006_SCR02_DEFAULT_VALUE | _8000_SAU_TRANSMISSION | _0000_SAU_TIMING_1 | _0000_SAU_INTSRE_MASK | 
-            _0200_SAU_PARITY_EVEN | _0080_SAU_LSB | _0010_SAU_STOP_1 | _0001_SAU_LENGTH_8;
+            _0200_SAU_PARITY_EVEN | _0080_SAU_LSB | _0010_SAU_STOP_1 | 0x0003;
+  //          _0200_SAU_PARITY_EVEN | _0080_SAU_LSB | _0010_SAU_STOP_1 | _0001_SAU_LENGTH_8;
     SDR02 = _9A00_SAU0_CH2_BAUDRATE_DIVISOR;
     NFEN0 |= _04_SAU_RXD1_FILTER_ON;
     SIR03 = _0004_SAU_SIRMN_FECTMN | _0002_SAU_SIRMN_PECTMN | _0001_SAU_SIRMN_OVCTMN;
     SMR03 = _0020_SMR03_DEFAULT_VALUE | _0000_SAU_CLOCK_SELECT_CK00 | _0000_SAU_CLOCK_MODE_CKS | 
             _0100_SAU_TRIGGER_RXD | _0000_SAU_EDGE_FALL | _0002_SAU_MODE_UART | _0000_SAU_TRANSFER_END;
     SCR03 = _0006_SCR03_DEFAULT_VALUE | _4000_SAU_RECEPTION | _0000_SAU_TIMING_1 | _0000_SAU_INTSRE_MASK | 
-            _0200_SAU_PARITY_EVEN | _0080_SAU_LSB | _0010_SAU_STOP_1 | _0001_SAU_LENGTH_8;
+            _0200_SAU_PARITY_EVEN | _0080_SAU_LSB | _0010_SAU_STOP_1 | 0x0003;
+//            _0200_SAU_PARITY_EVEN | _0080_SAU_LSB | _0010_SAU_STOP_1 | _0001_SAU_LENGTH_8;
     SDR03 = _9A00_SAU0_CH3_BAUDRATE_DIVISOR;
     SO0 |= _0004_SAU_CH2_DATA_OUTPUT_1;
     SOL0 &= (uint16_t)~_0004_SAU_CHANNEL2_INVERTED;

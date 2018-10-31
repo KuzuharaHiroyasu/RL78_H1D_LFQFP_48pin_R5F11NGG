@@ -14,65 +14,55 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014, 2017 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_port.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
+* File Name    : r_cg_pclbuz.h
+* Version      : Code Generator for RL78/I1E V1.03.01.01 [08 Sep 2017]
 * Device(s)    : R5F11CCC
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for Port module.
-* Creation Date: 2017/06/01
+* Description  : This file implements device driver for PCLBUZ module.
+* Creation Date: 2018/01/29
+***********************************************************************************************************************/
+#ifndef PCLBUZ_H
+#define PCLBUZ_H
+
+/***********************************************************************************************************************
+Macro definitions (Register bit)
+***********************************************************************************************************************/
+/*
+    Clock output select registers n (CKSn) 
+*/
+/* PCLBUZn output enable/disable specification (PCLOEn) */
+#define _00_PCLBUZ_OUTPUT_DISABLE          (0x00U) /* pclbuz pin output disable */
+#define _80_PCLBUZ_OUTPUT_ENABLE           (0x80U) /* pclbuz pin output enable */
+/* PCLBUZn output clock selection (CCSn2,CCSn1,CCSn0) */
+#define _00_PCLBUZ_OUTCLK_fMAIN0           (0x00U) /* fMAIN */
+#define _01_PCLBUZ_OUTCLK_fMAIN1           (0x01U) /* fMAIN/2 */
+#define _02_PCLBUZ_OUTCLK_fMAIN2           (0x02U) /* fMAIN/2^2 */
+#define _03_PCLBUZ_OUTCLK_fMAIN3           (0x03U) /* fMAIN/2^3 */
+#define _04_PCLBUZ_OUTCLK_fMAIN4           (0x04U) /* fMAIN/2^4 */
+#define _05_PCLBUZ_OUTCLK_fMAIN5           (0x05U) /* fMAIN/2^11 */
+#define _06_PCLBUZ_OUTCLK_fMAIN6           (0x06U) /* fMAIN/2^12 */
+#define _07_PCLBUZ_OUTCLK_fMAIN7           (0x07U) /* fMAIN/2^13 */
+
+
+/***********************************************************************************************************************
+Macro definitions
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-Includes
+Typedef definitions
 ***********************************************************************************************************************/
-#include "r_cg_macrodriver.h"
-#include "r_cg_port.h"
-/* Start user code for include. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
-#include "r_cg_userdefine.h"
 
 /***********************************************************************************************************************
-Pragma directive
+Global functions
 ***********************************************************************************************************************/
-/* Start user code for pragma. Do not edit comment generated here */
+void R_PCLBUZ0_Create(void);
+void R_PCLBUZ0_Start(void);
+void R_PCLBUZ0_Stop(void);
+
+/* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
-
-/***********************************************************************************************************************
-Global variables and functions
-***********************************************************************************************************************/
-/* Start user code for global. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
-
-/***********************************************************************************************************************
-* Function Name: R_PORT_Create
-* Description  : This function initializes the Port I/O.
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-void R_PORT_Create(void)
-{
-//    P1 = _00_Pn5_OUTPUT_0;
-//    POM1 = _00_POMn5_NCH_OFF;
-//    PM1 = _80_PMn7_MODE_UNUSED | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED | _10_PMn4_MODE_UNUSED | 
-//          _08_PMn3_MODE_UNUSED | _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-//    PM3 = _80_PMn7_MODE_INPUT | _40_PMn6_MODE_INPUT | _20_PMn5_MODE_UNUSED |
-//    PM3 = _80_PMn7_MODE_UNUSED | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED |
-    PM3 = _00_PMn7_MODE_OUTPUT | _40_PMn6_MODE_UNUSED | _00_PMn5_MODE_OUTPUT |
-          _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-	// 赤外線(P77)、赤色フォトダイオード(P76)ON/OFF切替
-    PM7 = _00_PMn7_MODE_OUTPUT | _00_PMn6_MODE_OUTPUT | _20_PMn5_MODE_UNUSED |
-          _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-    P7  = 0xBF;
-	
-	P3.5 = 0;	//BLE Reset
-//	P3.5 = 1;	//BLE Reset解除
-
-
-}
-
-/* Start user code for adding. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
+#endif

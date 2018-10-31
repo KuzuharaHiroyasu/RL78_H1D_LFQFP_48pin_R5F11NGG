@@ -42,6 +42,7 @@ Includes
 #include "r_cg_it.h"
 #include "r_cg_iica.h"
 #include "r_cg_rtc.h"
+#include "r_cg_pclbuz.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -77,7 +78,7 @@ void R_Systeminit(void)
     R_IT_Create();
     R_IICA0_Create();
     R_RTC_Create();
-    
+   	R_PCLBUZ0_Create();
     IAWCTL = 0x00U;
     DFLCTL = 0x01U;
 }

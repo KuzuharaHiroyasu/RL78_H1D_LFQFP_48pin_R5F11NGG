@@ -30,6 +30,17 @@
 Includes
 ***********************************************************************************************************************/
 #include "header.h"
+#include "r_cg_pclbuz.h"
+#include "arch.h"
+#include "rscip_api.h"
+//#include "rskrl78g14def.h"
+#include "timer.h"
+#include "rble_app.h"
+#include "rble_host.h"
+#include "uart.h"
+
+#include "vuart.h"
+#include "vuarts.h"
 
 /***********************************************************************************************************************
 Pragma directive
@@ -234,6 +245,10 @@ void main_send_uart1_12h_end(void);
 void main_send_uart1_rtc(void);
 
 
+void main_send_ble(void);
+extern RBLE_STATUS VUART_Send_Data( char *str , uint16_t len );
+
+
 // 外部参照宣言　※無いと正常に動かない
 extern void R_IICA0_Create(void);
 //extern MD_STATUS com_srv_send(uint8_t * const tx_buf, uint16_t tx_num);
@@ -246,7 +261,7 @@ extern void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 );
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
 
-const B		version_product_tbl[]= {0, 0, 0, 5};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 6};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
@@ -304,10 +319,31 @@ void main(void)
 //	R_UART1_Receive( &eep_rx_data[0], 10 );
 	
 
+	/***********/
+	/* BLE処理 */
+	/***********/
+	
+	R_PCLBUZ0_Start();	/* BLE 32.768KHz */
+    /* Enable UART for communication with RL78/G1D */
+    R_UART0_Start();
 
+    /* Initialize rBLE Timer */
+    if ( RBLE_OK != RBLE_Init_Timer() )
+    {
+		while(1);
+	}
+    /* Intialize Application */
+ 	APP_Init();
+//    if ( TRUE == APP_Init() ){
+//		while(1);
+//	}
+	
 //	s_unit.system_mode = SYSTEM_MODE_NORMAL;
     while (1U)
     {
+		APP_Run();
+		rBLE_Run();
+
 //		if( 0 == R_UART1_Receive( &eep_rx_data[0], 3 )){
 //			if(( eep_rx_data[0] == 0x47 ) && 
 //			   ( eep_rx_data[1] == 0x45 ) && 
@@ -392,8 +428,13 @@ void main(void)
 				R_DAC_Change_OutputVoltage_12bit( 0x0000 );		//RD1704暫定：DAC変更後一定時間待たないと電圧が落ち切らない様に思う
 				
 				main_acl_read();
-				
+
+
+#if 1
+				main_send_ble();		// BLEで送信
+#else
 				main_send_uart1();		// 1レコード送信
+#endif
 				// 1レコード書き込み	//暫定
 				main_eep_write();
 				
@@ -458,6 +499,32 @@ void set_req_main_cyc(void)
 {
 	s_unit.main_cyc_req = ON;
 }
+
+
+
+//================================
+//BLE関連
+//================================
+#define BLE_STR_MAX		20
+
+uint8_t debug_x;
+
+void main_send_ble(void)
+{
+	uint8_t tx_data[BLE_STR_MAX] = {0};
+	int len;
+#if 0
+	len = sprintf((char*)tx_data, "%d\r\n", debug_x);
+	debug_x++;
+#else
+	len = sprintf((char*)tx_data, "%d\r\n", s_unit.eep.record.data.acl_x);
+#endif
+	VUART_Send_Data((char*)tx_data,len);
+
+//	com_srv_send( &tx_data[0], len );
+
+}
+
 
 //================================
 //UART関連
