@@ -1,8 +1,8 @@
 /****************************************************************************/
-/* システム名   : RD1215 入出力BOX											*/
+/* システム名   : RD8001 快眠チェッカー										*/
 /* ファイル名   : com_srv.h													*/
 /* 機能         : ログ通信(RS232C)											*/
-/* 変更履歴		: 2018.01.25 Axia Soft Design 西島 稔	初版作成				*/
+/* 変更履歴		: 2018.01.25 Axia Soft Design 西島 稔	初版作成			*/
 /* 注意事項     : なし														*/
 /****************************************************************************/
 #ifndef _COM_SRV_H_
@@ -27,6 +27,8 @@ extern void com_srv_init( void );
 extern void com_srv_log_title( void );
 extern void com_srv_cyc( void );
 extern void com_srv_send( UB* tx_data, UB len );
+extern void com_srv_puts( const B* pMsg);
+
 
 /******************/
 /* 関数マクロ定義 */

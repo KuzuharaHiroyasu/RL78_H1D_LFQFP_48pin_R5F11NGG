@@ -67,12 +67,12 @@ $ENDIF
 	;--------------------------------------------------
 	; initializing stack area
 	;--------------------------------------------------
-$IF (__RENESAS_VERSION__ >= 0x01010000)
-	MOVW	AX,#LOWW(__STACK_ADDR_END)
-$ELSE	; for CC-RL V1.00
-	MOVW	AX,#LOWW(_stackend)
-$ENDIF
-	CALL	!!_stkinit
+;$IF (__RENESAS_VERSION__ >= 0x01010000)
+;	MOVW	AX,#LOWW(__STACK_ADDR_END)
+;$ELSE	; for CC-RL V1.00
+;	MOVW	AX,#LOWW(_stackend)
+;$ENDIF
+;	CALL	!!_stkinit
 
 	;--------------------------------------------------
 	; hardware initialization

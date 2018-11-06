@@ -29,6 +29,7 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
 #include "r_cg_macrodriver.h"
 #include "r_cg_intp.h"
 /* Start user code for include. Do not edit comment generated here */
@@ -70,34 +71,50 @@ void R_INTC_Create(void)
     PMK6 = 1U;      /* disable INTP6 interrupt */
     PIF6 = 0U;      /* clear INTP6 interrupt flag */
     /* Set INTP0 low priority */
-    PPR10 = 1U;
-    PPR00 = 1U;
-    EGN0 =  _01_INTP0_EDGE_FALLING_BOTH;
-    EGP0 =  _00_INTP0_EDGE_FALLING_DISABLE;
+//    PPR10 = 1U;
+//    PPR00 = 1U;
+    /* Set INTP1 low priority */
+    PPR11 = 1U;
+    PPR01 = 1U;
+    /* Set INTP0 エッジ */
+//    EGN0 =  _01_INTP0_EDGE_FALLING_BOTH;
+//    EGP0 =  _00_INTP0_EDGE_FALLING_DISABLE;
+    /* Set INTP1 立下り*/
+    EGN0 =  _02_INTP1_EDGE_FALLING_BOTH;
+    EGP0 =  _00_INTP1_EDGE_FALLING_DISABLE;
+    /* Set INTP1 両エッジ*/
+//    EGN0 =  _02_INTP1_EDGE_FALLING_BOTH;
+//    EGP0 =  _02_INTP1_EDGE_RISING_BOTH;
     /* Set INTP0 pin */
+    
+    R_INTC1_Start();
 }
 
 /***********************************************************************************************************************
-* Function Name: R_INTC0_Start
-* Description  : This function clears INTP0 interrupt flag and enables interrupt.
+* Function Name: R_INTC1_Start
+* Description  : This function clears INTP1 interrupt flag and enables interrupt.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_INTC0_Start(void)
+void R_INTC1_Start(void)
 {
-    PIF0 = 0U;      /* clear INTP0 interrupt flag */
-    PMK0 = 0U;      /* enable INTP0 interrupt */
+//    PIF0 = 0U;      /* clear INTP0 interrupt flag */
+//    PMK0 = 0U;      /* enable INTP0 interrupt */
+    PIF1 = 0U;      /* clear INTP1 interrupt flag */
+    PMK1 = 0U;      /* enable INTP1 interrupt */
 }
 /***********************************************************************************************************************
-* Function Name: R_INTC0_Stop
-* Description  : This function disables INTP0 interrupt and clears interrupt flag.
+* Function Name: R_INTC1_Stop
+* Description  : This function disables INTP1 interrupt and clears interrupt flag.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_INTC0_Stop(void)
+void R_INTC1_Stop(void)
 {
-    PMK0 = 1U;      /* disable INTP0 interrupt */
-    PIF0 = 0U;      /* clear INTP0 interrupt flag */
+//    PMK0 = 1U;      /* disable INTP0 interrupt */
+//    PIF0 = 0U;      /* clear INTP0 interrupt flag */
+    PMK1 = 1U;      /* disable INTP0 interrupt */
+    PIF1 = 0U;      /* clear INTP0 interrupt flag */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

@@ -23,7 +23,7 @@
 /************************************************************/
 /*					ŠO•”QÆéŒ¾							*/
 /************************************************************/
-extern void  calculator_pulse_oximeter(int *data1, int len1, int *data2, int len2);
+extern void  calculator_pulse_oximeter(const short* pdata1, const short* pdata2);
 extern double  get_result_sp_normal();
 extern double  get_result_sp_konica();
 extern double  get_result_shinpaku_sekigai();

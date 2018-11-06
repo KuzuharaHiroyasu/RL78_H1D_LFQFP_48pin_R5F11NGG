@@ -23,12 +23,12 @@
 /* Device     : RL78/R5F11NGG                                                 */
 /* File Name  : iodefine.h                                                    */
 /* Abstract   : Definition of Special Function Register (SFR)                 */
-/* History    : E1.00c [Device File version]                                  */
-/* Options    : -df=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device_ */
-/*              Custom\RL78\Devicefile\DR5F11NGG.DVF -o=C:\Workspace\BPM_root */
-/*              \Bpm_Demo_H1D\iodefine.h -f                                   */
-/* Date       : 2017/06/05                                                    */
-/* Version    : V1.07.00.02  [df2iodef.exe version]                           */
+/* History    : V1.00  [Device File version]                                  */
+/* Options    : -df=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\ */
+/*              RL78\Devicefile\DR5F11NGG.DVF -o=C:\svn_work\20171212_RD8001\ */
+/*              23_SourceCode\RD8001_HD\iodefine.h -f                         */
+/* Date       : 2018/03/13                                                    */
+/* Version    : V1.09.00.04  [df2iodef.exe version]                           */
 /* This is a typical example.                                                 */
 /*                                                                            */
 /******************************************************************************/

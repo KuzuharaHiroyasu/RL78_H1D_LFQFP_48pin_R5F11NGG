@@ -29,6 +29,8 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
+
 #include "r_cg_macrodriver.h"
 #include "r_cg_intp.h"
 /* Start user code for include. Do not edit comment generated here */
@@ -38,7 +40,8 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_intc0_interrupt(vect=INTP0)
+//#pragma interrupt r_intc0_interrupt(vect=INTP0)
+#pragma interrupt r_intc1_interrupt(vect=INTP1)
 
 
 /* Start user code for pragma. Do not edit comment generated here */
@@ -50,6 +53,7 @@ Global variables and functions
 /* Start user code for global. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
+#if 0
 /***********************************************************************************************************************
 * Function Name: r_intc0_interrupt
 * Description  : None
@@ -60,6 +64,50 @@ static void __near r_intc0_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
+}
+#endif
+/***********************************************************************************************************************
+* Function Name: r_intc1_interrupt
+* Description  : None
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void __near r_intc1_interrupt(void)
+{
+    /* Start user code. Do not edit comment generated here */
+    /* End user code. Do not edit comment generated here */
+	NOP();
+}
+
+
+UB drv_read_pow_sw(void)
+{
+	UB sw1;
+	UB sw2;
+	UB ret;
+	
+	// ポート読み出し ※2回一致で抜ける(一致し続けない時は致命的異常なので考慮しない)
+	do{
+		if( P12 & 0x02 ){
+			sw1 = HIGH;
+		}else{
+			sw1 = LOW;
+		}
+		if( P12 & 0x02 ){
+			sw2 = HIGH;
+		}else{
+			sw2 = LOW;
+		}
+	}while( sw1 != sw2 );
+
+	// 論理対応
+	if( HIGH == sw1 ){
+		ret = OFF;
+	}else{
+		ret = ON;
+	}
+	
+	return ret;
 }
 
 /* Start user code for adding. Do not edit comment generated here */

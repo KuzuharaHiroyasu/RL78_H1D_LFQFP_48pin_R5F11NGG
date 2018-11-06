@@ -43,6 +43,7 @@ extern	double	temp_dbl_buf2[BUF_SIZE];		// 一時double型データ
 extern	double	temp_dbl_buf3[BUF_SIZE];		// 一時double型データ
 
 extern	int		temp_int_buf0[BUF_SIZE];		// 一時int型データ
+extern	int		temp_int_buf1[BUF_SIZE];		// 一時int型データ
 
 #endif	/*_CALC_DATA_H_*/
 /************************************************************/

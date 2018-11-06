@@ -100,8 +100,10 @@ Typedef definitions
 Global functions
 ***********************************************************************************************************************/
 void R_INTC_Create(void);
-void R_INTC0_Start(void);
-void R_INTC0_Stop(void);
+void R_INTC1_Start(void);
+void R_INTC1_Stop(void);
+UB drv_read_pow_sw(void);
+
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #endif

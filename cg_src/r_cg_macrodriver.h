@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_macrodriver.h
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements general head file.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/03/13
 ***********************************************************************************************************************/
 #ifndef MODULEID_H
 #define MODULEID_H
@@ -63,23 +63,24 @@ Macro definitions
 #define MD_ERROR2            (MD_ERRORBASE + 0x03U)  /* error 2 */
 #define MD_ERROR3            (MD_ERRORBASE + 0x04U)  /* error 3 */
 #define MD_ERROR4            (MD_ERRORBASE + 0x05U)  /* error 4 */
+#define MD_ERROR5            (MD_ERRORBASE + 0x06U)  /* error 5 */
+#define MD_ERROR6            (MD_ERRORBASE + 0x07U)  /* error 6 */
+#define MD_ERROR7            (MD_ERRORBASE + 0x08U)  /* error 7 */
 #endif
 
 /***********************************************************************************************************************
 Typedef definitions
 ***********************************************************************************************************************/
 #ifndef __TYPEDEF__
-//typedef signed char         int8_t;
-//typedef unsigned char       uint8_t;
-//typedef signed short        int16_t;
-//typedef unsigned short      uint16_t;
-//typedef signed long         int32_t;
-//typedef unsigned long       uint32_t;
+typedef signed char         int8_t;
+typedef unsigned char       uint8_t;
+typedef signed short        int16_t;
+typedef unsigned short      uint16_t;
+typedef signed long         int32_t;
+typedef unsigned long       uint32_t;
 typedef unsigned short      MD_STATUS;
 #define __TYPEDEF__
 #endif
-
-#include "compiler.h"
 
 /***********************************************************************************************************************
 Global functions

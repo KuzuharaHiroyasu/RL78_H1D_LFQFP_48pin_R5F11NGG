@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_cgc_user.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for CGC module.
-* Creation Date: 2017/12/19
+* Creation Date: 2018/03/13
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************

@@ -1,5 +1,5 @@
 /************************************************************************/
-/* システム名   : RD1201 パチンコ/パチスロ用呼び出しランプ				*/
+/* システム名   : RD8001 快眠チェッカー									*/
 /* ファイル名   : com_srv.c                                             */
 /* 機能         : ログ通信（RS-232C）				                    */
 /* 変更履歴     : 2018.01.25 Axia Soft Design 西島 稔	初版作成		*/
@@ -60,9 +60,11 @@ extern void drv_uart1_data_init( void );
 /************************************************************************/
 void com_srv_init( void )
 {
+#if FUNC_DEBUG_LOG == ON
 	memset( &s_com_srv_ana, 0x00, sizeof(s_com_srv_ana) );
 
 	drv_uart1_data_init();
+#endif
 }
 
 /************************************************************************/
@@ -78,6 +80,7 @@ void com_srv_init( void )
 /************************************************************************/
 void com_srv_log_title( void )
 {
+#if FUNC_DEBUG_LOG == ON
 	int len;
 	UB tx_data[COM_STR_MAX] = {0};
 	
@@ -85,6 +88,7 @@ void com_srv_log_title( void )
 																	   version_product_tbl[2], version_product_tbl[3] );
 	
 	com_srv_send( tx_data, len );
+#endif
 }
 
 /************************************************************************/
@@ -100,6 +104,7 @@ void com_srv_log_title( void )
 /************************************************************************/
 void com_srv_cyc( void )
 {
+#if FUNC_DEBUG_LOG == ON
 	RING_BUF* p_ring_buf = NULL;
 	UB rcv_data;
 	
@@ -114,6 +119,7 @@ void com_srv_cyc( void )
 			s_com_srv_ana.rcv_non = 0;
 		}
 	}
+#endif
 }
 
 /************************************************************************/
@@ -129,6 +135,7 @@ void com_srv_cyc( void )
 /************************************************************************/
 STATIC void com_srv_command( UB data )
 {
+#if FUNC_DEBUG_LOG == ON
 	if( 0 == s_com_srv_ana.len ){
 		if( 'G' == data ){
 			s_com_srv_ana.data[s_com_srv_ana.len] = data;
@@ -172,10 +179,12 @@ STATIC void com_srv_command( UB data )
 		}
 	}
 #endif
+#endif
 }
 
 void com_srv_send( UB* tx_data, UB len )
 {
+#if FUNC_DEBUG_LOG == ON
 	RING_BUF* p_ring_buf;
 	UB i = 0;
 	UB ret;
@@ -192,8 +201,40 @@ void com_srv_send( UB* tx_data, UB len )
 	
 	/* 送信開始 */
 	drv_uart1_send_start();
+#endif
 }
 
+
+/************************************************************************/
+/* 関数     : com_srv_puts                                              */
+/* 関数名   : 標準出力処理(固定文字列のみ)                              */
+/* 引数     : 文字列													*/
+/* 戻り値   : なし                                                      */
+/* 変更履歴 : 2017.03.02  Axia Soft Design 西島 稔   初版作成           */
+/************************************************************************/
+/* 機能 : 標準出力処理(固定文字列のみ)				                    */
+/************************************************************************/
+/* 注意事項 : なし                                                      */
+/************************************************************************/
+void com_srv_puts( const B* pMsg)
+{
+#if FUNC_DEBUG_LOG == ON
+	RING_BUF* p_ring_buf;
+	
+	p_ring_buf = drv_uart1_get_snd_ring();
+	
+	/* 送信バッファを全て書き込み */
+	while(*pMsg != 0x00){
+		if( E_OK != write_ring_buf(p_ring_buf, (UB)(*pMsg) )){
+			return;
+		}
+		pMsg++;
+	}
+	
+	/* 送信開始 */
+	drv_uart1_send_start();
+#endif
+}
 
 /*****************************************************************************
  *								 end of text

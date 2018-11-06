@@ -69,6 +69,41 @@ Macro definitions (Register bit)
 #define _00E0_SAU_CK01_fCLK_14                  (0x00E0U) /* ck01-fCLK/2^14 */
 #define _00F0_SAU_CK01_fCLK_15                  (0x00F0U) /* ck01-fCLK/2^15 */
 
+/* Section of operation clock (CKm0) (PRSm00,PRSm01,PRSm02,PRSm03) */
+#define _0000_SAU_CK00_FCLK_0                   (0x0000U) /* ck00-fCLK */
+#define _0001_SAU_CK00_FCLK_1                   (0x0001U) /* ck00-fCLK/2^1 */
+#define _0002_SAU_CK00_FCLK_2                   (0x0002U) /* ck00-fCLK/2^2 */
+#define _0003_SAU_CK00_FCLK_3                   (0x0003U) /* ck00-fCLK/2^3 */
+#define _0004_SAU_CK00_FCLK_4                   (0x0004U) /* ck00-fCLK/2^4 */
+#define _0005_SAU_CK00_FCLK_5                   (0x0005U) /* ck00-fCLK/2^5 */
+#define _0006_SAU_CK00_FCLK_6                   (0x0006U) /* ck00-fCLK/2^6 */
+#define _0007_SAU_CK00_FCLK_7                   (0x0007U) /* ck00-fCLK/2^7 */
+#define _0008_SAU_CK00_FCLK_8                   (0x0008U) /* ck00-fCLK/2^8 */
+#define _0009_SAU_CK00_FCLK_9                   (0x0009U) /* ck00-fCLK/2^9 */
+#define _000A_SAU_CK00_FCLK_10                  (0x000AU) /* ck00-fCLK/2^10 */
+#define _000B_SAU_CK00_FCLK_11                  (0x000BU) /* ck00-fCLK/2^11 */
+#define _000C_SAU_CK00_FCLK_12                  (0x000CU) /* ck00-fCLK/2^12 */
+#define _000D_SAU_CK00_FCLK_13                  (0x000DU) /* ck00-fCLK/2^13 */
+#define _000E_SAU_CK00_FCLK_14                  (0x000EU) /* ck00-fCLK/2^14 */
+#define _000F_SAU_CK00_FCLK_15                  (0x000FU) /* ck00-fCLK/2^15 */
+/* Section of operation clock (CKm1) (PRSm10,PRSm11,PRSm12,PRSm13,) */
+#define _0000_SAU_CK01_FCLK_0                   (0x0000U) /* ck01-fCLK */
+#define _0010_SAU_CK01_FCLK_1                   (0x0010U) /* ck01-fCLK/2^1 */
+#define _0020_SAU_CK01_FCLK_2                   (0x0020U) /* ck01-fCLK/2^2 */
+#define _0030_SAU_CK01_FCLK_3                   (0x0030U) /* ck01-fCLK/2^3 */
+#define _0040_SAU_CK01_FCLK_4                   (0x0040U) /* ck01-fCLK/2^4 */
+#define _0050_SAU_CK01_FCLK_5                   (0x0050U) /* ck01-fCLK/2^5 */
+#define _0060_SAU_CK01_FCLK_6                   (0x0060U) /* ck01-fCLK/2^6 */
+#define _0070_SAU_CK01_FCLK_7                   (0x0070U) /* ck01-fCLK/2^7 */
+#define _0080_SAU_CK01_FCLK_8                   (0x0080U) /* ck01-fCLK/2^8 */
+#define _0090_SAU_CK01_FCLK_9                   (0x0090U) /* ck01-fCLK/2^9 */
+#define _00A0_SAU_CK01_FCLK_10                  (0x00A0U) /* ck01-fCLK/2^10 */
+#define _00B0_SAU_CK01_FCLK_11                  (0x00B0U) /* ck01-fCLK/2^11 */
+#define _00C0_SAU_CK01_FCLK_12                  (0x00C0U) /* ck01-fCLK/2^12 */
+#define _00D0_SAU_CK01_FCLK_13                  (0x00D0U) /* ck01-fCLK/2^13 */
+#define _00E0_SAU_CK01_FCLK_14                  (0x00E0U) /* ck01-fCLK/2^14 */
+#define _00F0_SAU_CK01_FCLK_15                  (0x00F0U) /* ck01-fCLK/2^15 */
+
 /*
     Serial mode register mn (SMRmn) 
 */
@@ -279,6 +314,12 @@ Macro definitions (Register bit)
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+#define _2E00_SAU0_CH0_BAUDRATE_DIVISOR         (0x2E00U) /* transfer clock set by dividing the operating clock */
+#define _2E00_SAU0_CH1_BAUDRATE_DIVISOR         (0x2E00U) /* transfer clock set by dividing the operating clock */
+#define _9A00_SAU0_CH2_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
+#define _9A00_SAU0_CH3_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
+#define _9A00_SAU0_CH0_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
+#define _9A00_SAU0_CH1_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
 #define _9A00_SAU0_CH2_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
 #define _9A00_SAU0_CH3_BAUDRATE_DIVISOR         (0x9A00U) /* transfer clock set by dividing the operating clock */
 #define _0020_SMR00_DEFAULT_VALUE               (0x0020U) /* SMR00 default value */
@@ -292,6 +333,14 @@ Macro definitions
 #define _0006_SCR03_DEFAULT_VALUE               (0x0006U) /* SCR03 default value */
 #define IIC_WAITTIME                            (14U) /* change the waiting time according to the system */
 
+#define _0004_SCR02_DEFAULT_VALUE               (0x0004U) /* SCR02 default value */
+#define _0004_SCR03_DEFAULT_VALUE               (0x0004U) /* SCR03 default value */
+#define _0A0A_SO0_DEFAULT_VALUE                 (0x0A0AU) /* SO0 default value */
+
+
+#define	DRV_UART0_DATA_LENGH					100									/* CPU間通信データ長(送受、共通) ヘッダXXXバイト＋オプションデータXXXバイト */
+#define	DRV_UART0_RCV_RING_LENGTH				( DRV_UART0_DATA_LENGH * 1 + 1 )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
+#define	DRV_UART0_SND_RING_LENGTH				( DRV_UART0_DATA_LENGH * 1 + 1 )		/* リングバッファ長(3メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
 
 #define	DRV_UART1_DATA_LENGH					100									/* RS232C通信データ長(送受、共通) ヘッダ８バイト＋オプションデータ６バイト */
 #define	DRV_UART1_RCV_RING_LENGTH				( DRV_UART1_DATA_LENGH * 1 + 1 )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
@@ -319,11 +368,6 @@ void R_UART1_Stop(void);
 //static void r_uart1_callback_sendend(void);
 //static void r_uart1_callback_error(uint8_t err_type);
 //static void r_uart1_callback_softwareoverrun(uint16_t rx_data);
-static void r_uart0_callback_receiveend(void);
-static void r_uart0_callback_sendend(void);
-static void r_uart0_callback_error(uint8_t err_type);
-static void r_uart0_callback_softwareoverrun(uint16_t rx_data);
-
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 

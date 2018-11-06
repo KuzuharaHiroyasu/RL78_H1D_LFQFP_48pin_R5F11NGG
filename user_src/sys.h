@@ -35,38 +35,6 @@
 #define		SET					(1)							/* セット	*/
 //#define		CLR					(0)							/* クリア	*/
 
-/* エッジ定義(論理) */
-#define		EDGE_NON				0	/*エッジなし*/
-#define		EDGE_ON					1	/*ONエッジ*/
-#define		EDGE_OFF				2	/*OFFエッジ*/
-#define		EDGE_ON_ONESHOT			3	/*ONエッジ(ワンショット)*/
-#define		EDGE_OFF_ONESHOT		4	/*OFFエッジ(ワンショット)*/
-
-/* マイコンビット定義 */
-			/* 端子の入出力方向設定*/
-#define		PORT_DIR_INPUT		(0)							/* ポート入力設定	*/
-#define		PORT_DIR_OUTPUT		(1)							/* ポート出力設定	*/
-			/* 端子機能設定 */
-#define		PORT_PMR_NORMAL_IO	(0)							/* 端子機能 汎用IO	*/
-#define		PORT_PMR_FUNC		(1)							/* 端子機能 周辺機能	*/
-			/* ポートのエッジ方向設定*/
-#define		PORT_EDGE_UP		(1)							/* ポート立上りエッジ設定	*/
-#define		PORT_EDGE_DOWN		(0)							/* ポート立下りエッジ設定	*/
-#define		PORT_EDGE_BOTH		PORT_EDGE_DOWN				/* (両エッジ選択時は立下りに設定しておく)	*/
-			/* ポートの割り込みセンス設定*/
-#define		PORT_SENSE_EDGE		(0)							/* ポートエッジセンス	*/
-#define		PORT_SENSE_LEVEL	(1)							/* ポートレベルセンス	*/
-			/* ポートエッジの割り込み要因設定*/
-#define		INT_FACTOR_ONE_EDGE		(0)						/* 片エッジ設定	*/
-#define		INT_FACTOR_BOTH_EDGE	(1)						/* 両エッジ設定	*/
-#define		INT_FACTOR_LEVEL		(0)						/* (レベルセンス選択時は0に設定しておく)	*/
-			/* 個別割り込みの禁止/許可設定値*/
-#define		ENABLE				(1)							/* 許可					*/
-#define		DISABLE				(0)							/* 禁止					*/
-			/* 主にタイマのカウント開始/停止に使用する*/
-#define		REG_CNT_START				(1)					/* 開始	*/
-#define		REG_CNT_STOP				(0)					/* 停止	*/
-
 
 /* ビット定義 */
 #define		BIT00				(0x00000001)				/* bit0					*/
@@ -102,42 +70,12 @@
 #define		BIT30				(0x40000000)				/* bit30				*/
 #define		BIT31				(0x80000000)				/* bit31				*/
 
-#define		BITS_BY_BYTE	8	/*1バイトあたりのビット数*/
-
-#define		WORD1BYTE			(0xFF000000)				/* ワードデータ内上位1BYTE目 */
-#define		WORD2BYTE			(0x00FF0000)				/* ワードデータ内上位2BYTE目 */
-#define		WORD3BYTE			(0x0000FF00)				/* ワードデータ内上位3BYTE目 */
-#define		WORD4BYTE			(0x000000FF)				/* ワードデータ内上位4BYTE目 */
-
-#define		UH1BYTE				(0xFF00)					/* UHデータ内上位1BYTE目 */
-#define		UH2BYTE				(0x00FF)					/* UHデータ内上位2BYTE目 */
-
 /* 汎用エラー定義 */
 #define		E_OK		((INT)0)			/* 正常終了 */
 #define		E_GENE		((INT)1)			/* 汎用エラー */
 #define		E_OBJ		((INT)2)			/* オブジェクト状態エラー */
 #define		E_PAR		((INT)3)			/* パラメータエラー */
 #define		E_QOVR		((INT)4)			/* キューイングオーバーフロー */
-
-
-
-#define		CONV_BEAM_UNIT	1000						/* 桁変換(キロ→メガなど)の単位 */
-
-#define		DIGIT_CHANGE_KILO			1024				/* Kbyte */
-#define		DIGIT_CHANGE_MEGA			( 1024 * 1024 )		/* Mbyte */
-
-/* ポートの無効値 ※前回値に使用 */
-#define		PORT_INVALID		0xff						/* ポートの無効値 */
-
-/* 時刻定義 */
-#define		MIN_30_SEC					( 60 * 30 )			/* 秒換算での30分 */
-#define		HOUR_SEC					( 60 * 60 )			/* 秒換算での1時間 */
-
-
-/* 演算用補正値 ※固定小数点第3位四捨五入し、固定小数点第2位の演算用 */
-#define		CALC_HALF_ADJUST			5					/* 四捨五入用 */
-
-
 /* nopの定義 */
 /* 12.000MHz駆動の1クロック83.333‥ns */
 #define	Nop1()		NOP();															/* 83.333ns */
@@ -155,9 +93,6 @@
 #define WAIT_EEP_STOP_AFTER			WAIT_10US();
 
 
-/* AD変換回数 */
-#define	AD_CHANGE_CNT					10
-
 /* サム値関連 */
 #define	CALC_SUM_INIT		((UB)0x00)			/* サム値計算の初期値 */
 #define	CALC_SUM_INIT_UH	((UH)0x0000)		/* サム値計算の初期値 */
@@ -169,23 +104,6 @@
 /* エンディアン変換 */
 #define	CHANGE_UB2_UW		0			/* UBx2 → UWx1 */
 #define	CHANGE_UW_UB2		1			/* UWx1 → UBx2 */
-
-/* P/Sモード */
-#define PS_MODE_P			0			/* パチンコ仕様 */
-#define PS_MODE_S			1			/* スロット仕様 */
-#define PS_MODE_MAX			2			/* 最大種別 */
-
-/* 待ち時間の定義 time_nop_wait() */
-/* 注意：各待ち処理は余裕を持っている。計測時は割り込み禁止で計測する事 */
-#define TIM_NOP_WAIT_500MS			( 625000 )		/* コールドスタート時500ms以上待ち用 ※正確でなくてよい */
-#define TIM_NOP_WAIT_1MS			( 4200 )		/* 1ms以上待ち用 ※正確でなくてよい *///RD1214暫定：値の調整が必要
-#define TIM_NOP_WAIT_10US			( 10 )			/* 10us以上待ち用 ※正確でなくてよい */
-
-/* 関数コール種別 */
-typedef enum{
-	FUNC_CALL_TYPE_POWON = 0,	/* 起動時					*/
-	FUNC_CALL_TYPE_NORMAL		/* 通常時					*/
-}FUNC_CALL_TYPE;
 
 /* =====汎用マクロ関数===== */
 /* maxまでdataをインクリメント */
@@ -229,11 +147,10 @@ typedef enum{
 #define	UH_D		1		/* 下位アドレス取得 */
 
 /* 単体デバッグ用定義 */
-//#define STATIC							static				/* 単体デバッグ実施時はSTATICを無のデファインにしても良い */
 #define STATIC							static				/* 単体デバッグ実施時はSTATICを無のデファインにしても良い */
 
 /* =====機能有効無効(ON/OFF)===== */
-#define	FUNC_RELEASE					ON					/* リリース */
+#define	FUNC_RELEASE					OFF					/* リリース */
 															/* 正式リリースが始まった後は基本的にONで運用→リリース時の間違いをなくす */
 															/* OFFは、デバッグ時にローカルで修正 */
 
@@ -244,32 +161,16 @@ typedef enum{
 															/* ※デバッガ接続時は自己診断ポートがLOWになるため無効化する */
 #endif
 
-//アンドロイドデバッグ時はOFFとする
-#define FUNC_ADR_COM_ERR_RESET			ON					/* アンドロイド通信異常時のリセット有効 */
-
-
-
-#define FUNC_DOWNLOAD					ON				/* ダウンロードの許可 */
-
-/*------------*/
-/* デバッグ用 */
-/*------------*/
-/* デバッグポート機能 */
-#define FUNC_DEBUG_PORT				ON				/* デバッグポート機能(ON:デバッグポート有効 OFF:デバッグポート無効) */
-#define FUNC_DEBUG_PORT_LOG			ON				/* デバッグポートにログ出力(ON:デバッグポートログ有効 OFF:デバッグポートログ無効) */
-
-
 /*----------------*/
-/* 途中リリース用 */
+/* 機能の有効無効 */
 /*----------------*/
-#define FUNC_SELF_CHECK_MODE_TEST	OFF				/* 強制自己診断モード */
+#define		FUNC_DEBUG_LOG							ON					/* PCへのログ通信機能 *//* リリース時はOFFする事 */
+#define		FUNC_DEBUG_CPU_COM						OFF					/* CPU間通信をログ通信でデバッグする機能 *//* リリース時はOFFする事 */
+																		/* 使用する時はログ通信もOFFする事 */
 
-#define	FUNC_DISP_LAMP_CHECK_SOFT	OFF				/* 【ランプ動作確認用ソフト】(ON:有効,OFF;無効) */
-													/* 　ONにする場合は、232Cログ機能も併せてONにする事 */
-													/* 　ONにする場合は、自己診断モードのみリリースも併せてONにする事 */
+#define		FUNC_VALID_AMP							ON					/* アンプ関連 ※一部ハードではONすると動かない *//* リリース時はONする事 */
 
-#define FUNC_HARD_CHECK_SOFT				OFF		/* ハードチェック用ソフト */
-													/* 通信関連を定期出力する事でハード担当の方が確認を行う */
+
 
 /************************************************************/
 /* 型定義													*/
@@ -288,7 +189,7 @@ typedef float 			FLOAT;	/* 単精度浮動小数点 */
 typedef double			DOUBLE;	/* 倍単精度浮動小数点 */
 typedef int				ER;		/* 汎用エラー(μiTRON表記) */
 
-#if 0
+
 /* ビットフィールド */
 typedef struct{
     UB bit0 : 1;
@@ -306,7 +207,7 @@ typedef union{
 	BIT_FIELD	bit;
 	UB	byte;
 }BIT_FIELD_UNION;
-#endif
+
 
 /* 日時 */
 typedef struct{
@@ -421,6 +322,7 @@ UB	uwhex2bin(UW *bin, UB *pstr);
 UB bcdbin( UB bin );
 INT bcd2bin( UB *bin, const UB *src_bcd );
 void dummy( void );
+UH crc16( UB* p_in, int len );
 
 #endif
 /************************************************************/

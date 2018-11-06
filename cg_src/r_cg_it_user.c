@@ -46,7 +46,6 @@ Pragma directive
 Global variables and functions
 ***********************************************************************************************************************/
 /* Start user code for global. Do not edit comment generated here */
-extern void timer_isr(void);    // defined by timer.h
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
@@ -57,20 +56,19 @@ extern void timer_isr(void);    // defined by timer.h
 ***********************************************************************************************************************/
 int time_10ms_cnt = 0;
 extern void set_req_main_cyc(void);
+extern void time_soft_dec_10ms( void );
 static void __near r_it_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
-	timer_isr();	// BLEで使用
     /* End user code. Do not edit comment generated here */
 //    P5 = ~P5;	
 	time_10ms_cnt++;
-//	if( time_10ms_cnt >= 5 ){	/* 50ms */
-//	if( time_10ms_cnt >= 20 ){	/* 200ms */
-//	if( time_10ms_cnt >= 10 ){	/* 100ms */
-	if( time_10ms_cnt >= 20 ){	/* 200ms */
+	if( time_10ms_cnt >= 5 ){
 		time_10ms_cnt = 0;
 		set_req_main_cyc();
 	}
+	
+	time_soft_dec_10ms();	/* 10msソフトウェアタイマ減算処理 */
 }
 
 /* Start user code for adding. Do not edit comment generated here */
