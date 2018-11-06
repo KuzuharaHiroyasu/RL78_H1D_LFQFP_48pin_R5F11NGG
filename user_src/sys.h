@@ -332,6 +332,9 @@ extern UW calc_sum_32( UB *p_in, UW len );
 extern void calc_sum_32_any_times(UW *p_sum, UB *p_in, UW len );
 UH crc16( UB* p_in, int len );
 
+extern UB bin2bcd( UB bin );
+extern INT bcd2bin( UB *bin, const UB *src_bcd );
+
 #endif
 /************************************************************/
 /* END OF TEXT												*/

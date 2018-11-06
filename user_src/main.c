@@ -65,7 +65,7 @@ STATIC DS s_ds;
 /************************************************************/
 /* テーブル定義												*/
 /************************************************************/
-const B		version_product_tbl[]= {0, 0, 0, 16};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 17};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
@@ -924,23 +924,32 @@ STATIC void main_cpu_com_proc(void)
 STATIC void main_cpu_com_rcv_sts( void )
 {
 	rtc_counter_value_t rtc_val;
+	rtc_counter_value_t rtc_val_bin;
 	if( MD_OK != R_RTC_Get_CounterValue( &rtc_val ) ){
 		err_info( 13 );
 	}
 	
+	// BCD→バイナリ変換
+	bcd2bin(&rtc_val_bin.year, &rtc_val.year);
+	bcd2bin(&rtc_val_bin.month, &rtc_val.month);
+	bcd2bin(&rtc_val_bin.week, &rtc_val.week);
+	bcd2bin(&rtc_val_bin.day, &rtc_val.day);
+	bcd2bin(&rtc_val_bin.hour, &rtc_val.hour);
+	bcd2bin(&rtc_val_bin.min, &rtc_val.min);
+	bcd2bin(&rtc_val_bin.sec, &rtc_val.sec);
 
 	if( SYSTEM_MODE_NON == s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
 		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
 		s_ds.cpu_com.order.snd_data[2] = s_unit.info_data;
-		s_ds.cpu_com.order.snd_data[3] = rtc_val.year;
-		s_ds.cpu_com.order.snd_data[4] = rtc_val.month;
-		s_ds.cpu_com.order.snd_data[5] = rtc_val.week;
-		s_ds.cpu_com.order.snd_data[6] = rtc_val.day;
-		s_ds.cpu_com.order.snd_data[7] = rtc_val.hour;
-		s_ds.cpu_com.order.snd_data[8] = rtc_val.min;
-		s_ds.cpu_com.order.snd_data[9] = rtc_val.sec;
+		s_ds.cpu_com.order.snd_data[3] = rtc_val_bin.year;
+		s_ds.cpu_com.order.snd_data[4] = rtc_val_bin.month;
+		s_ds.cpu_com.order.snd_data[5] = rtc_val_bin.week;
+		s_ds.cpu_com.order.snd_data[6] = rtc_val_bin.day;
+		s_ds.cpu_com.order.snd_data[7] = rtc_val_bin.hour;
+		s_ds.cpu_com.order.snd_data[8] = rtc_val_bin.min;
+		s_ds.cpu_com.order.snd_data[9] = rtc_val_bin.sec;
 
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
@@ -950,13 +959,13 @@ STATIC void main_cpu_com_rcv_sts( void )
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
 		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
 		s_ds.cpu_com.order.snd_data[2] = s_unit.info_data;
-		s_ds.cpu_com.order.snd_data[3] = rtc_val.year;
-		s_ds.cpu_com.order.snd_data[4] = rtc_val.month;
-		s_ds.cpu_com.order.snd_data[5] = rtc_val.week;
-		s_ds.cpu_com.order.snd_data[6] = rtc_val.day;
-		s_ds.cpu_com.order.snd_data[7] = rtc_val.hour;
-		s_ds.cpu_com.order.snd_data[8] = rtc_val.min;
-		s_ds.cpu_com.order.snd_data[9] = rtc_val.sec;
+		s_ds.cpu_com.order.snd_data[3] = rtc_val_bin.year;
+		s_ds.cpu_com.order.snd_data[4] = rtc_val_bin.month;
+		s_ds.cpu_com.order.snd_data[5] = rtc_val_bin.week;
+		s_ds.cpu_com.order.snd_data[6] = rtc_val_bin.day;
+		s_ds.cpu_com.order.snd_data[7] = rtc_val_bin.hour;
+		s_ds.cpu_com.order.snd_data[8] = rtc_val_bin.min;
+		s_ds.cpu_com.order.snd_data[9] = rtc_val_bin.sec;
 		
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
@@ -978,7 +987,17 @@ STATIC void main_cpu_com_rcv_date_set( void )
 	rtc_val.hour = s_ds.cpu_com.input.rcv_data[4];
 	rtc_val.min = s_ds.cpu_com.input.rcv_data[5];
 	rtc_val.sec = s_ds.cpu_com.input.rcv_data[6];
-
+	
+	// バイナリ→BCD変換
+	rtc_val.year  = bin2bcd(rtc_val.year);
+	rtc_val.month = bin2bcd(rtc_val.month);
+	rtc_val.week  = bin2bcd(rtc_val.week);
+	rtc_val.day   = bin2bcd(rtc_val.day);
+	rtc_val.hour  = bin2bcd(rtc_val.hour);
+	rtc_val.min   = bin2bcd(rtc_val.min);
+	rtc_val.sec   = bin2bcd(rtc_val.sec);
+	
+	
 	if( MD_OK != R_RTC_Set_CounterValue( rtc_val ) ){
 		err_info( 12 );
 	}
