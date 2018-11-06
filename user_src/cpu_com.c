@@ -13,6 +13,9 @@
 /********************/
 /* プロトタイプ宣言 */
 /********************/
+
+
+
 STATIC void cpu_com_crcset(UB *msg, UH size, UH *crc);
 STATIC void cpu_com_rcv_proc(void);
 STATIC UB cpu_com_analyze_msg(void);
@@ -23,58 +26,45 @@ STATIC UB cpu_com_make_send_data(void);
 STATIC UH cpu_com_dle_extension( UB* data, UH size );
 
 
+
 /********************/
 /*     内部変数     */
 /********************/
-//RD8001暫定：メインとのデータIF未定
-STATIC DS_CPU_COM_ORDER s_ds_cpu_com_order;
+// メインIF
 STATIC DS_CPU_COM_INPUT s_cpu_com_ds_input;					/* データ管理部のコピーエリア アプリへのデータ受け渡し用 */
 STATIC DS_CPU_COM_ORDER *s_p_cpu_com_ds_order;				/* データ管理部のポインタ アプリからの指示用 */
+
 
 STATIC UB s_cpu_com_snd_cmd;								/* 送信コマンド */
 STATIC UB s_cpu_com_snd_data[CPU_COM_MSG_SIZE_MAX];			/* 送信メッセージ */
 STATIC UH s_cpu_com_snd_size;								/* 送信メッセージ長 */
-#if 0		// スレーブでは不要
-STATIC UB s_cpu_com_snd_type;								/* 送信コマンドタイプ */
-STATIC UB s_cpu_com_snd_retry_cnt;							/* 送信リトライ回数 */
-STATIC UW s_cpu_com_snd_timeout;							/* リトライタイムアウト時間 *10ms */
-STATIC UB s_cpu_com_snd_rensou_cnt;							/* 送信連送回数 */
-#endif
-
 STATIC UB s_cpu_com_snd_seq_no;								/* 送信シーケンスNo */
 STATIC UB s_cpu_com_res_seq_no;								/* 受信シーケンスNo */
-
-STATIC UB s_cpu_com_snd_status;								/* CPU間通信 送信ステータス */
-																/*	CPU_COM_SND_STATUS_IDLE			送信可能状態		*/
-																/* 	CPU_COM_SND_STATUS_RCV_WAIT		応答受信待ち状態	*/
-																/* 	CPU_COM_SND_STATUS_RENSOU		連送中状態			*/
-																/* 	CPU_COM_SND_STATUS_COMPLETE		送信完了状態		*/
-																/* 	CPU_COM_SND_STATUS_SEND_NG		リトライNG			*/
 
 STATIC CPU_COM_RCV_MSG	s_cpu_com_rcv_msg;					/* 受信メッセージ */
 STATIC UH s_cpu_com_rcv_msg_size;							/* 受信メッセージサイズ */
 
+
+
+
 /********************/
 /*   テーブル定義   */
 /********************/
-//RD8001暫定：テーブル削除予定
-/* コマンドテーブル ※マスター専用 */
-/* タイプを変更する事で受信専用にも対応 */
+/* コマンドテーブル[スレーブ] */
 STATIC const T_CPU_COM_CMD_INFO s_tbl_cmd_info[CPU_COM_CMD_MAX] = {
-	/*コマンド*/ /*タイプ*/					/*リトライ(初送含む)*//*リトライ間隔 *10ms*/ /*連送回数*/
-	{	0x00,	CPU_COM_CMD_TYPE_ONESHOT_SEND,		0,				0,					0	},	/* コマンド無し				*/
-	{	0xE0,	CPU_COM_CMD_TYPE_RETRY,				0,				0,					0	},	/* ステータス要求			*/
-	{	0xA0,	CPU_COM_CMD_TYPE_ONESHOT_SEND,		0,				0,					0	},	/* センサーデータ更新		*/
-	{	0xB0,	CPU_COM_CMD_TYPE_RETRY,				3,				3,					0	},	/* 状態変更(G1D)			*/
-	{	0xF0,	CPU_COM_CMD_TYPE_ONESHOT_RCV,		0,				0,					0	},	/* PCログ送信(内部コマンド)	*/
-	{	0xB1,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* 日時設定					*/
-																								// プログラム更新
-	{	0xD5,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送準備		*/
-	{	0xD2,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送開始		*/
-	{	0xD4,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送消去		*/
-	{	0xD0,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送データ		*/
-	{	0xD1,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送結果		*/
-	{	0xD3,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送確認		*/
+	/*コマンド*/ 
+	{	0x00	},	/* コマンド無し				*/
+	{	0xE0	},	/* ステータス要求			*/
+	{	0xA0	},	/* センサーデータ更新		*/
+	{	0xB0	},	/* 状態変更(G1D)			*/
+	{	0xF0	},	/* PCログ送信(内部コマンド)	*/
+	{	0xB1	},	/* 日時設定					*/
+	{	0xD5	},	/* プログラム転送準備		*/
+	{	0xD2	},	/* プログラム転送開始		*/
+	{	0xD4	},	/* プログラム転送消去		*/
+	{	0xD0	},	/* プログラム転送データ		*/
+	{	0xD1	},	/* プログラム転送結果		*/
+	{	0xD3	},	/* プログラム転送確認		*/
 };
 
 
@@ -92,21 +82,13 @@ STATIC const T_CPU_COM_CMD_INFO s_tbl_cmd_info[CPU_COM_CMD_MAX] = {
 void cpu_com_init(void)
 {
 	memset(&s_cpu_com_ds_input, 0x00, sizeof(s_cpu_com_ds_input));
-	s_p_cpu_com_ds_order = &s_ds_cpu_com_order;
 
 	s_cpu_com_snd_cmd = 0x00;
 	memset(s_cpu_com_snd_data, 0x00, sizeof(s_cpu_com_snd_data));
 	s_cpu_com_snd_size = 0;
-#if 0		// スレーブでは不要
-	s_cpu_com_snd_type = 0;
-	s_cpu_com_snd_retry_cnt = 0;
-	s_cpu_com_snd_timeout = 0;
-	s_cpu_com_snd_rensou_cnt = 0;
-#endif
 	s_cpu_com_snd_seq_no = 0;
-	s_cpu_com_res_seq_no = 0;
+	s_cpu_com_res_seq_no = 0xFF;
 	
-	s_cpu_com_snd_status = CPU_COM_SND_STATUS_IDLE;
 	
 	memset(s_cpu_com_rcv_msg.buf, 0x00, sizeof(s_cpu_com_rcv_msg.buf));
 	s_cpu_com_rcv_msg_size = 0;
@@ -151,10 +133,8 @@ STATIC void cpu_com_crcset(UB *msg, UH size, UH *crc)
 /************************************************************************/
 void cpu_com_proc(void)
 {
-#if 1
 	/* アプリからデータ取得 */
 	ds_get_cpu_com_order( &s_p_cpu_com_ds_order );
-#endif
 	
 	/* 受信データ解析 */
 	cpu_com_rcv_proc();
@@ -162,18 +142,12 @@ void cpu_com_proc(void)
 	/* 周期送信処理 */
 	cpu_com_send_proc();
 	
-#if 1
-	/* 状態通知用変数のセット */
-	s_cpu_com_ds_input.cpu_com_send_status = s_cpu_com_snd_status;
-	
 	/* アプリへのデータ設定 */
 	ds_set_cpu_com_input( &s_cpu_com_ds_input );
 	
 	/* データ通知後はクリア */
 	s_cpu_com_ds_input.rcv_cmd = 0x00;
 	memset( s_cpu_com_ds_input.rcv_data, 0x00, sizeof(s_cpu_com_ds_input.rcv_data));
-	
-#endif
 }
 
 
@@ -221,20 +195,9 @@ STATIC void cpu_com_rcv_proc(void)
 {
 	if( ON == cpu_com_analyze_msg() ){
 		/* 受信データ正常 */
-#if 1
 		s_cpu_com_ds_input.rcv_cmd = s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_CMD];
-		/* 受信シーケンスNoのセット */
-		s_cpu_com_res_seq_no = s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_SEQ];				/* SEQ下位ビット */
 		/* アプリ通知用のデータに受信データをセット */
 		memcpy( s_cpu_com_ds_input.rcv_data, &s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_DATA], ( s_cpu_com_rcv_msg_size- CPU_COM_MSG_SIZE_MIN ));
-#endif
-	}else{
-#if 1
-		/* 受信なし */
-		s_cpu_com_ds_input.rcv_cmd = 0x00;
-		s_cpu_com_res_seq_no = 0x0000;
-		memset( s_cpu_com_ds_input.rcv_data, 0x00, sizeof(s_cpu_com_ds_input.rcv_data));
-#endif
 	}
 }
 
@@ -408,6 +371,11 @@ STATIC UB cpu_com_analyze_msg_check_data(void)
 				break;
 			}
 		}
+#if FUNC_DEBUG_CPU_COM == OFF
+		drv_uart0_send_start();
+#else
+		drv_uart1_send_start();
+#endif
 		return OFF;
 	}
 	s_cpu_com_res_seq_no = seq_num;		//シーケンス番号更新
@@ -454,13 +422,10 @@ STATIC UB cpu_com_make_send_data(void)
 {
 	CPU_COM_CMD_ID cmd_id;
 	UH size;
-	
 	UH crc;
-//	UH sum;
 	UH pos = 0;
 	RING_BUF* p_ring;
 	INT i = 0;
-//	UH wr_size;
 	
 	/* コマンド、データ、データ長のクリア */
 	s_cpu_com_snd_cmd = 0x00;
@@ -468,15 +433,7 @@ STATIC UB cpu_com_make_send_data(void)
 	s_cpu_com_snd_size = 0;
 	
 	/* リトライ回数、タイムアウト時間、連送回数クリア */
-#if 0	// スレーブでは未使用
-	s_cpu_com_snd_type = CPU_COM_CMD_TYPE_ONESHOT_SEND;
-	s_cpu_com_snd_retry_cnt = 0;
-	s_cpu_com_snd_timeout = 0;
-	s_cpu_com_snd_rensou_cnt = 0;
-#endif
-
-	if(( CPU_COM_CMD_NONE == s_p_cpu_com_ds_order->snd_cmd_id ) || ( CPU_COM_CMD_MAX <= s_p_cpu_com_ds_order->snd_cmd_id ) ||
-		( CPU_COM_CMD_TYPE_ONESHOT_RCV == s_tbl_cmd_info[s_p_cpu_com_ds_order->snd_cmd_id].cmd_type )){
+	if(( CPU_COM_CMD_NONE == s_p_cpu_com_ds_order->snd_cmd_id ) || ( CPU_COM_CMD_MAX <= s_p_cpu_com_ds_order->snd_cmd_id )){
 		/* コマンドID異常 */
 		return FALSE;
 	}
@@ -508,25 +465,6 @@ STATIC UB cpu_com_make_send_data(void)
 	s_cpu_com_snd_data[pos] = s_cpu_com_snd_seq_no;
 	pos += CPU_COM_SEQ_SIZE;
 
-	//RD1508暫定
-#if FUNC_DBG_CPU_COM_LOG_EVENT == ON
-	if( s_cpu_com_snd_cmd == 0xA0 ){
-		//RD1508暫定：CPU間通信デバッグ用処理
-#if 0
-		if( s_p_cpu_com_ds_order->snd_data[0] == 214 ){
-//			return FALSE;
-		}
-#endif
-		com_srv_printf(COM_SRV_LOG_COMMAND,(const B*)"CPUCOM 表示更新:%d\r\n",s_p_cpu_com_ds_order->snd_data[0] + ( s_p_cpu_com_ds_order->snd_data[1] << 8 ));
-	}
-	if( 0xA1 == s_cpu_com_snd_cmd ){
-		com_srv_printf(COM_SRV_LOG_DISP,(const B*)"CPUCOM イベント:%d\r\n",s_p_cpu_com_ds_order->snd_data[0] + ( s_p_cpu_com_ds_order->snd_data[1] << 8 ));
-	}
-	if( 0xA2 == s_cpu_com_snd_cmd ){
-		//ステータス要求
-		com_srv_puts(COM_SRV_LOG_COMMAND,(const B*)"CPUCOM ステータス要求\r\n");
-	}
-#endif
 	/* データのセット */
 	memcpy( &s_cpu_com_snd_data[pos], s_p_cpu_com_ds_order->snd_data, size );
 	pos += size;
@@ -546,21 +484,8 @@ STATIC UB cpu_com_make_send_data(void)
 	/* DLE 拡張 */
 	s_cpu_com_snd_size = cpu_com_dle_extension( &s_cpu_com_snd_data[0], s_cpu_com_snd_size );
 	
-	/* コマンドタイプ、リトライ・連送回数セット */
-#if 0	// スレーブでは未使用
-	s_cpu_com_snd_type = s_tbl_cmd_info[cmd_id].cmd_type;
-	s_cpu_com_snd_retry_cnt = s_tbl_cmd_info[cmd_id].retry_cnt;
-	s_cpu_com_snd_timeout = s_tbl_cmd_info[cmd_id].retry_time;
-	if( 1 < s_tbl_cmd_info[cmd_id].rensou_cnt ){
-		/* 連送回数は初回を含むため1減算 */
-		s_cpu_com_snd_rensou_cnt = s_tbl_cmd_info[cmd_id].rensou_cnt-1;
-	}
-#endif
-	
 	/* シーケンスNo加算 */
 	s_cpu_com_snd_seq_no++;
-	
-	
 	
 	// 送信リングバッファ書き込み
 	p_ring = drv_uart0_get_snd_ring();
@@ -576,28 +501,6 @@ STATIC UB cpu_com_make_send_data(void)
 #endif
 	
 	return TRUE;
-}
-
-
-/************************************************************************/
-/* 関数     : cpu_com_get_status										*/
-/* 関数名   : CPUステータス取得											*/
-/* 引数     : なし														*/
-/* 戻り値   :	CPU_COM_SND_STATUS_IDLE			送信可能状態			*/
-/*				CPU_COM_SND_STATUS_RCV_WAIT		応答受信待ち状態		*/
-/* 				CPU_COM_SND_STATUS_RENSOU		連送中状態				*/
-/* 				CPU_COM_SND_STATUS_COMPLETE		送信完了状態			*/
-/* 				CPU_COM_SND_STATUS_SEND_NG		リトライNG				*/
-/* 変更履歴 : 2014.07.09 Axia Soft Design 西島		初版作成			*/
-/************************************************************************/
-/* 機能 : CPUステータス取得												*/
-/************************************************************************/
-/* 注意事項 :なし														*/
-/************************************************************************/
-UB cpu_com_get_status(void)
-{
-	/* ドライバ関数をコール */
-	return s_cpu_com_snd_status;
 }
 
 
@@ -642,10 +545,8 @@ STATIC UH cpu_com_dle_extension( UB* data, UH size )
 
 
 // ==================================================
-//RD8001暫定：テストコード↓↓↓↓↓↓↓↓↓↓↓↓↓
+// デバッグ用処理：テストコード↓↓↓↓↓↓↓↓↓↓↓
 // ==================================================
-
-
 void test_cpu_com_send( void )
 {
 #if 0

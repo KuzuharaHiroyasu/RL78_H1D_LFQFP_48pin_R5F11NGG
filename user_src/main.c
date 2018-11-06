@@ -27,7 +27,7 @@ void err_info( int id );
 void main_acl_init(void);
 void main_acl_read(void);
 void main_acl_write(void);
-STATIC H main_ad24_to_h( UH bufferH, UH bufferL );
+STATIC W main_ad24_to_w( UH bufferH, UH bufferL );
 static void stop_in( void );
 static void halt_in( void );
 STATIC void main_cpu_com_snd_sensor_data( void );
@@ -256,7 +256,7 @@ static void user_main_mode_sensor(void)
 		pga_do();
 //		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		s_unit.meas.info.dat.sekishoku_val = main_ad24_to_h( bufferH_dbg, bufferL_dbg );
+		s_unit.meas.info.dat.sekishoku_val = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
 		wait_ms( 2 );
 
 		// 赤外光ON
@@ -268,7 +268,7 @@ static void user_main_mode_sensor(void)
 		pga_do();
 //		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		s_unit.meas.info.dat.sekigaival = main_ad24_to_h( bufferH_dbg, bufferL_dbg );
+		s_unit.meas.info.dat.sekigaival = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
 		
 		R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
 		R_AMP2_Stop();		// □AMP2  OFF
@@ -308,7 +308,7 @@ static void user_main_mode_sensor(void)
 				
 				
 				
-				dbg_len = sprintf((char*)dbg_tx_data, "%d,%d,%d,%d,0,0,0\r\n",		 s_unit.meas.info.dat.sekishoku_val
+				dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,0,0,0\r\n",		 s_unit.meas.info.dat.sekishoku_val
 																					,s_unit.meas.info.dat.sekigaival
 																					,s_unit.meas.info.dat.kokyu_val
 																					,s_unit.meas.info.dat.ibiki_val);
@@ -337,21 +337,21 @@ static void user_main_mode_sensor(void)
 }
 
 /************************************************************************/
-/* 関数     : main_ad24_to_h											*/
-/* 関数名   : AD24bit2byte(符号あり)変換								*/
+/* 関数     : main_ad24_to_w											*/
+/* 関数名   : AD24bit4byte(符号あり)変換								*/
 /* 引数     : なし														*/
 /* 戻り値   : なし														*/
 /* 変更履歴 : 2018.03.02 Axia Soft Design 西島 稔	初版作成			*/
 /************************************************************************/
 /* 機能 :																*/
-/* AD24bit2byte(符号あり)変換											*/
+/* AD24bit4byte(符号あり)変換											*/
 /************************************************************************/
 /* 注意事項 :															*/
 /* なし																	*/
 /************************************************************************/
-STATIC H main_ad24_to_h( UH bufferH, UH bufferL )
+STATIC W main_ad24_to_w( UH bufferH, UH bufferL )
 {
-	H value = 0;
+	W value = 0;
 	UW work_uw = 0;
 	W work_w = 0;
 	UB m_flg = 0;
@@ -371,14 +371,12 @@ STATIC H main_ad24_to_h( UH bufferH, UH bufferL )
 	}else{
 		work_w = work_uw;
 	}
-	// 24bitのデータのうち上位4bitと下位4bitを捨てる
 	work_uw = work_w;
-	work_uw >>= 4;
-	work_uw &= 0x007FFF;
+	work_uw &= 0x007FFFFF;
 	if( 1 == m_flg ){
-		value = (H)work_uw * (H)-1;
+		value = (W)work_uw * (W)-1;
 	}else{
-		value = (H)work_uw;
+		value = (W)work_uw;
 	}
 		
 	return value;

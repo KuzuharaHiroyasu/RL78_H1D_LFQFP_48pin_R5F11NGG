@@ -147,7 +147,7 @@
           <Option>-USER_OPT_BYTE=7DFFE1</Option>
           <Option>-LISt=%BuildModeName%\%ProjectName%.map</Option>
           <Option>-AUTO_SECTION_LAYOUT</Option>
-          <Option>-STARt=.text,.constf,.data,.sdata,FSL_FCD,FSL_RCD,FSL_BCD/07000,VCT_TBL_f/1FAF0,TBL_ID_CODE_f/1FBF0,VECT_RAM_n/FFD20</Option>
+          <Option>-STARt=.text,.const,.RLIB,.SLIB,.textf,.constf,.data,.sdata,FSL_FCD,FSL_RCD,FSL_BCD/07000,VCT_TBL_f/1FAF0,TBL_ID_CODE_f/1FBF0,VECT_RAM_n/FFD20</Option>
           <Option>-ROm=.data=.dataR</Option>
           <Option>-ROm=.sdata=.sdataR</Option>
           <Option>-NOMessage</Option>
@@ -173,15 +173,11 @@
     <Extension_CodePart2>
       <CodeGeneratorData>﻿&lt;SerializableData&gt;
   &lt;SerializableData name="39a9d609-9774-41fe-9e4e-5c50dfa1451e"&gt;
-    &lt;DataElement key="pior35_macroname" value=""&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior14_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior34_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior16_macroname" value=""&gt;
-    &lt;/DataElement&gt;
-    &lt;DataElement key="pior25_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior22_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -201,9 +197,13 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior30_macroname" value=""&gt;
     &lt;/DataElement&gt;
+    &lt;DataElement key="pior33" value="0"&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior01_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior35" value="0"&gt;
+    &lt;DataElement key="pior01" value="0"&gt;
+    &lt;/DataElement&gt;
+    &lt;DataElement key="pior11_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior04_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -221,7 +221,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior31" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior01" value="0"&gt;
+    &lt;DataElement key="pior25_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior11" value="0"&gt;
     &lt;/DataElement&gt;
@@ -239,13 +239,13 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior14" value="0"&gt;
     &lt;/DataElement&gt;
+    &lt;DataElement key="pior02_macroname" value=""&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior12_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior20_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior32_macroname" value=""&gt;
-    &lt;/DataElement&gt;
-    &lt;DataElement key="pior03" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior22" value="0"&gt;
     &lt;/DataElement&gt;
@@ -255,9 +255,9 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior23" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior33" value="0"&gt;
+    &lt;DataElement key="pior35_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior27_macroname" value=""&gt;
+    &lt;DataElement key="pior03" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior24_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -269,7 +269,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior25" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior11_macroname" value=""&gt;
+    &lt;DataElement key="pior35" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior05" value="0"&gt;
     &lt;/DataElement&gt;
@@ -279,7 +279,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior33_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior02_macroname" value=""&gt;
+    &lt;DataElement key="pior27_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior05_macroname" value=""&gt;
     &lt;/DataElement&gt;

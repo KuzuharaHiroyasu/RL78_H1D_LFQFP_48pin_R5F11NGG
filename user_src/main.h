@@ -51,8 +51,8 @@ typedef struct{
 	union{
 		UB	byte[CPU_COM_SND_DATA_SIZE_SENSOR_DATA];
 		struct{
-			H	sekigaival;		// ·“®“ü—Í‚Ìˆ×‚É•„†‚ ‚è
-			H	sekishoku_val;	// ·“®“ü—Í‚Ìˆ×‚É•„†‚ ‚è
+			W	sekigaival;		// ·“®“ü—Í‚Ìˆ×‚É•„†‚ ‚è
+			W	sekishoku_val;	// ·“®“ü—Í‚Ìˆ×‚É•„†‚ ‚è
 			UH	kokyu_val;		
 			UH	ibiki_val;		
 			B acl_x;
