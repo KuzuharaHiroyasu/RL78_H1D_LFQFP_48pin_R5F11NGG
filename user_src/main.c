@@ -240,7 +240,27 @@ static void user_main_mode_sensor(void)
 	// センサーモード
 	// メイン周期(50ms)
 	if( ON == s_unit.main_cyc_req ){
-		R_DAC1_Start();			// ■DAC        ON
+		R_DAC1_Start();			// ■DAC ON　※共通用途
+
+		// ↓↓マイク用(呼吸、イビキ)開始↓↓
+		R_DAC1_Set_ConversionValue( 0x0000 );
+		R_AMP0_Start();		// ■AMP0 ON
+		R_PGA1_Start();		// ■PGA1 ON
+
+		wait_ms( 2 );
+		adc_ibiki_kokyu( &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
+		
+		// RD8001暫定：いびきデータをデバッグ用カウント
+#ifdef	IBIKI_COUNT
+		s_unit.meas.info.dat.ibiki_val = dbg_ibiki_cnt++;
+#endif
+		wait_ms( 2 );
+#if 0	// RD8001暫定：AMP0,PGA1をOFFすると正常にイビキ等が取得できない
+		R_AMP0_Stop();		// □AMP0 OFF
+		R_PGA1_Stop();		// □PGA1 OFF
+#endif
+		// ↑↑マイク用(呼吸、イビキ)終了↑↑
+
 		R_PGA_DSAD_Start();		// ■PGA0_DSAD  ON
 		R_AMP2_Start();			// ■AMP2       ON
 		
@@ -278,26 +298,9 @@ static void user_main_mode_sensor(void)
 		drv_o_port_sekigai( OFF );
 		drv_o_port_sekishoku( OFF );
 		
-		// マイク用(呼吸、イビキ)開始
-		R_DAC1_Set_ConversionValue( 0x0000 );
-		R_AMP0_Start();		// ■AMP0 ON
-		R_PGA1_Start();		// ■PGA1 ON
 
-		wait_ms( 2 );
-		adc_ibiki_kokyu( &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
-		
-		// RD8001暫定：いびきデータをデバッグ用カウント
-#ifdef	IBIKI_COUNT
-		s_unit.meas.info.dat.ibiki_val = dbg_ibiki_cnt++;
-#endif
-		wait_ms( 2 );
-		R_DAC1_Stop();		// □DAC  OFF
+		R_DAC1_Stop();		// □DAC  OFF ※共通用途
 
-#if 0	// RD8001暫定：AMP0,PGA1をOFFすると正常にイビキ等が取得できない
-		R_AMP0_Stop();		// □AMP0 OFF
-		R_PGA1_Stop();		// □PGA1 OFF
-#endif
-		
 		// 加速度センサ取得
 		// RD8001暫定：30msかかるが50ms毎に取得
 #if FUNC_DEBUG_RAW_VAL_OUT == OFF
