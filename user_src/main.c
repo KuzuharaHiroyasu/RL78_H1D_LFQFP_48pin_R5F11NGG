@@ -246,7 +246,7 @@ static void user_main_mode_sensor(void)
 		
 //RD8001b’èF‰Šú‰»‚ğs‚¤‚Æ“®ì‚µ‚È‚¢
 #if FUNC_VALID_AMP == ON
-		R_DAC1_Set_ConversionValue( 0x0B00 );
+		R_DAC1_Set_ConversionValue( 0x0500 );
 		// ÔFŒõON
 		drv_o_port_sekigai( OFF );
 		drv_o_port_sekishoku( ON );
@@ -263,7 +263,7 @@ static void user_main_mode_sensor(void)
 		drv_o_port_sekigai( ON );
 		drv_o_port_sekishoku( OFF );
 
-		R_DAC1_Set_ConversionValue( 0x0500 );
+		R_DAC1_Set_ConversionValue( 0x0B00 );
 		wait_ms( 2 );
 		pga_do();
 //		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//•½‹Ï
