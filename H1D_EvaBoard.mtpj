@@ -1033,7 +1033,7 @@
       <PostBuildCommands-DefaultValue />
       <GeneralOptionOtherAdditionalOptions-DefaultValue />
       <IsLockedByUser>False</IsLockedByUser>
-      <TimeTagModified--0>-8586840572139633720</TimeTagModified--0>
+      <TimeTagModified--0>-8586835548240047379</TimeTagModified--0>
       <BuildMode-0>DefaultBuild</BuildMode-0>
       <Memo-0 />
       <OutputMessageFormat-0>%TargetFiles%</OutputMessageFormat-0>
@@ -1114,7 +1114,7 @@
       <COptionOaliasAnsi-DefaultValue>False</COptionOaliasAnsi-DefaultValue>
       <COptionGoptimize-DefaultValue>False</COptionGoptimize-DefaultValue>
       <IsLockedByUser>False</IsLockedByUser>
-      <TimeTagModified--0>-8586840452512541441</TimeTagModified--0>
+      <TimeTagModified--0>-8586835492393413134</TimeTagModified--0>
       <COptionAnsi-0>False</COptionAnsi-0>
       <COptionAsmPath-0>False</COptionAsmPath-0>
       <COptionCharacterSet-0>Auto</COptionCharacterSet-0>
@@ -1155,7 +1155,7 @@ user_src
       <COptionPreinclude-0 />
       <COptionSignedBitfield-0>None</COptionSignedBitfield-0>
       <COptionD-0>_USE_CCRL_RL78
-noUSE_PAIRING_JUSTWORKS
+USE_PAIRING_JUSTWORKS
 noUSE_SAMPLE_PROFILE
 USE_MODULE_RY7011
 USE_VUART_PROFILE
@@ -2587,15 +2587,11 @@ USE_FW_UPDATE_PROFILE
     <Instance Guid="18ae40a2-ced0-4b3c-8ee8-890cea9e5a20">
       <CodeGeneratorData>﻿&lt;SerializableData&gt;
   &lt;SerializableData name="39a9d609-9774-41fe-9e4e-5c50dfa1451e"&gt;
-    &lt;DataElement key="pior35_macroname" value=""&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior14_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior34_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior16_macroname" value=""&gt;
-    &lt;/DataElement&gt;
-    &lt;DataElement key="pior24_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior22_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -2611,15 +2607,17 @@ USE_FW_UPDATE_PROFILE
     &lt;/DataElement&gt;
     &lt;DataElement key="pior10_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior27_macroname" value=""&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior27" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior30_macroname" value=""&gt;
     &lt;/DataElement&gt;
+    &lt;DataElement key="pior33" value="0"&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior01_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior35" value="0"&gt;
+    &lt;DataElement key="pior01" value="0"&gt;
+    &lt;/DataElement&gt;
+    &lt;DataElement key="pior11_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior04_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -2637,7 +2635,7 @@ USE_FW_UPDATE_PROFILE
     &lt;/DataElement&gt;
     &lt;DataElement key="pior31" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior01" value="0"&gt;
+    &lt;DataElement key="pior24_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior11" value="0"&gt;
     &lt;/DataElement&gt;
@@ -2661,6 +2659,8 @@ USE_FW_UPDATE_PROFILE
     &lt;/DataElement&gt;
     &lt;DataElement key="pior32_macroname" value=""&gt;
     &lt;/DataElement&gt;
+    &lt;DataElement key="pior03" value="0"&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior22" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior15_macroname" value=""&gt;
@@ -2669,9 +2669,9 @@ USE_FW_UPDATE_PROFILE
     &lt;/DataElement&gt;
     &lt;DataElement key="pior23" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior33" value="0"&gt;
+    &lt;DataElement key="pior35_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior03" value="0"&gt;
+    &lt;DataElement key="pior27_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior25_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -2683,7 +2683,7 @@ USE_FW_UPDATE_PROFILE
     &lt;/DataElement&gt;
     &lt;DataElement key="pior25" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior11_macroname" value=""&gt;
+    &lt;DataElement key="pior35" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior05" value="0"&gt;
     &lt;/DataElement&gt;
