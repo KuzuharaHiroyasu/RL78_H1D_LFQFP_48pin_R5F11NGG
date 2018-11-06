@@ -247,11 +247,11 @@ static void user_main_mode_sensor(void)
 //RD8001暫定：初期化を行うと動作しない
 #if FUNC_VALID_AMP == ON
 		R_DAC1_Set_ConversionValue( 0x0B00 );
-		wait_ms( 2 );
-		
 		// 赤色光ON
 		drv_o_port_sekigai( OFF );
 		drv_o_port_sekishoku( ON );
+		wait_ms( 2 );
+		
 
 		pga_do();
 //		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
@@ -274,6 +274,9 @@ static void user_main_mode_sensor(void)
 		R_AMP2_Stop();		// □AMP2  OFF
 		
 		wait_ms( 2 );
+		// 赤外光,赤色光OFF
+		drv_o_port_sekigai( OFF );
+		drv_o_port_sekishoku( OFF );
 		
 		// マイク用(呼吸、イビキ)開始
 		R_DAC1_Set_ConversionValue( 0x0000 );
@@ -397,6 +400,8 @@ STATIC W main_ad24_to_w( UH bufferH, UH bufferL )
 /************************************************************************/
 static void main_init(void)
 {
+	wdt_refresh();		//WDTリフレッシュ
+
 	//データ初期化
 	memset( &s_unit, 0, sizeof(s_unit) );
 	/* Start user code. Do not edit comment generated here */
