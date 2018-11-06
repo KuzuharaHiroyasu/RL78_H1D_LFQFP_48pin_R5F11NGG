@@ -12,7 +12,7 @@
 /******************/
 /* 定数マクロ定義 */
 /******************/
-#define CPU_COM_SND_DATA_SIZE_STATUS_REQ			4				/* ステータス要求			*/
+#define CPU_COM_SND_DATA_SIZE_STATUS_REQ			13				/* ステータス要求			*/
 #define CPU_COM_SND_DATA_SIZE_MODE_CHG				1				/* 状態変更(G1D)			*/
 #define CPU_COM_SND_DATA_SIZE_PC_LOG				7				/* PCログ送信(内部コマンド)	*/
 #define CPU_COM_SND_DATA_SIZE_SENSOR_DATA			11				/* センサーデータ	*/
@@ -58,43 +58,6 @@
 #define CPU_COM_SND_RES_RETRY_OUT_NG			2			/* リトライアウト */
 #define CPU_COM_SND_RES_COM_NG					3			/* 送信コマンドNG */
 
-
-/* CPU間通信送信要求トリガID */
-/* 汎用処理関連 ※特別なものは除く */
-/* 複数要求が発生するものは除く 例)表示データ更新、イベント通知、音声再生等 */
-/* 特別は処理をしているものは除く 例)プログラム転送等 */
-typedef enum _CPU_COM_REQ_TRIGGER_ID {
-	CPU_COM_REQ_TRG_ID_NONE=0,					/* 【送信要求トリガID】要求無し */
-	CPU_COM_REQ_TRG_ID_STRING_WRITE,			/* 【送信要求トリガID】文字列書き込み */
-	CPU_COM_REQ_TRG_ID_STRING_READ,				/* 【送信要求トリガID】文字列読み出し */
-	CPU_COM_REQ_TRG_ID_FILE_READ,				/* 【送信要求トリガID】ファイル読み出し */
-//	CPU_COM_REQ_TRG_ID_SOUND_REQ,				/* 【送信要求トリガID】音声再生要求 */	/* 音声要求バッファリング対応のためトリガIDから移動 */
-	CPU_COM_REQ_TRG_ID_MAX						/* 【送信要求トリガID】最大値 */
-}CPU_COM_REQ_TRIGGER_ID;
-
-/* CPU間通信画面制御情報 種別ID */
-typedef enum _CPU_COM_CONTROL_STATUS_ID {
-	CPU_COM_CONTROL_STATUS_ID_NONE=0,			/* 【画面制御情報 種別ID】状態無し */
-	CPU_COM_CONTROL_STATUS_ID_NEWS_END,			/* 【画面制御情報 種別ID】ニュース配信終了 */
-	CPU_COM_CONTROL_STATUS_ID_ANIME_END,		/* 【画面制御情報 種別ID】アニメ再生終了 */
-	CPU_COM_CONTROL_STATUS_ID_MAX				/* 【画面制御情報 種別ID】最大値 */
-}CPU_COM_CONTROL_STATUS_ID;
-
-
-/* CPU間通信送信要求トリガID */
-/* 汎用処理関連 ※特別なものは除く */
-/* 複数要求が発生するものは除く 例)表示データ更新、イベント通知、音声再生等 */
-/* 特別は処理をしているものは除く 例)プログラム転送等 */
-#if 0
-typedef enum _CPU_COM_REQ_TRIGGER_ID {
-	CPU_COM_REQ_TRG_ID_NONE=0,					/* 【送信要求トリガID】要求無し */
-	CPU_COM_REQ_TRG_ID_STRING_WRITE,			/* 【送信要求トリガID】文字列書き込み */
-	CPU_COM_REQ_TRG_ID_STRING_READ,				/* 【送信要求トリガID】文字列読み出し */
-	CPU_COM_REQ_TRG_ID_FILE_READ,				/* 【送信要求トリガID】ファイル読み出し */
-//	CPU_COM_REQ_TRG_ID_SOUND_REQ,				/* 【送信要求トリガID】音声再生要求 */	/* 音声要求バッファリング対応のためトリガIDから移動 */
-	CPU_COM_REQ_TRG_ID_MAX						/* 【送信要求トリガID】最大値 */
-}CPU_COM_REQ_TRIGGER_ID;
-#endif
 /* CPU間通信 コマンド種別 */
 /* 要求・応答のセット */
 typedef enum _CPU_COM_CMD_ID{
@@ -103,16 +66,18 @@ typedef enum _CPU_COM_CMD_ID{
 	CPU_COM_CMD_SENSOR_DATA,					/* 【CPU間通信コマンド】センサーデータ更新			*/
 	CPU_COM_CMD_MODE_CHG,						/* 【CPU間通信コマンド】状態変更(G1D)				*/
 	CPU_COM_CMD_PC_LOG,							/* 【CPU間通信コマンド】PCログ送信(内部コマンド)	*/
+	CPU_COM_CMD_DATE_SET,						/* 【CPU間通信コマンド】日時設定	*/
 	
-	CPU_COM_CMD_PRG_DOWNLORD_REQ,				/* 【CPU間通信コマンド】プログラム転送開始		*/
-	CPU_COM_CMD_PRG_DOWNLORD_DATA_REQ,			/* 【CPU間通信コマンド】プログラム転送データ要求 */
-	CPU_COM_CMD_PRG_DOWNLORD_DATA_RCV,			/* 【CPU間通信コマンド】プログラム転送(受信)	*/
-	CPU_COM_CMD_PRG_DOWNLORD_SUM_REQ,			/* 【CPU間通信コマンド】プログラム転送サム値要求 */
-	CPU_COM_CMD_PRG_DOWNLORD_RESLUT_REQ,		/* 【CPU間通信コマンド】プログラム転送結果要求	*/
-	CPU_COM_CMD_FILE_REQ,						/* 【CPU間通信コマンド】ファイル転送開始		*/
-	CPU_COM_CMD_FILE,							/* 【CPU間通信コマンド】ファイル転送			*/
-	CPU_COM_CMD_FILE_BLOCK_RESULT_REQ,			/* 【CPU間通信コマンド】ブロック転送結果要求	*/
-	CPU_COM_CMD_FILE_RESLUT_REQ,				/* 【CPU間通信コマンド】ファイル転送結果要求	*/
+	CPU_COM_CMD_PRG_DOWNLORD_READY,				/* 【CPU間通信コマンド】プログラム転送準備		*/
+	CPU_COM_CMD_PRG_DOWNLORD_START,				/* 【CPU間通信コマンド】プログラム転送開始		*/
+	CPU_COM_CMD_PRG_DOWNLORD_ERASE,				/* 【CPU間通信コマンド】プログラム転送消去		*/
+	CPU_COM_CMD_PRG_DOWNLORD_DATA,				/* 【CPU間通信コマンド】プログラム転送データ	*/
+	CPU_COM_CMD_PRG_DOWNLORD_RESLUT,			/* 【CPU間通信コマンド】プログラム転送結果		*/
+	CPU_COM_CMD_PRG_DOWNLORD_CHECK,				/* 【CPU間通信コマンド】プログラム転送確認		*/
+//	CPU_COM_CMD_FILE_REQ,						/* 【CPU間通信コマンド】ファイル転送開始		*/
+//	CPU_COM_CMD_FILE,							/* 【CPU間通信コマンド】ファイル転送			*/
+//	CPU_COM_CMD_FILE_BLOCK_RESULT_REQ,			/* 【CPU間通信コマンド】ブロック転送結果要求	*/
+//	CPU_COM_CMD_FILE_RESLUT_REQ,				/* 【CPU間通信コマンド】ファイル転送結果要求	*/
 	CPU_COM_CMD_MAX								/* 【CPU間通信コマンド】最大値					*/
 }CPU_COM_CMD_ID;
 

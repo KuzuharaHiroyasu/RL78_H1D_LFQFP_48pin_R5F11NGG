@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_iica.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for IICA module.
-* Creation Date: 2017/12/22
+* Creation Date: 2018/05/15
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -72,25 +72,16 @@ void R_IICA0_Create(void)
     /* Set SCLA0, SDAA0 pin */
     P6 &= 0xFCU;
     PM6 |= 0x03U;
-#if 1
-	// çÇë¨400Kbps
     SMC0 = 1U;      /* operates in fast mode */
-    IICWL0 = _10_IICA0_LOW_WIDTH;
-    IICWH0 = _0F_IICA0_HIGH_WIDTH;
-#else
-	// ïWèÄ100Kbps
-    SMC0 = 0U;      /* operates in standard mode */
-    IICWL0 = _39_IICA0_LOW_WIDTH;
-    IICWH0 = _40_IICA0_HIGH_WIDTH;
-#endif
+    IICWL0 = _0F_IICA_LOW_WIDTH;
+    IICWH0 = _0F_IICA_HIGH_WIDTH;
     DFC0 = 0U;      /* digital filter off */
-    IICCTL01 = _00_IICA_FCLK_SELECTED;
+    IICCTL01 |= _00_IICA_FCLK_SELECTED;
     SVA0 = _10_IICA0_MASTERADDRESS;
-    STCEN0 = 1U;    /* enable generation of a start condition without detecting a stop
-condition */
+    STCEN0 = 1U;    /* enable generation of a start condition without detecting a stop condition */
     IICRSV0 = 1U;   /* disable communication reservation */
     SPIE0 = 0U;     /* disable */
-    WTIM0 = 1U;     /* interrupt request is generated at the ninth clockÅfs falling edge */
+    WTIM0 = 1U;     /* interrupt request is generated at the ninth clock's falling edge */
     ACKE0 = 1U;     /* enable acknowledgment */
     IICAMK0 = 0U;   /* enable INTIICA0 interrupt */
     IICE0 = 1U;     /* enable operation */
@@ -149,11 +140,10 @@ MD_STATUS R_IICA0_Master_Send(uint8_t adr, uint8_t * const tx_buf, uint16_t tx_n
     {
         STT0 = 1U;      /* generate a start condition */
         IICAMK0 = 0U;   /* enable INTIICA0 interrupt */
-        
-        /* Wait */
+              
         while (wait--)
         {
-            ;
+            /* Wait */;
         }
         
         if (0U == STD0)
@@ -201,11 +191,10 @@ MD_STATUS R_IICA0_Master_Receive(uint8_t adr, uint8_t * const rx_buf, uint16_t r
     {
         STT0 = 1U;      /* generate a start condition */
         IICAMK0 = 0U;   /* enable INTIICA0 interrupt */
-        
-        /* Wait */
+              
         while (wait--)
         {
-            ;
+            /* Wait */;
         }
         
         if (0U == STD0)

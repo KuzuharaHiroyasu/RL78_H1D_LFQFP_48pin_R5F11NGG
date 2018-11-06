@@ -40,9 +40,9 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_intc1_interrupt(vect=INTP1)
-#pragma interrupt r_intc3_interrupt(vect=INTP3)
-#pragma interrupt r_intc5_interrupt(vect=INTP5)
+//#pragma interrupt r_intc1_interrupt(vect=INTP1)
+//#pragma interrupt r_intc3_interrupt(vect=INTP3)
+//#pragma interrupt r_intc5_interrupt(vect=INTP5)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -58,7 +58,7 @@ Global variables and functions
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-static void __near r_intc1_interrupt(void)
+/* static */ void __near r_intc1_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
@@ -70,7 +70,7 @@ static void __near r_intc1_interrupt(void)
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-static void __near r_intc3_interrupt(void)
+/* static */ void __near r_intc3_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
@@ -82,7 +82,7 @@ static void __near r_intc3_interrupt(void)
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-static void __near r_intc5_interrupt(void)
+/* static */ void __near r_intc5_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */

@@ -18,43 +18,58 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_it.h
+* File Name    : r_cg_wdt.c
 * Version      :  
 * Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for IT module.
-* Creation Date: 2018/04/10
-***********************************************************************************************************************/
-#ifndef IT_H
-#define IT_H
-
-/***********************************************************************************************************************
-Macro definitions (Register bit)
-***********************************************************************************************************************/
-/*
-    12-bit Interval Timer Control Register (ITMC) 
-*/
-/* 12-bit Interval timer operation control (RINTE) */
-#define _0000_IT_OPERATION_DISABLE        (0x0000U) /* count operation stopped */
-#define _8000_IT_OPERATION_ENABLE         (0x8000U) /* count operation started */
-
-
-/***********************************************************************************************************************
-Macro definitions
-***********************************************************************************************************************/
-#define _0665_ITCMP_VALUE                 (0x0665U) /* specification of the 12-bit interval timer compare value */
-
-/***********************************************************************************************************************
-Typedef definitions
+* Description  : This file implements device driver for WDT module.
+* Creation Date: 2018/05/14
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-Global functions
+Includes
 ***********************************************************************************************************************/
-void R_IT_Create(void);
-void R_IT_Start(void);
-void R_IT_Stop(void);
-void __near r_it_interrupt(void);
-/* Start user code for function. Do not edit comment generated here */
+#include "r_cg_macrodriver.h"
+#include "r_cg_wdt.h"
+/* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
-#endif
+#include "r_cg_userdefine.h"
+
+/***********************************************************************************************************************
+Pragma directive
+***********************************************************************************************************************/
+/* Start user code for pragma. Do not edit comment generated here */
+/* End user code. Do not edit comment generated here */
+
+/***********************************************************************************************************************
+Global variables and functions
+***********************************************************************************************************************/
+/* Start user code for global. Do not edit comment generated here */
+/* End user code. Do not edit comment generated here */
+
+/***********************************************************************************************************************
+* Function Name: R_WDT_Create
+* Description  : This function initializes the watchdogtimer.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_WDT_Create(void)
+{
+    WDTIMK = 1U;    /* disable INTWDTI interrupt */
+    WDTIIF = 0U;    /* clear INTWDTI interrupt flag */
+    /* Set INTWDTI mask flag */
+    WDTIMK = 0U;    /* enable INTWDTI interrupt */
+}
+/***********************************************************************************************************************
+* Function Name: R_WDT_Restart
+* Description  : This function restarts the watchdog timer.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_WDT_Restart(void)
+{
+    WDTE = 0xACU;     /* restart watchdog timer */
+}
+
+/* Start user code for adding. Do not edit comment generated here */
+/* End user code. Do not edit comment generated here */

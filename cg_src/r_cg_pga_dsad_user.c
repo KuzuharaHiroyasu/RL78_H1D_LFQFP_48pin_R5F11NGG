@@ -39,7 +39,7 @@ Includes
 Pragma directive
 ***********************************************************************************************************************/
 
-#pragma interrupt r_pga_dsad_conversion_interrupt(vect=INTDSAD)
+//#pragma interrupt r_pga_dsad_conversion_interrupt(vect=INTDSAD)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -56,7 +56,7 @@ Global variables and functions
 * Return Value : None
 ***********************************************************************************************************************/
 static unsigned short pga_finish = 0;
-static void __near r_pga_dsad_conversion_interrupt(void)
+/* static */ void __near r_pga_dsad_conversion_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */

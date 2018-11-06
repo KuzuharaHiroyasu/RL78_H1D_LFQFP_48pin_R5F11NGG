@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_iica_user.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for IICA module.
-* Creation Date: 2017/12/22
+* Creation Date: 2018/05/15
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -38,7 +38,7 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_iica0_interrupt(vect=INTIICA0)
+//#pragma interrupt r_iica0_interrupt(vect=INTIICA0)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -64,9 +64,9 @@ extern void err_info( int id );
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-static void __near r_iica0_interrupt(void)
+/* static */void __near r_iica0_interrupt(void)
 {
-    if ((IICS0 & _80_IICA_MASTER_DEVICE) == 0x80U)
+    if (0x80U == (IICS0 & _80_IICA_MASTER_DEVICE))
     {
         iica0_masterhandler();
     }
@@ -87,7 +87,7 @@ static void iica0_masterhandler(void)
     /* Control for sended address */
     else
     {
-        if ((g_iica0_master_status_flag & _80_IICA_ADDRESS_COMPLETE) == 0U)
+        if (0U == (g_iica0_master_status_flag & _80_IICA_ADDRESS_COMPLETE))
         {
             if (1U == ACKD0)
             {
@@ -95,7 +95,7 @@ static void iica0_masterhandler(void)
 
                 if (1U == TRC0)
                 {
-                    WTIM0 = 1U;     /* interrupt request is generated at the ninth clockÅfs falling edge */
+                    WTIM0 = 1U;     /* interrupt request is generated at the ninth clock's falling edge */
 
                     if (g_iica0_tx_cnt > 0U)
                     {
@@ -111,7 +111,7 @@ static void iica0_masterhandler(void)
                 else
                 {
                     ACKE0 = 1U;     /* enable acknowledgment */
-                    WTIM0 = 0U;     /* interrupt request is generated at the eighth clockÅfs falling edge */
+                    WTIM0 = 0U;     /* interrupt request is generated at the eighth clock's falling edge */
                     WREL0 = 1U;     /* cancel wait */
                 }
             }
@@ -156,7 +156,7 @@ static void iica0_masterhandler(void)
                     {
                         ACKE0 = 0U;     /* disable acknowledgment */
                         WREL0 = 1U;     /* cancel wait */
-                        WTIM0 = 1U;     /* interrupt request is generated at the ninth clockÅfs falling edge */
+                        WTIM0 = 1U;     /* interrupt request is generated at the ninth clock's falling edge */
                     }
                     else
                     {

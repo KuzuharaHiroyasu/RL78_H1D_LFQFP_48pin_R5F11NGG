@@ -167,6 +167,9 @@
 #define		FUNC_DEBUG_LOG							ON					/* PCへのログ通信機能 *//* リリース時はOFFする事 */
 #define		FUNC_DEBUG_CPU_COM						OFF					/* CPU間通信をログ通信でデバッグする機能 *//* リリース時はOFFする事 */
 																		/* 使用する時はログ通信もOFFする事 */
+#define		FUNC_DEBUG_RAW_VAL_OUT					ON					/* 生データをPC出力 ※一部ハードではONすると動かない *//* リリース時はOFFする事 */
+
+
 
 #define		FUNC_VALID_AMP							ON					/* アンプ関連 ※一部ハードではONすると動かない *//* リリース時はONする事 */
 
@@ -311,6 +314,8 @@ typedef struct{
 
 #endif
 
+#define		wdt_refresh()	{		R_WDT_Restart();}
+
 /************************************************************/
 /* 外部参照宣言												*/
 /************************************************************/
@@ -322,6 +327,9 @@ UB	uwhex2bin(UW *bin, UB *pstr);
 UB bcdbin( UB bin );
 INT bcd2bin( UB *bin, const UB *src_bcd );
 void dummy( void );
+
+extern UW calc_sum_32( UB *p_in, UW len );
+extern void calc_sum_32_any_times(UW *p_sum, UB *p_in, UW len );
 UH crc16( UB* p_in, int len );
 
 #endif

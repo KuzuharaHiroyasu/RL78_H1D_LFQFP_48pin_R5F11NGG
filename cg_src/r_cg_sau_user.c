@@ -45,10 +45,10 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt drv_uart0_snd_int(vect=INTST0)
-#pragma interrupt drv_uart0_rcv_int(vect=INTSR0)
-#pragma interrupt drv_uart1_snd_int(vect=INTST1)
-#pragma interrupt drv_uart1_rcv_int(vect=INTSR1)
+//#pragma interrupt drv_uart0_snd_int(vect=INTST0)
+//#pragma interrupt drv_uart0_rcv_int(vect=INTSR0)
+//#pragma interrupt drv_uart1_snd_int(vect=INTST1)
+//#pragma interrupt drv_uart1_rcv_int(vect=INTSR1)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 

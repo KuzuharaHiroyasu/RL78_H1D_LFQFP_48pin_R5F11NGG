@@ -39,12 +39,22 @@
         <Path>cg_src\r_cg_pclbuz_user.c</Path>
         <Path>cg_src\r_cg_amp.c</Path>
         <Path>cg_src\r_cg_amp_user.c</Path>
+        <Path>cg_src\r_cg_wdt.c</Path>
+        <Path>cg_src\r_cg_wdt_user.c</Path>
       </Category>
       <Path>user_src\com_srv.c</Path>
       <Path>user_src\cpu_com.c</Path>
       <Path>user_src\main.c</Path>
       <Path>user_src\sys.c</Path>
       <Path>user_src\time.c</Path>
+      <Path>user_src\download.c</Path>
+      <Path>user_src\drv_from.c</Path>
+      <Path>user_src\fsl_ram.c</Path>
+      <Path>user_src\rom_id_code.c</Path>
+      <Path>user_src\rom_vect_func.c</Path>
+      <Path>user_src\vect_func.c</Path>
+      <Path>user_src\fsl.lib</Path>
+      <Path>user_src\boot_vect_func.c</Path>
     </Files>
     <Device Series="RL78">R5F11NGG</Device>
     <BuildOptions Name="CC-RL" Version="V1.06.00">
@@ -85,6 +95,16 @@
           <Path>DefaultBuild\r_cg_pclbuz_user.obj</Path>
           <Path>DefaultBuild\r_cg_amp.obj</Path>
           <Path>DefaultBuild\r_cg_amp_user.obj</Path>
+          <Path>DefaultBuild\r_cg_wdt.obj</Path>
+          <Path>DefaultBuild\r_cg_wdt_user.obj</Path>
+          <Path>DefaultBuild\download.obj</Path>
+          <Path>DefaultBuild\drv_from.obj</Path>
+          <Path>DefaultBuild\fsl_ram.obj</Path>
+          <Path>DefaultBuild\rom_id_code.obj</Path>
+          <Path>DefaultBuild\rom_vect_func.obj</Path>
+          <Path>DefaultBuild\vect_func.obj</Path>
+          <Path>DefaultBuild\boot_vect_func.obj</Path>
+          <Path>user_src\fsl.lib</Path>
         </LinkOrder>
         <CommonOptions>
           <IncludePathForC>cg_src</IncludePathForC>
@@ -124,9 +144,10 @@
           <Option>-LIBrary=%MicomToolPath%\CC-RL\V1.06.00\lib\rl78em4r.lib</Option>
           <Option>-OCDBG=04</Option>
           <Option>-DEBUG_MONITOR</Option>
-          <Option>-USER_OPT_BYTE=EFFFE1</Option>
+          <Option>-USER_OPT_BYTE=7DFFE1</Option>
           <Option>-LISt=%BuildModeName%\%ProjectName%.map</Option>
           <Option>-AUTO_SECTION_LAYOUT</Option>
+          <Option>-STARt=.text,.constf,.data,.sdata,FSL_FCD,FSL_RCD,FSL_BCD/07000,VCT_TBL_f/1FAF0,TBL_ID_CODE_f/1FBF0,VECT_RAM_n/FFD20</Option>
           <Option>-ROm=.data=.dataR</Option>
           <Option>-ROm=.sdata=.sdataR</Option>
           <Option>-NOMessage</Option>
@@ -152,11 +173,15 @@
     <Extension_CodePart2>
       <CodeGeneratorData>﻿&lt;SerializableData&gt;
   &lt;SerializableData name="39a9d609-9774-41fe-9e4e-5c50dfa1451e"&gt;
+    &lt;DataElement key="pior35_macroname" value=""&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior14_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior34_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior16_macroname" value=""&gt;
+    &lt;/DataElement&gt;
+    &lt;DataElement key="pior25_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior22_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -176,13 +201,9 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior30_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior33" value="0"&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior01_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior01" value="0"&gt;
-    &lt;/DataElement&gt;
-    &lt;DataElement key="pior11_macroname" value=""&gt;
+    &lt;DataElement key="pior35" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior04_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -200,7 +221,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior31" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior24_macroname" value=""&gt;
+    &lt;DataElement key="pior01" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior11" value="0"&gt;
     &lt;/DataElement&gt;
@@ -218,13 +239,13 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior14" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior02_macroname" value=""&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior12_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior20_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior32_macroname" value=""&gt;
+    &lt;/DataElement&gt;
+    &lt;DataElement key="pior03" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior22" value="0"&gt;
     &lt;/DataElement&gt;
@@ -234,11 +255,11 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior23" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior35_macroname" value=""&gt;
+    &lt;DataElement key="pior33" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior03" value="0"&gt;
+    &lt;DataElement key="pior27_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior25_macroname" value=""&gt;
+    &lt;DataElement key="pior24_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior26" value="0"&gt;
     &lt;/DataElement&gt;
@@ -248,7 +269,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior25" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior35" value="0"&gt;
+    &lt;DataElement key="pior11_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior05" value="0"&gt;
     &lt;/DataElement&gt;
@@ -258,7 +279,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior33_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior27_macroname" value=""&gt;
+    &lt;DataElement key="pior02_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior05_macroname" value=""&gt;
     &lt;/DataElement&gt;

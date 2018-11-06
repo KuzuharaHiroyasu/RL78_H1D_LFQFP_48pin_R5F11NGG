@@ -382,7 +382,10 @@ void drv_uart1_data_init( void );
 void drv_uart1_send_start( void );
 UB drv_uart0_get_send( void );
 void test_uart_0_send( void );
-
+void __near drv_uart0_snd_int(void);
+void __near drv_uart0_rcv_int(void);
+void __near drv_uart1_snd_int(void);
+void __near drv_uart1_rcv_int(void);
 
 
 #endif

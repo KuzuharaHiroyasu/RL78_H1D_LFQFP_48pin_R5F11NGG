@@ -33,15 +33,19 @@
 #include "r_cg_iica.h"
 #include "r_cg_rtc.h"
 #include "r_cg_adc.h"
+#include "r_cg_wdt.h"
+#include "r_cg_tau.h"
 
 /* ミドル */
 #include "com_srv.h"
 #include "cpu_com.h"
 #include "time.h"
 
+#include "drv_from.h"
+#include "vect_func.h"
 
 /* アプリケーション */
 #include "main.h"
-
+#include "common_memory_def.h"
 
 #endif /*_HEADER_H */

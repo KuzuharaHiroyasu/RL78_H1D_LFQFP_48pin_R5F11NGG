@@ -18,31 +18,23 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_it.h
+* File Name    : r_cg_wdt.h
 * Version      :  
 * Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for IT module.
-* Creation Date: 2018/04/10
+* Description  : This file implements device driver for WDT module.
+* Creation Date: 2018/05/14
 ***********************************************************************************************************************/
-#ifndef IT_H
-#define IT_H
+#ifndef WDT_H
+#define WDT_H
 
 /***********************************************************************************************************************
 Macro definitions (Register bit)
 ***********************************************************************************************************************/
-/*
-    12-bit Interval Timer Control Register (ITMC) 
-*/
-/* 12-bit Interval timer operation control (RINTE) */
-#define _0000_IT_OPERATION_DISABLE        (0x0000U) /* count operation stopped */
-#define _8000_IT_OPERATION_ENABLE         (0x8000U) /* count operation started */
-
 
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-#define _0665_ITCMP_VALUE                 (0x0665U) /* specification of the 12-bit interval timer compare value */
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -51,10 +43,8 @@ Typedef definitions
 /***********************************************************************************************************************
 Global functions
 ***********************************************************************************************************************/
-void R_IT_Create(void);
-void R_IT_Start(void);
-void R_IT_Stop(void);
-void __near r_it_interrupt(void);
+void R_WDT_Create(void);
+void R_WDT_Restart(void);
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #endif

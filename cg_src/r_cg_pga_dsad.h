@@ -207,6 +207,8 @@ void R_PGA_DSAD_Start(void);
 void R_PGA_DSAD_Stop(void);
 void R_PGA_DSAD_Get_Result(uint16_t * const bufferH, uint16_t * const bufferL);
 void R_PGA_DSAD_Get_AverageResult(uint16_t * const bufferH, uint16_t * const bufferL);
+void __near r_pga_dsad_conversion_interrupt(void);
+
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #endif

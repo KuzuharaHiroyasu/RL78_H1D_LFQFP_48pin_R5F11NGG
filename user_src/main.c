@@ -27,16 +27,20 @@ void err_info( int id );
 void main_acl_init(void);
 void main_acl_read(void);
 void main_acl_write(void);
+STATIC H main_ad24_to_h( UH bufferH, UH bufferL );
 static void stop_in( void );
 static void halt_in( void );
 STATIC void main_cpu_com_snd_sensor_data( void );
 STATIC void main_cpu_com_proc(void);
 STATIC void main_cpu_com_rcv_sts( void );
+STATIC void main_cpu_com_rcv_date_set( void );
 STATIC void main_cpu_com_rcv_pc_log( void );
 STATIC void main_cpu_com_rcv_mode_chg( void );
 void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data );
 void ds_set_cpu_com_input( DS_CPU_COM_INPUT *p_data );
 STATIC void main_cyc(void);
+STATIC void main_cpu_com_rcv_prg_hd_ready(void);
+STATIC void main_cpu_com_rcv_prg_hd_check(void);
 
 /************************************************************/
 /* 変数定義													*/
@@ -76,15 +80,13 @@ STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
 	{	0xA0,			NULL,							OFF	},	/* 【CPU間通信コマンド】センサーデータ更新			*/
 	{	0xB0,			main_cpu_com_rcv_mode_chg,		OFF	},	/* 【CPU間通信コマンド】状態変更(G1D)				*/
 	{	0xF0,			main_cpu_com_rcv_pc_log,		OFF	},	/* 【CPU間通信コマンド】PCログ送信(内部コマンド)	*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送開始		*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送データ要求 */
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送(受信)	*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送サム値要求 */
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送結果要求	*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】ファイル転送開始		*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】ファイル転送			*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】ブロック転送結果要求	*/
-	{	0xFF,			NULL,							OFF	},	/* 【CPU間通信コマンド】ファイル転送結果要求	*/
+	{	0xB1,			main_cpu_com_rcv_date_set,		OFF	},	/* 【CPU間通信コマンド】日時設定					*/
+	{	0xD5,			main_cpu_com_rcv_prg_hd_ready,	OFF	},	/* 【CPU間通信コマンド】プログラム転送準備			*/
+	{	0xD2,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送開始			*/
+	{	0xD4,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送消去			*/
+	{	0xD0,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送データ		*/
+	{	0xD1,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送結果			*/
+	{	0xD3,			main_cpu_com_rcv_prg_hd_check,							OFF	},	/* 【CPU間通信コマンド】プログラム転送確認			*/
 };
 
 extern void test_uart_0_send( void );
@@ -117,6 +119,8 @@ void user_main(void)
 	rtc_counter_value_t rtc;
 //	char com_data[10];
     
+	vect_set_tbl_apl();	
+
     main_init();
     /* Start user code. Do not edit comment generated here */
 	
@@ -191,6 +195,9 @@ void user_main(void)
 			// ありえない
 			
 		}
+		if( OFF == s_unit.non_wdt_refresh ){
+			wdt_refresh();		//WDTリフレッシュ
+		}
     }
     /* End user code. Do not edit comment generated here */
 }
@@ -199,10 +206,16 @@ void user_main(void)
 #ifdef	IBIKI_COUNT
 UH dbg_ibiki_cnt = 0;
 #endif
+#if FUNC_DEBUG_RAW_VAL_OUT == ON
+UB dbg_send_cnt;
+char dbg_tx_data[50] = {0};
+int dbg_len;
+#endif
+
 static void user_main_mode_sensor(void)
 {
 	UW time;
-	UW work_uw = 0;
+	
 	
 //	MEAS meas;
 	
@@ -241,18 +254,10 @@ static void user_main_mode_sensor(void)
 		drv_o_port_sekishoku( ON );
 
 		pga_do();
-		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);
+//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		// RD8001暫定：エンディアンがマニュアルを読んでも確証を持てない
-		work_uw = bufferH_dbg;
-		work_uw <<= 16;
-		work_uw += bufferL_dbg;
-		
-		s_unit.meas.info.dat.sekishoku_val = (( work_uw >> 16 ) & 0x0000FFFF );
-//		s_unit.meas.info.dat.sekishoku_val = work_uw;
-//		s_unit.meas.info.dat.sekishoku_val >>= 8;
+		s_unit.meas.info.dat.sekishoku_val = main_ad24_to_h( bufferH_dbg, bufferL_dbg );
 		wait_ms( 2 );
-
 
 		// 赤外光ON
 		drv_o_port_sekigai( ON );
@@ -261,15 +266,9 @@ static void user_main_mode_sensor(void)
 		R_DAC1_Set_ConversionValue( 0x0500 );
 		wait_ms( 2 );
 		pga_do();
-		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);
+//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		work_uw = bufferH_dbg;
-		work_uw <<= 16;
-		work_uw += bufferL_dbg;
-		
-		s_unit.meas.info.dat.sekigaival = (( work_uw >> 16 ) & 0x0000FFFF );
-//		s_unit.meas.info.dat.sekigaival = work_uw;
-//		s_unit.meas.info.dat.sekigaival >>= 8;
+		s_unit.meas.info.dat.sekigaival = main_ad24_to_h( bufferH_dbg, bufferL_dbg );
 		
 		R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
 		R_AMP2_Stop();		// □AMP2  OFF
@@ -298,7 +297,26 @@ static void user_main_mode_sensor(void)
 		
 		// 加速度センサ取得
 		// RD8001暫定：30msかかるが50ms毎に取得
+#if FUNC_DEBUG_RAW_VAL_OUT == OFF
 		main_acl_read();
+#else
+		//生値デバッグ出力　※加速度は無効
+		if( dbg_send_cnt++ >= 0 ){	
+			dbg_send_cnt = 0;
+//			printf( "kokyu%d", s_unit.meas.info.dat.kokyu_val );		//コンソールデバッグ用　※現状コンソールの使い方が不明
+			{
+				
+				
+				
+				dbg_len = sprintf((char*)dbg_tx_data, "%d,%d,%d,%d,0,0,0\r\n",		 s_unit.meas.info.dat.sekishoku_val
+																					,s_unit.meas.info.dat.sekigaival
+																					,s_unit.meas.info.dat.kokyu_val
+																					,s_unit.meas.info.dat.ibiki_val);
+				com_srv_send( &dbg_tx_data[0], dbg_len );
+			}
+		}
+		wait_ms( 5 );
+#endif
 		
 #endif
 
@@ -317,6 +335,55 @@ static void user_main_mode_sensor(void)
 	}
 
 }
+
+/************************************************************************/
+/* 関数     : main_ad24_to_h											*/
+/* 関数名   : AD24bit2byte(符号あり)変換								*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.03.02 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* AD24bit2byte(符号あり)変換											*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+STATIC H main_ad24_to_h( UH bufferH, UH bufferL )
+{
+	H value = 0;
+	UW work_uw = 0;
+	W work_w = 0;
+	UB m_flg = 0;
+	
+	// bufferH ※上位8bit,中位8bit
+	// bufferL ※下位8bit,変換結果8bit
+	work_uw  = bufferH;
+	work_uw <<= 16;
+	work_uw += bufferL;
+	work_uw >>= 8;
+	work_uw &= 0x00FFFFFF;		// 24bitデータ化
+	// 負数処理
+	if( work_uw & 0x00800000 ){
+		work_w = work_uw;
+		work_w *= -1;			// プラスに変換
+		m_flg = 1;
+	}else{
+		work_w = work_uw;
+	}
+	// 24bitのデータのうち上位4bitと下位4bitを捨てる
+	work_uw = work_w;
+	work_uw >>= 4;
+	work_uw &= 0x007FFF;
+	if( 1 == m_flg ){
+		value = (H)work_uw * (H)-1;
+	}else{
+		value = (H)work_uw;
+	}
+		
+	return value;
+}
+
 /************************************************************************/
 /* 関数     : main_init													*/
 /* 関数名   : 初期化													*/
@@ -722,6 +789,7 @@ void main_acl_write(void)
 }
 
 
+
 static void stop_in( void )
 {
 	//RD8001暫定：突入復帰処理に関して要検討
@@ -852,33 +920,71 @@ STATIC void main_cpu_com_proc(void)
 
 STATIC void main_cpu_com_rcv_sts( void )
 {
+	rtc_counter_value_t rtc_val;
+	if( MD_OK != R_RTC_Get_CounterValue( &rtc_val ) ){
+		err_info( 13 );
+	}
+	
+
 	if( SYSTEM_MODE_NON == s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
-		s_ds.cpu_com.order.snd_data[1] = s_unit.dench_sts;
-		s_ds.cpu_com.order.snd_data[2] = 0;
-		s_ds.cpu_com.order.snd_data[3] = 0;
+		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
+		s_ds.cpu_com.order.snd_data[2] = s_unit.info_data;
+		s_ds.cpu_com.order.snd_data[3] = rtc_val.year;
+		s_ds.cpu_com.order.snd_data[4] = rtc_val.month;
+		s_ds.cpu_com.order.snd_data[5] = rtc_val.week;
+		s_ds.cpu_com.order.snd_data[6] = rtc_val.day;
+		s_ds.cpu_com.order.snd_data[7] = rtc_val.hour;
+		s_ds.cpu_com.order.snd_data[8] = rtc_val.min;
+		s_ds.cpu_com.order.snd_data[9] = rtc_val.sec;
+
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
 		s_unit.system_mode_chg_req = SYSTEM_MODE_HD_CHG_NON;
 	}else if( SYSTEM_MODE_SENSOR == s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
-		s_ds.cpu_com.order.snd_data[1] = s_unit.dench_sts;
-		s_ds.cpu_com.order.snd_data[2] = 0;
-		s_ds.cpu_com.order.snd_data[3] = 0;
+		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
+		s_ds.cpu_com.order.snd_data[2] = s_unit.info_data;
+		s_ds.cpu_com.order.snd_data[3] = rtc_val.year;
+		s_ds.cpu_com.order.snd_data[4] = rtc_val.month;
+		s_ds.cpu_com.order.snd_data[5] = rtc_val.week;
+		s_ds.cpu_com.order.snd_data[6] = rtc_val.day;
+		s_ds.cpu_com.order.snd_data[7] = rtc_val.hour;
+		s_ds.cpu_com.order.snd_data[8] = rtc_val.min;
+		s_ds.cpu_com.order.snd_data[9] = rtc_val.sec;
+		
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
 		s_unit.system_mode_chg_req = SYSTEM_MODE_HD_CHG_NON;
 	}else{
 		// 何もしない
 		
-		
-		
 	}
-
-
 }
+
+STATIC void main_cpu_com_rcv_date_set( void )
+{
+	rtc_counter_value_t rtc_val;
+	
+	rtc_val.year = s_ds.cpu_com.input.rcv_data[0];
+	rtc_val.month = s_ds.cpu_com.input.rcv_data[1];
+	rtc_val.week = s_ds.cpu_com.input.rcv_data[2];
+	rtc_val.day = s_ds.cpu_com.input.rcv_data[3];
+	rtc_val.hour = s_ds.cpu_com.input.rcv_data[4];
+	rtc_val.min = s_ds.cpu_com.input.rcv_data[5];
+	rtc_val.sec = s_ds.cpu_com.input.rcv_data[6];
+
+	if( MD_OK != R_RTC_Set_CounterValue( rtc_val ) ){
+		err_info( 12 );
+	}
+	
+	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_DATE_SET;
+	s_ds.cpu_com.order.snd_data[0] = 0;
+	s_ds.cpu_com.order.data_size = 1;
+}
+
 
 STATIC void main_cpu_com_rcv_pc_log( void )
 {
@@ -934,6 +1040,31 @@ STATIC void main_cpu_com_rcv_mode_chg( void )
 	
 }
 
+/* 【CPU間通信コマンド】プログラム転送開始準備		*/
+STATIC void main_cpu_com_rcv_prg_hd_ready(void)
+{
+	// 識別コード消去
+	download_change_boot();
+
+	// RD8001暫定：ブートへの切替処理(WDTによる事故リセット)
+	s_unit.non_wdt_refresh = ON;
+	
+	// 応答
+	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_PRG_DOWNLORD_READY;
+	s_ds.cpu_com.order.snd_data[0] = 0;
+	s_ds.cpu_com.order.data_size = 1;
+}
+
+/* 【CPU間通信コマンド】プログラム転送確認		*/
+STATIC void main_cpu_com_rcv_prg_hd_check(void)
+{
+	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_PRG_DOWNLORD_CHECK;
+	s_ds.cpu_com.order.snd_data[0] = version_product_tbl[0];
+	s_ds.cpu_com.order.snd_data[1] = version_product_tbl[1];
+	s_ds.cpu_com.order.snd_data[2] = version_product_tbl[2];
+	s_ds.cpu_com.order.snd_data[3] = version_product_tbl[3];
+	s_ds.cpu_com.order.data_size = 4;
+}
 
 /************************************************************************/
 /* 関数     : ds_get_cpu_com_order										*/

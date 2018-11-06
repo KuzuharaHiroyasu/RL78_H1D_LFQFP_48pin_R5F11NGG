@@ -22,8 +22,8 @@
 #define DENCH_ZANRYO_3_VAL			(UH)( 1023.0 * (1.5 / 3.0 ))		// 1.5V以上
 
 
-#define			HOUR12_CNT_50MS		( 12 * 60 * 60 * (1000 / 50))	//12時間のカウント値[50ms]
-//#define			HOUR12_CNT_50MS			( 1 * 10 * 60 * (1000 / 50))	//12時間のカウント値[50ms]		短縮版10分
+#define			HOUR12_CNT_50MS		(UW)( 12L * 60L * 60L * (1000L / 50L))	//12時間のカウント値[50ms]
+//#define			HOUR12_CNT_50MS			( 1L * 10L * 60L * (1000L / 50L))	//12時間のカウント値[50ms]		短縮版10分
 
 
 
@@ -65,19 +65,17 @@ typedef struct{
 
 typedef struct{
 	UB main_cyc_req;		/* メイン周期要求(20ms) */
-	UB system_mode;			/* メイン周期要求(20ms) */
-	
+
+	UB system_mode;			/* システムモード */
 	UB system_mode_chg_req;	/* システムモード変更要求 */
+	UB info_data;			/* H1D情報 */
 	
 	MEAS meas;				/* 計測値(50ms) */
-//	UH dench_val;
 	UH dench_sts;			/* 電池残量状態 */
 	
 	UB hour;
 	UB min;
 	UB sec;
-	
-	
 	
 	UB sensing_start_trig;		// センシング開始トリガ
 	UB sensing_end_flg;			// センシング終了
@@ -86,6 +84,8 @@ typedef struct{
 	
 	UB pow_sw_last;				// 電源ボタン状態(前回)
 	
+	
+	UB non_wdt_refresh;			// WDTリフレッシュなし
 	
 	UW err_cnt;			//異常回数(デバッグ用途)
 }T_UNIT;

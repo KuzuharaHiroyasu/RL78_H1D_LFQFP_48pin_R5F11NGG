@@ -34,10 +34,12 @@ STATIC DS_CPU_COM_ORDER *s_p_cpu_com_ds_order;				/* データ管理部のポインタ アプ
 STATIC UB s_cpu_com_snd_cmd;								/* 送信コマンド */
 STATIC UB s_cpu_com_snd_data[CPU_COM_MSG_SIZE_MAX];			/* 送信メッセージ */
 STATIC UH s_cpu_com_snd_size;								/* 送信メッセージ長 */
+#if 0		// スレーブでは不要
 STATIC UB s_cpu_com_snd_type;								/* 送信コマンドタイプ */
 STATIC UB s_cpu_com_snd_retry_cnt;							/* 送信リトライ回数 */
 STATIC UW s_cpu_com_snd_timeout;							/* リトライタイムアウト時間 *10ms */
 STATIC UB s_cpu_com_snd_rensou_cnt;							/* 送信連送回数 */
+#endif
 
 STATIC UB s_cpu_com_snd_seq_no;								/* 送信シーケンスNo */
 STATIC UB s_cpu_com_res_seq_no;								/* 受信シーケンスNo */
@@ -65,16 +67,14 @@ STATIC const T_CPU_COM_CMD_INFO s_tbl_cmd_info[CPU_COM_CMD_MAX] = {
 	{	0xA0,	CPU_COM_CMD_TYPE_ONESHOT_SEND,		0,				0,					0	},	/* センサーデータ更新		*/
 	{	0xB0,	CPU_COM_CMD_TYPE_RETRY,				3,				3,					0	},	/* 状態変更(G1D)			*/
 	{	0xF0,	CPU_COM_CMD_TYPE_ONESHOT_RCV,		0,				0,					0	},	/* PCログ送信(内部コマンド)	*/
+	{	0xB1,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* 日時設定					*/
 																								// プログラム更新
-	{	0xC0,	CPU_COM_CMD_TYPE_RETRY,				5,				3,					0	},	/* プログラム転送開始 */
-	{	0xC1,	CPU_COM_CMD_TYPE_RETRY,				5,				3,					0	},	/* プログラム転送データ要求 */
-	{	0xC2,	CPU_COM_CMD_TYPE_ONESHOT_RCV,		5,				3,					0	},	/* プログラム転送(受信)	*/
-	{	0xC3,	CPU_COM_CMD_TYPE_RETRY,				5,				3,					0	},	/* プログラム転送サム値要求 */
-	{	0xCF,	CPU_COM_CMD_TYPE_RETRY,				5,				3,					0	},	/* プログラム転送結果要求 */
-	{	0xD0,	CPU_COM_CMD_TYPE_RETRY,				5,				3,					0	},	/* ファイル転送開始 */
-	{	0xD1,	CPU_COM_CMD_TYPE_RENSOU,			0,				0,					3	},	/* ファイル転送(連送) */
-	{	0xD3,	CPU_COM_CMD_TYPE_RETRY,				5,				10,					0	},	/* ブロック転送結果要求 */
-	{	0xDF,	CPU_COM_CMD_TYPE_RETRY,				5,				10,					0	},	/* ファイル転送結果要求 *///SH側の結果が遅くなる事があった為
+	{	0xD5,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送準備		*/
+	{	0xD2,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送開始		*/
+	{	0xD4,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送消去		*/
+	{	0xD0,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送データ		*/
+	{	0xD1,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送結果		*/
+	{	0xD3,	CPU_COM_CMD_TYPE_RETRY,				3,				5,					0	},	/* プログラム転送確認		*/
 };
 
 
@@ -97,10 +97,12 @@ void cpu_com_init(void)
 	s_cpu_com_snd_cmd = 0x00;
 	memset(s_cpu_com_snd_data, 0x00, sizeof(s_cpu_com_snd_data));
 	s_cpu_com_snd_size = 0;
+#if 0		// スレーブでは不要
 	s_cpu_com_snd_type = 0;
 	s_cpu_com_snd_retry_cnt = 0;
 	s_cpu_com_snd_timeout = 0;
 	s_cpu_com_snd_rensou_cnt = 0;
+#endif
 	s_cpu_com_snd_seq_no = 0;
 	s_cpu_com_res_seq_no = 0;
 	
@@ -395,8 +397,7 @@ STATIC UB cpu_com_analyze_msg_check_data(void)
 	}
 
 	/* シーケンス番号チェック */
-	// RD8001暫定：リトライ番号未使用
-	seq_num = s_cpu_com_rcv_msg.buf[ CPU_COM_CRC_SIZE ];				/* シーケンス番号下位ビット */
+	seq_num = s_cpu_com_rcv_msg.buf[ CPU_COM_MSG_TOP_POS_SEQ ];				/* シーケンス番号下位ビット */
 
 	if( s_cpu_com_res_seq_no == seq_num ){
 		//応答を再送
@@ -467,11 +468,13 @@ STATIC UB cpu_com_make_send_data(void)
 	s_cpu_com_snd_size = 0;
 	
 	/* リトライ回数、タイムアウト時間、連送回数クリア */
+#if 0	// スレーブでは未使用
 	s_cpu_com_snd_type = CPU_COM_CMD_TYPE_ONESHOT_SEND;
 	s_cpu_com_snd_retry_cnt = 0;
 	s_cpu_com_snd_timeout = 0;
 	s_cpu_com_snd_rensou_cnt = 0;
-	
+#endif
+
 	if(( CPU_COM_CMD_NONE == s_p_cpu_com_ds_order->snd_cmd_id ) || ( CPU_COM_CMD_MAX <= s_p_cpu_com_ds_order->snd_cmd_id ) ||
 		( CPU_COM_CMD_TYPE_ONESHOT_RCV == s_tbl_cmd_info[s_p_cpu_com_ds_order->snd_cmd_id].cmd_type )){
 		/* コマンドID異常 */
@@ -544,6 +547,7 @@ STATIC UB cpu_com_make_send_data(void)
 	s_cpu_com_snd_size = cpu_com_dle_extension( &s_cpu_com_snd_data[0], s_cpu_com_snd_size );
 	
 	/* コマンドタイプ、リトライ・連送回数セット */
+#if 0	// スレーブでは未使用
 	s_cpu_com_snd_type = s_tbl_cmd_info[cmd_id].cmd_type;
 	s_cpu_com_snd_retry_cnt = s_tbl_cmd_info[cmd_id].retry_cnt;
 	s_cpu_com_snd_timeout = s_tbl_cmd_info[cmd_id].retry_time;
@@ -551,6 +555,7 @@ STATIC UB cpu_com_make_send_data(void)
 		/* 連送回数は初回を含むため1減算 */
 		s_cpu_com_snd_rensou_cnt = s_tbl_cmd_info[cmd_id].rensou_cnt-1;
 	}
+#endif
 	
 	/* シーケンスNo加算 */
 	s_cpu_com_snd_seq_no++;

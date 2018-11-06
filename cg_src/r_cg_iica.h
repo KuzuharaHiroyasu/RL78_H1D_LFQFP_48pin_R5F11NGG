@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_iica.h
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for IICA module.
-* Creation Date: 2017/12/22
+* Creation Date: 2018/05/15
 ***********************************************************************************************************************/
 #ifndef IICA_H
 #define IICA_H
@@ -47,17 +47,17 @@ Macro definitions (Register bit)
 #define _00_IICA_INTERRUPT_REQUEST_DISABLE            (0x00U) /* disable */
 #define _10_IICA_INTERRUPT_REQUEST_ENABLE             (0x10U) /* enable */
 /* Control of wait and interrupt request generation (WTIMn) */
-#define _00_IICA_INTERRUPT_REQUEST_EIGHTH             (0x00U) /* interrupt request is generated at the eighth clockÅfs falling edge */
-#define _08_IICA_INTERRUPT_REQUEST_NINTH              (0x08U) /* interrupt request is generated at the ninth clockÅfs falling edge */
+#define _00_IICA_INTERRUPT_REQUEST_EIGHTH             (0x00U) /* interrupt request is generated at the eighth clock's falling edge */
+#define _08_IICA_INTERRUPT_REQUEST_NINTH              (0x08U) /* interrupt request is generated at the ninth clock's falling edge */
 /* Acknowledgment control (ACKEn) */
 #define _00_IICA_ACKOWNLEDGMENT_DISABLE               (0x00U) /* disable acknowledgment */
 #define _04_IICA_ACKOWNLEDGMENT_ENABLE                (0x04U) /* enable acknowledgment */
 /* Start condition trigger (STTn) */
-#define _00_IICA_NOTGENERATE_START                    (0x00U) /* do not generate a start condition */
-#define _02_IICA_GENERATE_START                       (0x02U) /* generate a start condition */
+#define _00_IICA_START_GENERATE                       (0x00U) /* do not generate a start condition */
+#define _02_IICA_START_NOTGENERATE                    (0x02U) /* generate a start condition */
 /* Stop condition trigger (SPTn) */
-#define _00_IICA_NOTGENERATE_STOP                     (0x00U) /* stop condition is not generated */
-#define _01_IICA_GENERATE_STOP                        (0x01U) /* stop condition is generated */
+#define _00_IICA_STOP_GENERATE                        (0x00U) /* stop condition is not generated */
+#define _01_IICA_STOP_NOTGENERATE                     (0x01U) /* stop condition is generated */
 
 /*
     IICA status register n (IICSn) 
@@ -66,8 +66,8 @@ Macro definitions (Register bit)
 #define _00_IICA_SLAVE_DEVICE                         (0x00U) /* slave device status or communication standby status */
 #define _80_IICA_MASTER_DEVICE                        (0x80U) /* master device communication status */
 /* Detection of arbitration loss (ALDn) */
-#define _00_IICA_RESULT_WIN                           (0x00U) /* this status means either that there was no arbitration or that the arbitration result was a ÅgwinÅh */
-#define _40_IICA_RESULT_LOSS                          (0x40U) /* this status indicates the arbitration result was a ÅglossÅh. The MSTSn bit is cleared */
+#define _00_IICA_RESULT_WIN                           (0x00U) /* no arbitration or that the arbitration result was a win */
+#define _40_IICA_RESULT_LOSS                          (0x40U) /* arbitration result was a loss. The MSTSn bit is cleared */
 /* Detection of extension code reception (EXCn) */
 #define _00_IICA_NOTRECEIVED_CODE                     (0x00U) /* extension code was not received */
 #define _20_IICA_RECEIVED_CODE                        (0x20U) /* extension code was received */
@@ -97,10 +97,8 @@ Macro definitions (Register bit)
 #define _00_IICA_RESULT_WIN_STATUS                    (0x00U) /* bus release status */
 #define _40_IICA_RESULT_LOSS_STATUS                   (0x40U) /* bus communication status */
 /* Initial start enable trigger (STCENn) */
-#define _00_IICA_UOPN_DETECTION                       (0x00U) /* enable generation of a start condition upon detection of a stop
-                                                                 condition */
-#define _02_IICA_WITHOUT_DETECTION                    (0x02U) /* enable generation of a start condition without detecting a stop
-                                                                 condition */
+#define _00_IICA_UOPN_DETECTION                       (0x00U) /* enable generation of a start condition upon detection of a stop condition */
+#define _02_IICA_WITHOUT_DETECTION                    (0x02U) /* enable generation of a start condition without detecting a stop condition */
 /* Communication reservation function disable bit (IICRSVn) */
 #define _00_IICA_RESERVATION_ENABLE                   (0x00U) /* enable communication reservation */
 #define _01_IICA_RESERVATION_DISABLE                  (0x01U) /* disable communication reservation */
@@ -128,19 +126,15 @@ Macro definitions (Register bit)
 #define _01_IICA_FCLK_2_SELECTED                      (0x01U) /* selects fCLK/2 */
 
 /* IICA used flag */
-#define _80_IICA_ADDRESS_COMPLETE                     (0x80U)
-#define _00_IICA_MASTER_FLAG_CLEAR                    (0x00U)
+#define _80_IICA_ADDRESS_COMPLETE                     (0x80U) /* addresses complete */
+#define _00_IICA_MASTER_FLAG_CLEAR                    (0x00U) /* clear flag master */ 
 
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
 #define _10_IICA0_MASTERADDRESS                       (0x10U) /* set the master address value */
-// çÇë¨400Kbps
-#define _10_IICA0_LOW_WIDTH                           (0x10U) /* set the low-level width (tLOW) of the SCLAn pin signal */
-#define _0F_IICA0_HIGH_WIDTH                          (0x0FU) /* set the high-level width of the SCLAn pin signal */
-// ïWèÄ100Kbps
-#define _39_IICA0_LOW_WIDTH                           (0x39U) /* set the low-level width (tLOW) of the SCLAn pin signal */
-#define _40_IICA0_HIGH_WIDTH                          (0x40U) /* set the high-level width of the SCLAn pin signal */
+#define _0F_IICA_LOW_WIDTH                            (0x0FU) /* set the low-level width (tLOW) of the SCLA0 pin signal */
+#define _0F_IICA_HIGH_WIDTH                           (0x0FU) /* set the high-level width of the SCLA0 pin signal */
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -160,4 +154,5 @@ static void r_iica0_callback_master_receiveend(void);
 static void r_iica0_callback_master_error(MD_STATUS flag);
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
+void __near r_iica0_interrupt(void);
 #endif

@@ -44,6 +44,7 @@ Includes
 #include "r_cg_rtc.h"
 #include "r_cg_pclbuz.h"
 #include "r_cg_tau.h"
+#include "r_cg_wdt.h"
 
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
@@ -88,6 +89,7 @@ void R_Systeminit(void)
     R_IICA0_Create();
     R_RTC_Create();
     R_PCLBUZ0_Create();
+    R_WDT_Create();
     
     IAWCTL = 0x00U;
 }

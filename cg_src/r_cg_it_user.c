@@ -38,7 +38,7 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_it_interrupt(vect=INTIT)
+//#pragma interrupt r_it_interrupt(vect=INTIT)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -57,7 +57,7 @@ Global variables and functions
 extern void set_req_main_cyc(void);
 
 // 10ms割り込み
-static void __near r_it_interrupt(void)
+/* static */void __near r_it_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */

@@ -115,6 +115,10 @@ void R_INTC5_Stop(void);
 UB drv_intp_read_pow_sw(void);
 UB drv_intp_read_g1d_int(void);
 
+void __near r_intc1_interrupt(void);
+void __near r_intc3_interrupt(void);
+void __near r_intc5_interrupt(void);
+
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #endif

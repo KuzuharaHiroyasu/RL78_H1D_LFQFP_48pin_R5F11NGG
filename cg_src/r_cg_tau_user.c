@@ -38,7 +38,7 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_tau0_channel0_interrupt(vect=INTTM00)
+//#pragma interrupt r_tau0_channel0_interrupt(vect=INTTM00)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -56,7 +56,7 @@ Global variables and functions
 ***********************************************************************************************************************/
 //int time_10ms_cnt = 0;
 extern void time_soft_dec_10ms( void );
-static void __near r_tau0_channel0_interrupt(void)
+/* static */ void __near r_tau0_channel0_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
