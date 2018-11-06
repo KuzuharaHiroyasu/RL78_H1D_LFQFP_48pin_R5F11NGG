@@ -1,5 +1,5 @@
 /********************************************************************************/
-/* システム名   : RD1215 入出力BOX												*/
+/* システム名   : RD8001 快眠チェッカー												*/
 /* ファイル名   : vect_tbl.c                                                    */
 /* 機能         : ブートプログラム用ベクタテーブル                              */
 /* 変更履歴     : 2013.01.23 Axia Soft Design K.Wada    初版作成                */
@@ -13,7 +13,7 @@
 /********************/
 
 
-#pragma section const TBL_ID_CODE	//far属性
+//#pragma section const TBL_ID_CODE	//far属性
 
 const UB __far ProductIdCode[PRODUCT_ID_SIZE] = {
 	0x00,0x00,0x00,0x00,	/* size *//* ダウンロード時に設定される ※現在未使用 */

@@ -167,7 +167,7 @@
 #define		FUNC_DEBUG_LOG							ON					/* PCへのログ通信機能 *//* リリース時はOFFする事 */
 #define		FUNC_DEBUG_CPU_COM						OFF					/* CPU間通信をログ通信でデバッグする機能 *//* リリース時はOFFする事 */
 																		/* 使用する時はログ通信もOFFする事 */
-#define		FUNC_DEBUG_RAW_VAL_OUT					ON					/* 生データをPC出力 ※一部ハードではONすると動かない *//* リリース時はOFFする事 */
+#define		FUNC_DEBUG_RAW_VAL_OUT					OFF					/* 生データをPC出力 ※一部ハードではONすると動かない *//* リリース時はOFFする事 */
 
 
 

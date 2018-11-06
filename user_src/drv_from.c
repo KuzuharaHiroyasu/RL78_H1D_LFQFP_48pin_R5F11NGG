@@ -1,5 +1,5 @@
 /********************************************************************************/
-/* システム名   : RD1215 入出力BOX												*/
+/* システム名   : RD8001 快眠チェッカー												*/
 /* ファイル名   : drv_from.c													*/
 /* 機能         : FROMの読み書き												*/
 /* 変更履歴     : 2012.02.18 Axia Soft Design K.Wada	初版作成(RD1201)		*/
@@ -133,7 +133,7 @@ void drv_from_mode_disable(void)
 /************************************************************************/
 /* 注意事項 : 読み込みデータの保存領域は呼び出し側で確保すること        */
 /************************************************************************/
-DRV_FROM_ERROR drv_from_read(UB *addr_src , UB *addr_dest, UW size)
+DRV_FROM_ERROR drv_from_read(UB  __far  *addr_src , UB  __far  *addr_dest, UW size)
 {
 	DRV_FROM_ERROR	ercd = DRV_FROM_ERR_NONE;
 	UW block_num = DRV_FROM_BLOCK_NUM;
@@ -148,7 +148,7 @@ DRV_FROM_ERROR drv_from_read(UB *addr_src , UB *addr_dest, UW size)
 		return DRV_FROM_ERR_PARAM;
 	}
 	
-	memcpy( addr_dest, addr_src, (size_t)size);
+	_COM_memcpy_ff( addr_dest, addr_src, (size_t)size);
 	
 	return ercd;
 }
@@ -169,7 +169,7 @@ DRV_FROM_ERROR drv_from_read(UB *addr_src , UB *addr_dest, UW size)
 /************************************************************************/
 /* 注意事項 : 256バイトまで書き込み可									*/
 /************************************************************************/
-DRV_FROM_ERROR drv_from_write(UB __far *addr_src , UB __far *addr_dest, UW size)
+DRV_FROM_ERROR drv_from_write(UB __far *addr_src ,  const UB __far *addr_dest, UW size)
 {
 	DRV_FROM_ERROR	ercd = DRV_FROM_ERR_NONE;
 	
@@ -200,9 +200,9 @@ DRV_FROM_ERROR drv_from_write(UB __far *addr_src , UB __far *addr_dest, UW size)
 	
 	/* データ・バッファ初期化 */
 //    memset( fsl_data_buffer,DUMMY_DATA,WRITE_SIZE_BYTE);			// 0xFF埋め
-	memcpy( fsl_data_buffer, addr_dest-offset, WRITE_SIZE_BYTE);	// 元データ埋め
+	_COM_memcpy_ff( fsl_data_buffer, addr_dest-offset, WRITE_SIZE_BYTE);	// 元データ埋め
     /* 書き込みデータをデータ・バッファにコピー */
-	memcpy( fsl_data_buffer + offset, addr_src, (size_t)size);
+	_COM_memcpy_ff( fsl_data_buffer + offset, addr_src, (size_t)size);
 	
 	/* 書き込みサイズ調整(ワード拡張) */
 	write_unit_size = (UW)((offset + size) / WORD_SIZE);	// 切り捨て

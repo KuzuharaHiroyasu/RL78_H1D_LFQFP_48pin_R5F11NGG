@@ -1,5 +1,5 @@
 /********************************************************************************/
-/* システム名   : RD1215 入出力BOX												*/
+/* システム名   : RD8001 快眠チェッカー												*/
 /* ファイル名   : drv_from.h													*/
 /* 機能         : FROMの読み書き												*/
 /* 変更履歴     : 2012.12.21 Axia Soft Design K.Wada	初版作成				*/
@@ -68,8 +68,8 @@ typedef enum  {
 extern void				drv_from_init(void);
 extern void				drv_from_mode_enable(void);
 extern void				drv_from_mode_disable(void);
-extern DRV_FROM_ERROR	drv_from_read(UB *, UB *, UW );
-extern DRV_FROM_ERROR	drv_from_write(UB __far *addr_src , UB __far *addr_dest, UW size);
+extern DRV_FROM_ERROR	drv_from_read(UB  __far *, UB  __far *, UW );
+extern DRV_FROM_ERROR	drv_from_write(UB __far  *addr_src ,const  UB __far  *addr_dest, UW size);
 extern DRV_FROM_ERROR	drv_from_erase_block(DRV_FROM_BLOCK_NO );
 
 
