@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_intp.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for INTP module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/11
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -70,24 +70,27 @@ void R_INTC_Create(void)
     PIF5 = 0U;      /* clear INTP5 interrupt flag */
     PMK6 = 1U;      /* disable INTP6 interrupt */
     PIF6 = 0U;      /* clear INTP6 interrupt flag */
-    /* Set INTP0 low priority */
-//    PPR10 = 1U;
-//    PPR00 = 1U;
     /* Set INTP1 low priority */
     PPR11 = 1U;
     PPR01 = 1U;
-    /* Set INTP0 エッジ */
-//    EGN0 =  _01_INTP0_EDGE_FALLING_BOTH;
-//    EGP0 =  _00_INTP0_EDGE_FALLING_DISABLE;
-    /* Set INTP1 立下り*/
-    EGN0 =  _02_INTP1_EDGE_FALLING_BOTH;
-    EGP0 =  _00_INTP1_EDGE_FALLING_DISABLE;
-    /* Set INTP1 両エッジ*/
-//    EGN0 =  _02_INTP1_EDGE_FALLING_BOTH;
-//    EGP0 =  _02_INTP1_EDGE_RISING_BOTH;
-    /* Set INTP0 pin */
+    /* Set INTP3 low priority */
+    PPR13 = 1U;
+    PPR03 = 1U;
+    /* Set INTP5 low priority */
+    PPR15 = 1U;
+    PPR05 = 1U;
+    EGN0 = _20_INTP5_EDGE_FALLING_BOTH | _00_INTP3_EDGE_RISING_DISABLE | _02_INTP1_EDGE_FALLING_BOTH;
+    EGP0 = _00_INTP5_EDGE_FALLING_DISABLE | _08_INTP3_EDGE_RISING_BOTH | _00_INTP1_EDGE_FALLING_DISABLE;
+    /* Set INTP1 pin */
+    /* Set INTP3 pin */
+    PM3 |= 0x01U;
+    /* Set INTP5 pin */
     
     R_INTC1_Start();
+    R_INTC3_Start();
+    R_INTC5_Start();
+    
+
 }
 
 /***********************************************************************************************************************
@@ -98,8 +101,6 @@ void R_INTC_Create(void)
 ***********************************************************************************************************************/
 void R_INTC1_Start(void)
 {
-//    PIF0 = 0U;      /* clear INTP0 interrupt flag */
-//    PMK0 = 0U;      /* enable INTP0 interrupt */
     PIF1 = 0U;      /* clear INTP1 interrupt flag */
     PMK1 = 0U;      /* enable INTP1 interrupt */
 }
@@ -111,10 +112,52 @@ void R_INTC1_Start(void)
 ***********************************************************************************************************************/
 void R_INTC1_Stop(void)
 {
-//    PMK0 = 1U;      /* disable INTP0 interrupt */
-//    PIF0 = 0U;      /* clear INTP0 interrupt flag */
-    PMK1 = 1U;      /* disable INTP0 interrupt */
-    PIF1 = 0U;      /* clear INTP0 interrupt flag */
+    PMK1 = 1U;      /* disable INTP1 interrupt */
+    PIF1 = 0U;      /* clear INTP1 interrupt flag */
+}
+/***********************************************************************************************************************
+* Function Name: R_INTC3_Start
+* Description  : This function clears INTP3 interrupt flag and enables interrupt.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_INTC3_Start(void)
+{
+    PIF3 = 0U;      /* clear INTP3 interrupt flag */
+    PMK3 = 0U;      /* enable INTP3 interrupt */
+}
+/***********************************************************************************************************************
+* Function Name: R_INTC3_Stop
+* Description  : This function disables INTP3 interrupt and clears interrupt flag.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_INTC3_Stop(void)
+{
+    PMK3 = 1U;      /* disable INTP3 interrupt */
+    PIF3 = 0U;      /* clear INTP3 interrupt flag */
+}
+/***********************************************************************************************************************
+* Function Name: R_INTC5_Start
+* Description  : This function clears INTP5 interrupt flag and enables interrupt.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_INTC5_Start(void)
+{
+    PIF5 = 0U;      /* clear INTP5 interrupt flag */
+    PMK5 = 0U;      /* enable INTP5 interrupt */
+}
+/***********************************************************************************************************************
+* Function Name: R_INTC5_Stop
+* Description  : This function disables INTP5 interrupt and clears interrupt flag.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_INTC5_Stop(void)
+{
+    PMK5 = 1U;      /* disable INTP5 interrupt */
+    PIF5 = 0U;      /* clear INTP5 interrupt flag */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

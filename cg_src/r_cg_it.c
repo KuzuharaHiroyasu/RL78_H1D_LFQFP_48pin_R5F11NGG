@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_it.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for IT module.
-* Creation Date: 2017/12/20
+* Creation Date: 2018/04/10
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -55,14 +55,14 @@ Global variables and functions
 ***********************************************************************************************************************/
 void R_IT_Create(void)
 {
-    TMKAEN = 1;     /* enables input clock supply */
+    TMKAEN = 1U;    /* enables input clock supply */
     ITMC = _0000_IT_OPERATION_DISABLE;
-    TMKAMK = 1U;    	  /* disable INTIT interrupt */
-    TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+    TMKAMK = 1U;    /* disable INTIT interrupt */
+    TMKAIF = 0U;    /* clear INTIT interrupt flag */
     /* Set INTIT low priority */
     TMKAPR1 = 1U;
     TMKAPR0 = 1U;
-    ITMC = _0147_ITCMP_VALUE;
+    ITMC = _0665_ITCMP_VALUE;
     
     R_IT_Start();
 }
@@ -74,8 +74,8 @@ void R_IT_Create(void)
 ***********************************************************************************************************************/
 void R_IT_Start(void)
 {
-    TMKAIF = 0U;      /* clear INTIT interrupt flag */
-    TMKAMK = 0U;      /* enable INTIT interrupt */
+    TMKAIF = 0U;    /* clear INTIT interrupt flag */
+    TMKAMK = 0U;    /* enable INTIT interrupt */
     ITMC |= _8000_IT_OPERATION_ENABLE;
 }
 /***********************************************************************************************************************
@@ -86,8 +86,8 @@ void R_IT_Start(void)
 ***********************************************************************************************************************/
 void R_IT_Stop(void)
 {
-    TMKAMK = 1U;      /* disable INTIT interrupt */
-    TMKAIF = 0U;      /* clear INTIT interrupt flag */
+    TMKAMK = 1U;    /* disable INTIT interrupt */
+    TMKAIF = 0U;    /* clear INTIT interrupt flag */
     ITMC &= (uint16_t)~_8000_IT_OPERATION_ENABLE;
 }
 

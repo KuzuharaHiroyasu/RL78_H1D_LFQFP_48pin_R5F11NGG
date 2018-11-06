@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_intp_user.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for INTP module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/11
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -40,10 +40,9 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-//#pragma interrupt r_intc0_interrupt(vect=INTP0)
 #pragma interrupt r_intc1_interrupt(vect=INTP1)
-
-
+#pragma interrupt r_intc3_interrupt(vect=INTP3)
+#pragma interrupt r_intc5_interrupt(vect=INTP5)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -53,19 +52,6 @@ Global variables and functions
 /* Start user code for global. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
-#if 0
-/***********************************************************************************************************************
-* Function Name: r_intc0_interrupt
-* Description  : None
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-static void __near r_intc0_interrupt(void)
-{
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-}
-#endif
 /***********************************************************************************************************************
 * Function Name: r_intc1_interrupt
 * Description  : None
@@ -76,35 +62,75 @@ static void __near r_intc1_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-	NOP();
+   	NOP();
+}
+/***********************************************************************************************************************
+* Function Name: r_intc3_interrupt
+* Description  : None
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void __near r_intc3_interrupt(void)
+{
+    /* Start user code. Do not edit comment generated here */
+    /* End user code. Do not edit comment generated here */
+   	NOP();
+}
+/***********************************************************************************************************************
+* Function Name: r_intc5_interrupt
+* Description  : None
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void __near r_intc5_interrupt(void)
+{
+    /* Start user code. Do not edit comment generated here */
+    /* End user code. Do not edit comment generated here */
+   	NOP();
 }
 
 
-UB drv_read_pow_sw(void)
+
+
+UB drv_intp_read_pow_sw(void)
 {
-	UB sw1;
-	UB sw2;
+	UB port1;
+	UB port2;
 	UB ret;
 	
-	// �|�[�g�ǂݏo�� ��2���v�Ŕ�����(��v�������Ȃ����͒v���I�ُ�Ȃ̂ōl�����Ȃ�)
+	// ポート読み出し ※2回一致で抜ける(一致し続けない時は致命的異常なので考慮しない)
 	do{
-		if( P12 & 0x02 ){
-			sw1 = HIGH;
-		}else{
-			sw1 = LOW;
-		}
-		if( P12 & 0x02 ){
-			sw2 = HIGH;
-		}else{
-			sw2 = LOW;
-		}
-	}while( sw1 != sw2 );
+		port1 = DRV_I_PORT_POW_SW;
+		port2= DRV_I_PORT_POW_SW;
+	}while( port1 != port2 );
 
-	// �_���Ή�
-	if( HIGH == sw1 ){
-		ret = OFF;
-	}else{
+	// 論理対応
+	if( LOW == port1 ){
 		ret = ON;
+	}else{
+		ret = OFF;
+	}
+	
+	return ret;
+}
+
+UB drv_intp_read_g1d_int(void)
+{
+	UB port1;
+	UB port2;
+	UB ret;
+	
+	// ポート読み出し ※2回一致で抜ける(一致し続けない時は致命的異常なので考慮しない)
+	do{
+		port1 = DRV_I_PORT_G1D_INT;
+		port2 = DRV_I_PORT_G1D_INT;
+	}while( port1 != port2 );
+
+	// 論理対応
+	if( HIGH == port1 ){
+		ret = ON;
+	}else{
+		ret = OFF;
 	}
 	
 	return ret;

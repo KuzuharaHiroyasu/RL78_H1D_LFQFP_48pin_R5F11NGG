@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_it_user.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for IT module.
-* Creation Date: 2017/12/20
+* Creation Date: 2018/04/10
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -54,21 +54,14 @@ Global variables and functions
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-int time_10ms_cnt = 0;
 extern void set_req_main_cyc(void);
-extern void time_soft_dec_10ms( void );
+
+// 10ms蜑ｲ繧願ｾｼ縺ｿ
 static void __near r_it_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-//    P5 = ~P5;	
-	time_10ms_cnt++;
-	if( time_10ms_cnt >= 5 ){
-		time_10ms_cnt = 0;
-		set_req_main_cyc();
-	}
-	
-	time_soft_dec_10ms();	/* 10msソフトウェアタイマ減算処理 */
+	set_req_main_cyc();
 }
 
 /* Start user code for adding. Do not edit comment generated here */

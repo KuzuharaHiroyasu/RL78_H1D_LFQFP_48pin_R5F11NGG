@@ -14,88 +14,88 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_port_user.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for Port module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/10
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
+
 #include "r_cg_macrodriver.h"
 #include "r_cg_port.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
 
-/***********************************************************************************************************************
-Pragma directive
-***********************************************************************************************************************/
-/* Start user code for pragma. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
-
-/***********************************************************************************************************************
-Global variables and functions
-***********************************************************************************************************************/
-/* Start user code for global. Do not edit comment generated here */
-/* End user code. Do not edit comment generated here */
 
 
-/* Start user code for adding. Do not edit comment generated here */
-/***********************************************************************************************************************
-* Function Name: R_SAU0_Create
-* Description  : This function initializes the SAU0 module.
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-/***********************************************************************************************************************
-* Function Name : R_PORT_OutputBit
-* Description   : This function sets the port output
-* Arguments     : (e_port_pinname_t) pin_name
-*                 - Pin name
-*                 (e_port_bitdata_t) bit_data
-*                 - Output data
-* Return Value  : None
-***********************************************************************************************************************/
-void R_PORT_OutputBit( e_port_pinname_t pin_name, e_port_bitdata_t bit_data )
+// ユーザー定義
+void drv_o_port_sekigai( UB data )
 {
-    /* -----------------------------------------------------------------------------------------------------------------
-     * Processing to control the port output
-     * -------------------------------------------------------------------------------------------------------------- */
-    switch ( pin_name )
-    {
-        /* -------------------------------------------------------------------------------------------------------------
-         * In the case of P15 ( Handshake to RL78/L1A ) pin
-         * ---------------------------------------------------------------------------------------------------------- */
-        case E_PORT_HS_TO_L1A:
-            /* ---------------------------------------------------------------------------------------------------------
-             * Output = 0
-             * ------------------------------------------------------------------------------------------------------ */
-            if ( E_PORT_BIT_LOW == bit_data )
-            {
-                P1_bit.no5 = 0U;
-            }
-            /* ---------------------------------------------------------------------------------------------------------
-             * Output = 1
-             * ------------------------------------------------------------------------------------------------------ */
-            else
-            {
-                P1_bit.no5 = 1U;
-            }
-            break;
-        /* -------------------------------------------------------------------------------------------------------------
-         * Others
-         * ---------------------------------------------------------------------------------------------------------- */
-        default:
-            /* Do nothing */
-            break;
-    }
-} /* End of function ( R_PORT_OutputBit ) */
-/* End user code. Do not edit comment generated here */
+	if( ON == data ){
+		DRV_O_PORT_SEKIGAI = LOW;
+	}else{
+		DRV_O_PORT_SEKIGAI = HIGH;
+	}
+}
+
+void drv_o_port_sekishoku( UB data )
+{
+	if( ON == data ){
+		DRV_O_PORT_SEKISHOKU = LOW;
+	}else{
+		DRV_O_PORT_SEKISHOKU = HIGH;
+	}
+}
+
+
+void drv_o_port_mike( UB data )
+{
+	if( ON == data ){
+		DRV_O_PORT_MIKE = LOW;
+	}else{
+		DRV_O_PORT_MIKE = HIGH;
+	}
+}
+ 
+void drv_o_port_g1d_int( UB data )
+{
+	if( ON == data ){
+		DRV_O_PORT_G1D_INT = HIGH;
+	}else{
+		DRV_O_PORT_G1D_INT = LOW;
+	}
+}
+
+UB drv_i_port_kensa( void )
+{
+	UB ret = OFF;
+	
+	if( HIGH == DRV_I_PORT_KENSA ){
+		ret = ON;
+	}
+	
+	return ret;
+}
+
+
+UB drv_i_port_bat_chg( void )
+{
+	UB ret = OFF;
+	
+	if( LOW == DRV_I_PORT_BAT_CHG ){
+		ret = ON;
+	}
+	
+	return ret;
+}

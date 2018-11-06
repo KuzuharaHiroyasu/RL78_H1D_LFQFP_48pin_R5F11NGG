@@ -372,10 +372,16 @@ void R_UART1_Stop(void);
 /* End user code. Do not edit comment generated here */
 
 
+RING_BUF* drv_uart0_get_snd_ring( void );
+RING_BUF* drv_uart0_get_rcv_ring( void );
 RING_BUF* drv_uart1_get_snd_ring( void );
 RING_BUF* drv_uart1_get_rcv_ring( void );
+void drv_uart0_data_init( void );
+void drv_uart0_send_start( void );
+void drv_uart1_data_init( void );
 void drv_uart1_send_start( void );
-
+UB drv_uart0_get_send( void );
+void test_uart_0_send( void );
 
 
 

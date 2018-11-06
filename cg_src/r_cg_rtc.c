@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_rtc.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for RTC module.
-* Creation Date: 2018/01/22
+* Creation Date: 2018/04/11
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -55,32 +55,16 @@ Global variables and functions
 ***********************************************************************************************************************/
 void R_RTC_Create(void)
 {
-    RTCWEN = 1U;     /* enables input clock supply */
+    RTCWEN = 1U;    /* enables input clock supply */
     RTCE = 0U;      /* stops counter operation */
-    // nop
-    NOP();NOP();NOP();NOP();NOP();
-    RTCC0 = _08_RTC_24HOUR_SYSTEM;
-#if 0
-	// デバッグ用の固定値設定
-    SEC		 = 0;
-    MIN		 = 0x05;
-    HOUR	 = 0x15;
-    WEEK	 = 0x22;
-    DAY		 = 1;
-    MONTH	 = 1;
-    YEAR	 = 0x18;
-#endif
     RTCMK = 1U;     /* disable INTRTC interrupt */
     RTCIF = 0U;     /* clear INTRTC interrupt flag */
+    /* Set register RTCC0 */
+    RTCC0 = _00_RTC_COUNTER_STOP | _00_RTC_RTC1HZ_DISABLE | _08_RTC_24HOUR_SYSTEM | _00_RTC_INTRTC_NOT_GENERATE;
+    /* Disenable input clock */
+    RTCWEN = 0U;    /* stops input clock supply */
     
-    RTCE = 1U;      /* starts counter operation. */
-    // nop
-    NOP();NOP();NOP();NOP();NOP();
-    RTCWEN = 0U;     /* enables input clock supply */
-
-//	while(1U != INTRTC);
-
-//    R_RTC_Start();
+    R_RTC_Start();
 }
 /***********************************************************************************************************************
 * Function Name: R_RTC_Start
@@ -90,10 +74,18 @@ void R_RTC_Create(void)
 ***********************************************************************************************************************/
 void R_RTC_Start(void)
 {
-    volatile uint32_t w_count;
+    volatile uint16_t w_count;
 
-    RTCWEN = 0U;     /* enables input clock supply */
-    RTCE = 1U;      /* starts counter operation. */
+    RTCWEN = 1U;    /* enables input clock supply */
+    RTCE = 1U;      /* starts counter operation */
+
+    /* Change the waiting time according to the system */
+    for (w_count = 0U; w_count < RTC_WAITTIME_2FRTC; w_count++)
+    {
+        NOP();
+    }
+
+    RTCWEN = 0U;    /* stops input clock supply */
 }
 /***********************************************************************************************************************
 * Function Name: R_RTC_Stop
@@ -103,10 +95,18 @@ void R_RTC_Start(void)
 ***********************************************************************************************************************/
 void R_RTC_Stop(void)
 {
-    volatile uint32_t w_count;
+    volatile uint16_t w_count;
 
-    RTCWEN = 1U;     /* enables input clock supply */
+    RTCWEN = 1U;    /* enables input clock supply */
     RTCE = 0U;      /* stops counter operation */
+
+    /* Change the waiting time according to the system */
+    for (w_count = 0U; w_count < RTC_WAITTIME_2FRTC; w_count++)
+    {
+        NOP();
+    }
+
+    RTCWEN = 0U;    /* stops input clock supply */
 }
 /***********************************************************************************************************************
 * Function Name: R_RTC_Get_CounterValue
@@ -119,41 +119,13 @@ void R_RTC_Stop(void)
 MD_STATUS R_RTC_Get_CounterValue(rtc_counter_value_t * const counter_read_val)
 {
     MD_STATUS status = MD_OK;
-#if 1
-	// 手動設定
-	RTCWEN = 1U;     /* enables input clock supply */
-	RTCC1 |= _01_RTC_COUNTER_PAUSE;
-
-//	while(1U != RWST);
-
-	counter_read_val->sec = SEC;
-	counter_read_val->min = MIN;
-	counter_read_val->hour = HOUR;
-	counter_read_val->week = WEEK;
-	counter_read_val->day = DAY;
-	counter_read_val->month = MONTH;
-	counter_read_val->year = YEAR;
-
-	RTCC1 &= (uint8_t)~_01_RTC_COUNTER_PAUSE;
-
-	while(0U != RWST);
-
-    RTCE = 1U;      /* starts counter operation. */
-    // nop
-    NOP();NOP();NOP();NOP();NOP();
-
-	RTCWEN = 0U;     /* enables input clock supply */
-
-
-#else
-	// 自動設定
-    volatile uint32_t  w_count;
+    volatile uint16_t  w_count;
     
-    RTCWEN = 0U;     /* enables input clock supply */
+    RTCWEN = 1U;    /* enables input clock supply */
     RTCC1 |= _01_RTC_COUNTER_PAUSE;
 
     /* Change the waiting time according to the system */
-    for (w_count = 0U; w_count < RTC_WAITTIME; w_count++)
+    for (w_count = 0U; w_count < RTC_WAITTIME_2FRTC; w_count++)
     {
         NOP();
     }
@@ -175,7 +147,7 @@ MD_STATUS R_RTC_Get_CounterValue(rtc_counter_value_t * const counter_read_val)
         RTCC1 &= (uint8_t)~_01_RTC_COUNTER_PAUSE;
 
         /* Change the waiting time according to the system */
-        for (w_count = 0U; w_count < RTC_WAITTIME; w_count++)
+        for (w_count = 0U; w_count < RTC_WAITTIME_2FRTC; w_count++)
         {
             NOP();
         }
@@ -185,9 +157,10 @@ MD_STATUS R_RTC_Get_CounterValue(rtc_counter_value_t * const counter_read_val)
             status = MD_BUSY2;
         }
     }
-    RTCWEN = 1U;     /* enables input clock supply */
-#endif
-	return (status);
+
+    RTCWEN = 0U;    /* stops input clock supply */
+
+    return (status);
 }
 /***********************************************************************************************************************
 * Function Name: R_RTC_Set_CounterValue
@@ -199,39 +172,15 @@ MD_STATUS R_RTC_Get_CounterValue(rtc_counter_value_t * const counter_read_val)
 ***********************************************************************************************************************/
 MD_STATUS R_RTC_Set_CounterValue(rtc_counter_value_t counter_write_val)
 {
-	// 手動設定
     MD_STATUS status = MD_OK;
-#if 1
-    RTCWEN = 1U;     /* enables input clock supply */
-    RTCE = 0U;      /* stops counter operation */
-    // nop
-    NOP();NOP();NOP();NOP();NOP();
-    RTCC0 = _08_RTC_24HOUR_SYSTEM;
-    // 年月日
-    SEC		 = 0;
-    MIN		 = 31;
-    HOUR	 = 15;
-    WEEK	 = 22;
-    DAY		 = 1;
-    MONTH	 = 1;
-    YEAR	 = 0x18;
-    RTCMK = 1U;     /* disable INTRTC interrupt */
-    RTCIF = 0U;     /* clear INTRTC interrupt flag */
+    volatile uint16_t  w_count;
     
-    RTCE = 1U;      /* starts counter operation. */
-    // nop
-    NOP();NOP();NOP();NOP();NOP();
-    RTCWEN = 0U;     /* enables input clock supply */
-
-#else
-	// 自動設定
-
-    volatile uint32_t  w_count;
+    RTCWEN = 1U;    /* enables input clock supply */
     
     RTCC1 |= _01_RTC_COUNTER_PAUSE;
 
     /* Change the waiting time according to the system */
-    for (w_count = 0U; w_count < RTC_WAITTIME; w_count++)
+    for (w_count = 0U; w_count < RTC_WAITTIME_2FRTC; w_count++)
     {
         NOP();
     }
@@ -242,17 +191,36 @@ MD_STATUS R_RTC_Set_CounterValue(rtc_counter_value_t counter_write_val)
     }
     else
     {
-        SEC = counter_write_val.sec;
-        MIN = counter_write_val.min;
-        HOUR = counter_write_val.hour;
-        WEEK = counter_write_val.week;
-        DAY = counter_write_val.day;
-        MONTH = counter_write_val.month;
-        YEAR = counter_write_val.year;
+        if ((1U == RTCE) && (0U == RTCMK))
+        {
+            RTCMK = 1U;     /* disable INTRTC interrupt */
+            SEC = counter_write_val.sec;
+            MIN = counter_write_val.min;
+            HOUR = counter_write_val.hour;
+            WEEK = counter_write_val.week;
+            DAY = counter_write_val.day;
+            MONTH = counter_write_val.month;
+            YEAR = counter_write_val.year;
+            WAFG = 0U;      /* alarm mismatch */
+            RIFG = 0U;      /* constant-period interrupt is not generated */
+            RTCIF = 0U;     /* clear INTRTC interrupt flag */
+            RTCMK = 0U;     /* enable INTRTC interrupt */
+        }
+        else
+        {
+            SEC = counter_write_val.sec;
+            MIN = counter_write_val.min;
+            HOUR = counter_write_val.hour;
+            WEEK = counter_write_val.week;
+            DAY = counter_write_val.day;
+            MONTH = counter_write_val.month;
+            YEAR = counter_write_val.year;
+        }
+        
         RTCC1 &= (uint8_t)~_01_RTC_COUNTER_PAUSE;
-
+        
         /* Change the waiting time according to the system */
-        for (w_count = 0U; w_count < RTC_WAITTIME; w_count++)
+        for (w_count = 0U; w_count < RTC_WAITTIME_2FRTC; w_count++)
         {
             NOP();
         }
@@ -262,7 +230,8 @@ MD_STATUS R_RTC_Set_CounterValue(rtc_counter_value_t counter_write_val)
             status = MD_BUSY2;
         }
     }
-#endif
+
+    RTCWEN = 0U;    /* stops input clock supply */
 
     return (status);
 }

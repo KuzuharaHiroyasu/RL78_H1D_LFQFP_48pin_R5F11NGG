@@ -11,24 +11,22 @@
 /************************************************************/
 /* プロトタイプ宣言											*/
 /************************************************************/
-void main_send_uart1(void);
-MD_STATUS R_IICA0_Master_Send(uint8_t adr, uint8_t * const tx_buf, uint16_t tx_num, uint8_t wait);
-MD_STATUS R_IICA0_Master_Receive(uint8_t adr, uint8_t * const rx_buf, uint16_t rx_num, uint8_t wait);
-void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg );
-int main_eep_read(void);
-int main_eep_write(void);
-void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len );
-void wait_ms( int ms );
-void err_info( int id );
-void get_mode( void );
-void main_eep_erase_all( void );
-void main_acl_init(void);
-void main_acl_read(void);
-void test_code_eep(void);
-void main_send_uart1_rtc(void);
+void user_main(void);
+static void user_main_mode_sensor(void);
 static void main_init(void);
 static void sw_cyc(void);
 static void mode_cyc(void);
+void set_req_main_cyc(void);
+void main_send_uart1(void);
+void main_send_uart1_rtc(void);
+void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg );
+void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len );
+void getmode_in(void);
+void wait_ms( int ms );
+void err_info( int id );
+void main_acl_init(void);
+void main_acl_read(void);
+void main_acl_write(void);
 static void stop_in( void );
 static void halt_in( void );
 STATIC void main_cpu_com_snd_sensor_data( void );
@@ -38,14 +36,11 @@ STATIC void main_cpu_com_rcv_pc_log( void );
 STATIC void main_cpu_com_rcv_mode_chg( void );
 void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data );
 void ds_set_cpu_com_input( DS_CPU_COM_INPUT *p_data );
-static void user_main_mode_sensor(void);
+STATIC void main_cyc(void);
 
 /************************************************************/
 /* 変数定義													*/
 /************************************************************/
-//RD8001暫定：削除予定
-uint8_t eep_rx_data[I2C_RCV_SND_SIZE];        /* iica0 receive buffer */
-uint8_t eep_tx_data[I2C_RCV_SND_SIZE];        /* iica0 send buffer */
 
 UH bufferH_dbg_ave;
 UH bufferL_dbg_ave;
@@ -95,8 +90,11 @@ STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
 extern void test_uart_0_send( void );
 extern void test_cpu_com_send( void );
 
-
-
+#if 0
+rtc_counter_value_t dbg_rtc;
+rtc_counter_value_t dbg_rtc_set;
+UB dbg_rtc_flg = 0;
+#endif
 
 /************************************************************************/
 /* 関数     : user_main													*/
@@ -114,10 +112,10 @@ extern void test_cpu_com_send( void );
 void user_main(void)
 {
 	UW sleep_cnt = 0;
-    int cnt_20ms = 0;
-    int cnt_30sec = 0;
+//    int cnt_20ms = 0;
+//    int cnt_30sec = 0;
 	rtc_counter_value_t rtc;
-	char com_data[10];
+//	char com_data[10];
     
     main_init();
     /* Start user code. Do not edit comment generated here */
@@ -125,7 +123,7 @@ void user_main(void)
 	// RTC設定
 #if 1
 	if( dbg_set_clock == 7 ){
-		R_RTC_Set_CounterValue( rtc );
+//		R_RTC_Set_CounterValue( rtc );
 	}
 #endif
 	R_RTC_Get_CounterValue( &rtc );
@@ -139,38 +137,38 @@ void user_main(void)
 
 	main_acl_init();
 	
-	s_unit.eep_rd_record_cnt = 0;
-	s_unit.eep_wr_record_cnt = 0;
-#if 0
-	// 有効レコードチェック探索  ※しない
-	while(1){
-		if( INVALID == main_eep_read() ){
-			// 終了
-			break;
-		}
-		if( 1 == s_unit.eep.record.data.valid ){
-			// 有効レコード
-			s_unit.eep_wr_record_cnt++;
-		}else{
-			// 終了
-			break;
-		}
-	}
-#endif
-    
-    while (1U)
-    {
+	while (1U)
+	{
 		com_srv_cyc();
 		sw_cyc();
 		mode_cyc();
 		cpu_com_proc();
 		main_cpu_com_proc();
+		main_cyc();
 		
 		if( SYSTEM_MODE_NON == s_unit.system_mode ){
+			drv_o_port_mike( OFF );		//RD8001暫定
 			/* 何もしない */
 			// RD8001暫定：スリープ突入時間
 			if( sleep_cnt++ > 5000 ){
 				sleep_cnt = 0;
+#if 0			//RTCデバッグ
+				R_RTC_Get_CounterValue( &dbg_rtc );
+				
+				if( 1 == dbg_rtc_flg ){
+					dbg_rtc_flg = 0;
+					dbg_rtc_set.year = 9;
+					dbg_rtc_set.sec = 0;
+					dbg_rtc_set.min = 0;
+					dbg_rtc_set.hour = 5;
+					dbg_rtc_set.day = 0;
+					dbg_rtc_set.week = 0;
+					dbg_rtc_set.month = 0;
+//					R_RTC_Stop();
+					R_RTC_Set_CounterValue( dbg_rtc_set );
+//					R_RTC_Start();
+				}
+#endif
 //				drv_uart1_send_start();
 //				test_cpu_com_send();		//ミドルレベルCPU間通信
 //				test_uart_0_send();			//ドライバレベルCPU間通信
@@ -178,9 +176,10 @@ void user_main(void)
 				//stop_in();
 			}
 		}else if( SYSTEM_MODE_GET_MODE == s_unit.system_mode ){
+			drv_o_port_mike( OFF );		//RD8001暫定
 			// ゲットモード
 			
-			get_mode();
+//			get_mode();
 			
 			
 			NOP();
@@ -188,6 +187,7 @@ void user_main(void)
 		}else if( SYSTEM_MODE_SENSOR == s_unit.system_mode ){
 			user_main_mode_sensor();
 		}else{
+			drv_o_port_mike( OFF );		//RD8001暫定
 			// ありえない
 			
 		}
@@ -195,18 +195,26 @@ void user_main(void)
     /* End user code. Do not edit comment generated here */
 }
 
+//#define IBIKI_COUNT			//RD8001暫定：いびきカウントアップ
+#ifdef	IBIKI_COUNT
+UH dbg_ibiki_cnt = 0;
+#endif
 static void user_main_mode_sensor(void)
 {
 	UW time;
 	UW work_uw = 0;
-	MEAS meas;
 	
+//	MEAS meas;
+	
+#ifdef	IBIKI_COUNT
+	dbg_ibiki_cnt = 0;
+#endif
+	
+	if( s_unit.sensing_cnt_50ms++ >= HOUR12_CNT_50MS ){
+		s_unit.sensing_end_flg = ON;
+	}
 	
 	if( ON == s_unit.sensing_end_flg ){
-		// 赤外光
-		P7 &= ~0x80;
-		// 赤色光
-		P7 &= ~0x40;
 		return;
 	}
 	
@@ -219,37 +227,19 @@ static void user_main_mode_sensor(void)
 	// センサーモード
 	// メイン周期(50ms)
 	if( ON == s_unit.main_cyc_req ){
-
+		R_DAC1_Start();			// ■DAC        ON
+		R_PGA_DSAD_Start();		// ■PGA0_DSAD  ON
+		R_AMP2_Start();			// ■AMP2       ON
+		
 //RD8001暫定：初期化を行うと動作しない
 #if FUNC_VALID_AMP == ON
-		// 赤外光
-		P7 &= ~0x80;
-		P7 |= 0x40;
-		VSBIAS = 0x09;		/* 0.5 */
-		R_DAC_Change_OutputVoltage_12bit( 0x07BD );
-		wait_ms( 1 );
-		pga_do();
-		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);
-		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		work_uw = bufferH_dbg;
-		work_uw <<= 16;
-		work_uw += bufferL_dbg;
+		R_DAC1_Set_ConversionValue( 0x0B00 );
+		wait_ms( 2 );
 		
-		s_unit.meas.info.dat.sekigaival = (( work_uw >> 16 ) & 0x0000FFFF );
-//		s_unit.meas.info.dat.sekigaival = work_uw;
-//		s_unit.meas.info.dat.sekigaival >>= 8;
-		
-		R_DAC_Change_OutputVoltage_12bit( 0x0000 );		//RD8001暫定：DAC変更後一定時間待たないと電圧が落ち切らない様に思う
-		
-		// 赤色光
-		P7 &= ~0x40;
-		P7 |= 0x80;
+		// 赤色光ON
+		drv_o_port_sekigai( OFF );
+		drv_o_port_sekishoku( ON );
 
-//			VSBIAS = 0x0E;		/* 1.0 *///oneA様指示設定　※反応が悪い
-		VSBIAS = 0x09;		/* 0.5 */
-//			R_DAC_Change_OutputVoltage_12bit( 0x014A );//oneA様指示設定　※反応が悪い 
-		R_DAC_Change_OutputVoltage_12bit( 0x02BD ); 
-		wait_ms( 1 );
 		pga_do();
 		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
@@ -261,26 +251,69 @@ static void user_main_mode_sensor(void)
 		s_unit.meas.info.dat.sekishoku_val = (( work_uw >> 16 ) & 0x0000FFFF );
 //		s_unit.meas.info.dat.sekishoku_val = work_uw;
 //		s_unit.meas.info.dat.sekishoku_val >>= 8;
+		wait_ms( 2 );
 
-		// 加速度センサ取得
-		main_acl_read();
+
+		// 赤外光ON
+		drv_o_port_sekigai( ON );
+		drv_o_port_sekishoku( OFF );
+
+		R_DAC1_Set_ConversionValue( 0x0500 );
+		wait_ms( 2 );
+		pga_do();
+		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);
+		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
+		work_uw = bufferH_dbg;
+		work_uw <<= 16;
+		work_uw += bufferL_dbg;
+		
+		s_unit.meas.info.dat.sekigaival = (( work_uw >> 16 ) & 0x0000FFFF );
+//		s_unit.meas.info.dat.sekigaival = work_uw;
+//		s_unit.meas.info.dat.sekigaival >>= 8;
+		
+		R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
+		R_AMP2_Stop();		// □AMP2  OFF
+		
+		wait_ms( 2 );
 		
 		// マイク用(呼吸、イビキ)開始
-		R_DAC_Change_OutputVoltage_12bit( 0x0000 );
-		adc_do( &s_unit.dench_val, &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
+		R_DAC1_Set_ConversionValue( 0x0000 );
+		R_AMP0_Start();		// ■AMP0 ON
+		R_PGA1_Start();		// ■PGA1 ON
+
+		wait_ms( 2 );
+		adc_ibiki_kokyu( &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
+		
+		// RD8001暫定：いびきデータをデバッグ用カウント
+#ifdef	IBIKI_COUNT
+		s_unit.meas.info.dat.ibiki_val = dbg_ibiki_cnt++;
 #endif
-#if 0
-		//センサーデータ送信
-		//200msに一度
-		if( s_unit.sensing_cnt++ >= 4 ){
-			main_cpu_com_snd_sensor_data();
-			s_unit.sensing_cnt = 0;
-		}
-#else
+		wait_ms( 2 );
+		R_DAC1_Stop();		// □DAC  OFF
+
+#if 0	// RD8001暫定：AMP0,PGA1をOFFすると正常にイビキ等が取得できない
+		R_AMP0_Stop();		// □AMP0 OFF
+		R_PGA1_Stop();		// □PGA1 OFF
+#endif
+		
+		// 加速度センサ取得
+		// RD8001暫定：30msかかるが50ms毎に取得
+		main_acl_read();
+		
+#endif
+
 		main_cpu_com_snd_sensor_data();
-#endif
+		
 		s_unit.main_cyc_req  = OFF;
-		R_DAC_Change_OutputVoltage_12bit( 0x02BD );		//DACを赤色用に変更
+		
+		// 赤外、赤色OFF
+		drv_o_port_sekigai( OFF );
+		drv_o_port_sekishoku( OFF );
+
+		// RD8001暫定：stopモード無効
+#if 1
+		stop_in();
+#endif
 	}
 
 }
@@ -330,7 +363,7 @@ static void sw_cyc(void)
 	UB pow_sw;
 	UW time = 0;
 	
-	pow_sw = drv_read_pow_sw();
+	pow_sw = drv_intp_read_pow_sw();
 	
 	if( ON == pow_sw ){
 		// なにもしない(電源SW押下タイマー継続)
@@ -385,6 +418,38 @@ static void mode_cyc(void)
 	}
 }
 
+/************************************************************************/
+/* 関数     : main_cyc													*/
+/* 関数名   : アプリ周期処理											*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.04.16 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* 初期化																*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+STATIC void main_cyc(void)
+{
+	UH dench_val;
+	
+	
+	dench_val = DENCH_ZANRYO_1_VAL;
+	
+	adc_dench( &dench_val );
+	
+	if( dench_val >= DENCH_ZANRYO_1_VAL ){
+		s_unit.dench_sts = 1;
+	}else if( dench_val >= DENCH_ZANRYO_2_VAL ){
+		s_unit.dench_sts = 2;
+	}else if( dench_val >= DENCH_ZANRYO_3_VAL ){
+		s_unit.dench_sts = 3;
+	}else{
+		s_unit.dench_sts = 4;
+	}
+}
 
 void set_req_main_cyc(void)
 {
@@ -398,8 +463,8 @@ void set_req_main_cyc(void)
 #define UART1_STR_MAX		150
 void main_send_uart1(void)
 {
+#if 0
 	uint8_t tx_data[UART1_STR_MAX] = {0};
-//	uint8_t * const s = &tx_data[0];
 	int len;
 	
 #if 0
@@ -409,6 +474,7 @@ void main_send_uart1(void)
 	s_unit.ibiki_val = 4;
 #endif
 
+#if 0		//EEP無効
 #if 1
 	len = sprintf((char*)tx_data, "%ld,%ld,%d,%d,%d,%d,%d\r\n", s_unit.eep.record.data.sekishoku_val
 															  , s_unit.eep.record.data.sekigaival
@@ -435,6 +501,7 @@ void main_send_uart1(void)
 //	main_acl_read();
 //	len = sprintf(tx_data, "%d,%d,%d\r\n", s_unit.acl_x, s_unit.acl_y, s_unit.acl_z );		//加速度
 #endif
+#endif
 	
 	
 	com_srv_send( &tx_data[0], len );
@@ -451,6 +518,7 @@ void main_send_uart1(void)
 
 
 //	com_srv_send( s, len );
+#endif
 }
 
 // debug
@@ -478,76 +546,6 @@ void main_send_uart1_rtc(void)
 //================================
 #define			EEP_WAIT		255		//RD8001暫定値
 
-int main_eep_write(void)
-{
-	WR_EEP_RECORD		wr;
-	UH wr_adrs;
-	UB device_adrs;
-	int ret = INVALID;
-	UH record_offset = 0;
-
-#if 0
-	UB adrs[2];
-
-	// ページ処理の断片
-	UB page_bit;
-	int eep_adrs;
-	int eep_page;
-	UB  device_adrs;
-#endif
-	
-	// レコード最大
-	if( s_unit.eep_wr_record_cnt < EEP_RECORD_1P_MAX ){
-		device_adrs = EEP_DEVICE_ADR;
-	}else if( s_unit.eep_wr_record_cnt < EEP_RECORD_2P_MAX ){
-		device_adrs = EEP_DEVICE_ADR | 0x02;
-		record_offset = EEP_RECORD_1P_MAX;
-	}else{
-		return ret;
-	}
-
-#if 0
-	// ページ処理の断片
-	eep_adrs = eep_wr_record_cnt * EEP_RECORD_SIZE;
-	eep_page = eep_adrs / EEP_DATA_SIZE_PAGE;
-	eep_adrs = eep_adrs % EEP_DATA_SIZE_PAGE;
-
-	if( 0 == page ){
-		device_adrs = EEP_DEVICE_ADR;
-	}else{
-		device_adrs = EEP_DEVICE_ADR | 0x02;
-	}
-#endif
-	wr_adrs = ( s_unit.eep_wr_record_cnt - record_offset ) * EEP_RECORD_SIZE;
-//	wr.record.data.wr_adrs				 = s_unit.eep_wr_record_cnt * EEP_RECORD_SIZE;
-	wr.record.byte[0] = (UB)(( wr_adrs >> 8 ) & 0xff );		//アドレス上位
-	wr.record.byte[1] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
-	wr.record.data.valid				 = ON;			/* レコード有効/無効				*/
-	
-	wr.record.data.kokyu_val			 = s_unit.eep.record.data.kokyu_val;		
-	wr.record.data.ibiki_val			 = s_unit.eep.record.data.ibiki_val;		
-	wr.record.data.sekishoku_val		 = s_unit.eep.record.data.sekishoku_val;	// 差動入力の為に符号あり
-	wr.record.data.sekigaival			 = s_unit.eep.record.data.sekigaival;		// 差動入力の為に符号あり
-	wr.record.data.acl_x				 = s_unit.eep.record.data.acl_x;
-	wr.record.data.acl_y				 = s_unit.eep.record.data.acl_y;
-	wr.record.data.acl_z				 = s_unit.eep.record.data.acl_z;
-	
-	
-	//書き込み
-	i2c_write_sub( device_adrs, &wr.record.byte[0], sizeof(wr), ON );	
-
-//	eep_tx_data[0] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
-//	eep_tx_data[1] = (UB)(( wr_adrs >> 8 ) & 0xff );		//アドレス上位
-//	eep_tx_data[14]  = 1;
-//	i2c_write_sub( EEP_DEVICE_ADR, &eep_tx_data[0], sizeof(wr) );
-	
-	s_unit.eep_wr_record_cnt++;
-	
-	ret = VALID;
-	
-	return ret;
-}
-
 void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg )
 {
 	i2c_cmplete = 0;
@@ -568,36 +566,6 @@ void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg )
 		wait_ms(5);
 	}
 }
-
-int main_eep_read(void)
-{
-	int ret = INVALID;
-	UH read_adrs;
-	EEP_RECORD		rd;
-	UB device_adrs;
-	UH record_offset = 0;
-	
-	// レコード最大
-	if( s_unit.eep_rd_record_cnt < EEP_RECORD_1P_MAX ){
-		device_adrs = EEP_DEVICE_ADR;
-	}else if( s_unit.eep_rd_record_cnt < EEP_RECORD_2P_MAX ){
-		device_adrs = EEP_DEVICE_ADR | 0x02;
-		record_offset = EEP_RECORD_1P_MAX;
-	}else{
-		return ret;
-	}
-	
-	read_adrs = ( s_unit.eep_rd_record_cnt - record_offset ) * EEP_RECORD_SIZE;
-	i2c_read_sub( device_adrs, read_adrs, &s_unit.eep.record.byte[0], sizeof(rd) );
-//	i2c_read_sub( EEP_DEVICE_ADR, read_adrs, &eep_rx_data[0], 32 );
-	
-	s_unit.eep_rd_record_cnt++;
-	
-	ret = VALID;
-	
-	return ret;
-}
-
 
 void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len )
 {
@@ -692,95 +660,6 @@ void err_info( int id )
 #endif
 }
 
-void get_mode( void )
-{
-	com_srv_puts( (const B *__near)"START\r\n" );
-
-//	wait_ms(10);
-
-	// ゲットモードループ
-	s_unit.eep_rd_record_cnt = 0;
-	while(1){
-		if( INVALID == main_eep_read() ){
-			// 終了
-			break;
-		}
-		wait_ms(10);
-		if( 1 == s_unit.eep.record.data.valid ){
-			// 有効レコード
-#if 0		// 暫定
-			s_unit.kokyu_val	 = s_unit.eep.record.data.kokyu_val;		
-			s_unit.ibiki_val	 = s_unit.eep.record.data.ibiki_val;		
-			s_unit.sekishoku_val = s_unit.eep.record.data.sekishoku_val;	// 差動入力の為に符号あり
-			s_unit.sekigaival	 = s_unit.eep.record.data.sekigaival;		// 差動入力の為に符号あり
-#endif
-			
-//			wait_ms(5);
-			main_send_uart1();
-//			wait_ms(5);
-		}else{
-			// 終了
-			break;
-		}
-	}
-	main_eep_erase_all();
-
-	s_unit.eep_rd_record_cnt = 0;
-	s_unit.eep_wr_record_cnt  =0;
-	s_unit.system_mode = SYSTEM_MODE_NON;
-	
-	com_srv_puts( (const B *__near)"END\r\n" );
-}
-
-
-void main_eep_erase_all(void)
-{
-	WR_EEP_RECORD wr;
-	UB device_adrs =0;
-	UH record_offset = 0;
-	UH wr_adrs = 0;
-	
-	s_unit.eep_wr_record_cnt = 0;
-	
-	while(1){
-		// レコード最大
-		if( s_unit.eep_wr_record_cnt < EEP_RECORD_1P_MAX ){
-			device_adrs = EEP_DEVICE_ADR;
-		}else if( s_unit.eep_wr_record_cnt < EEP_RECORD_2P_MAX ){
-			device_adrs = EEP_DEVICE_ADR | 0x02;
-			record_offset = EEP_RECORD_1P_MAX;
-		}else{
-			return;
-		}
-		
-		// 使用分のみで終了
-#if 0
-		if( s_unit.eep_rd_record_cnt < s_unit.eep_wr_record_cnt ){
-			return;
-		}
-#endif
-		
-		wr_adrs = ( s_unit.eep_wr_record_cnt - record_offset ) * EEP_RECORD_SIZE;
-		wr.record.byte[0] = (UB)(( wr_adrs >> 8 ) & 0xff );		//アドレス上位
-		wr.record.byte[1] = (UB)( wr_adrs & 0x00ff );		//アドレス下位
-		wr.record.data.valid				 = OFF;			/* レコード有効/無効				*/
-		
-#if 0		// 暫定
-		wr.record.data.kokyu_val			 = 0;
-		wr.record.data.ibiki_val			 = 0;
-		wr.record.data.sekishoku_val		 = 0;
-		wr.record.data.sekigaival			 = 0;
-#endif
-			
-		//書き込み
-		i2c_write_sub( device_adrs, &wr.record.byte[0], sizeof(wr), ON );	
-		wait_ms(5);
-	
-		s_unit.eep_wr_record_cnt++;
-	}
-	
-}
-
 void main_acl_init(void)
 {
 	UB rd_data[2];
@@ -814,31 +693,27 @@ void main_acl_init(void)
 	i2c_write_sub( ACL_DEVICE_ADR, &wr_data[0], 2, ON );
 	
 	
-
-
-
 }
-
-
-
 
 void main_acl_read(void)
 {
 	UB rd_data[10];
 	
-	
-	i2c_read_sub( ACL_DEVICE_ADR, 0x1A, &rd_data[0], 1 );
-	
+	// INT_SOURCE1		
 	i2c_read_sub( ACL_DEVICE_ADR, 0x16, &rd_data[0], 1 );
 	if( 0 == ( rd_data[0] & 0x10 )){
+		// データ未達
 		return;
 	}
-
+	
+	// データ取得
 	i2c_read_sub( ACL_DEVICE_ADR, 0x06, &rd_data[0], 6 );
 	s_unit.meas.info.dat.acl_x = rd_data[1];
 	s_unit.meas.info.dat.acl_y = rd_data[3];
 	s_unit.meas.info.dat.acl_z = rd_data[5];
 	
+	// INT_REL読み出し　※割り込み要求クリア
+	i2c_read_sub( ACL_DEVICE_ADR, 0x1A, &rd_data[0], 1 );
 }
 
 void main_acl_write(void)
@@ -846,146 +721,14 @@ void main_acl_write(void)
 //	main_acl_read_sub( ACL_DEVICE_ADR, 0x0C, &rd_data[0], 1 );
 }
 
-void test_code_eep(void)
-{
-#if 0
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 0;
-	eep_tx_data[2] = 11;
-	eep_tx_data[3] = 22;
-	i2c_write_sub( 0xA0, &eep_tx_data[0], 4 );
-	
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 5;
-	eep_tx_data[2] = 33;
-	eep_tx_data[3] = 44;
-	i2c_write_sub( 0xA0, &eep_tx_data[0], 4 );
-
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 8;
-	eep_tx_data[2] = 55;
-	eep_tx_data[3] = 66;
-	i2c_write_sub( 0xA0, &eep_tx_data[0], 4 );
-
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 13;
-	eep_tx_data[2] = 77;
-	eep_tx_data[3] = 88;
-	i2c_write_sub( 0xA0, &eep_tx_data[0], 4 );
-	
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 0;
-//	i2c_write_sub( 0xA0, &eep_tx_data[0], 2 );
-
-	i2c_read_sub( 0xA0, 0, &eep_rx_data[0], 2 );
-
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 5;
-//	i2c_write_sub( 0xA0, &eep_tx_data[0], 2 );
-
-	i2c_read_sub( 0xA0, 5, &eep_rx_data[2], 2 );
-
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 8;
-///	i2c_write_sub( 0xA0, &eep_tx_data[0], 2 );
-
-	i2c_read_sub( 0xA0, 8, &eep_rx_data[4], 2 );
-
-	eep_tx_data[0] = 0;
-	eep_tx_data[1] = 13;
-//	i2c_write_sub( 0xA0, &eep_tx_data[0], 2 );
-
-	i2c_read_sub( 0xA0, 13, &eep_rx_data[6], 2 );
-
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	
-
-#endif
-
-#if 0
-	//デバッグコード
-	s_unit.eep_wr_record_cnt = 0;
-	
-	s_unit.kokyu_val  = 1111;		
-	s_unit.ibiki_val  = 2222;		
-	s_unit.sekishoku_val = 333333;	// 差動入力の為に符号あり
-	s_unit.sekigaival = -444444;		// 差動入力の為に符号あり
-    main_eep_write();
-	for(i = 0; i < 500; i++ ){
-		WAIT_10US()
-	}
-	s_unit.eep_wr_record_cnt = 4096;
-	
-	s_unit.kokyu_val  = 3333;		
-	s_unit.ibiki_val  = 4444;		
-	s_unit.sekishoku_val = 555555;	// 差動入力の為に符号あり
-	s_unit.sekigaival = -666666;		// 差動入力の為に符号あり
-    main_eep_write();
-	for(i = 0; i < 500; i++ ){
-		WAIT_10US()
-	}
-
-
-
-	s_unit.eep_wr_record_cnt = 4095;
-	
-	s_unit.kokyu_val  = 2222;		
-	s_unit.ibiki_val  = 3333;		
-	s_unit.sekishoku_val = 444444;		// 差動入力の為に符号あり
-	s_unit.sekigaival = -555555;		// 差動入力の為に符号あり
-    main_eep_write();
-    
-	for(i = 0; i < 500; i++ ){
-		WAIT_10US()
-	}
-	s_unit.eep_rd_record_cnt = 0;
-    main_eep_read();
-	s_unit.eep_rd_record_cnt = 4096;
-    main_eep_read();
-	s_unit.eep_rd_record_cnt = 4095;
-    main_eep_read();
-#endif
-	
-#if 0
-	s_unit.eep_rd_record_cnt = 0;
-	s_unit.eep_wr_record_cnt = 0;
-	s_unit.kokyu_val  = 1111;		
-	s_unit.ibiki_val  = 2222;		
-	s_unit.sekishoku_val = 333333;	// 差動入力の為に符号あり
-	s_unit.sekigaival = -444444;		// 差動入力の為に符号あり
-	while(1){
-		if( INVALID == main_eep_write() ){
-			// 終了
-			break;
-		}
-		wait_ms(5);
-//		for(i = 0; i < 500; i++ ){
-//			WAIT_10US()
-//		}
-	}	
-	
-#endif	
-	
-	
-}
-
 
 static void stop_in( void )
 {
 	//RD8001暫定：突入復帰処理に関して要検討
+#if 0
 	com_srv_puts( (const B *__near)"STOP IN\r\n" );
 	wait_ms( 10 );
+#endif
 	
 	NOP();
 	NOP();
@@ -994,8 +737,8 @@ static void stop_in( void )
 	NOP();
 	
 	// 割り込み止める処理
-	TMKAMK = 1U;    	  /* disable INTIT interrupt */
-	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+//	TMKAMK = 1U;    	  /* disable INTIT interrupt */
+//	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
 
 	STOP();
 	
@@ -1004,15 +747,17 @@ static void stop_in( void )
 	// ウエイト：ベクタ割り込み処理を行う場合(7クロック)
 	//             ベクタ割り込み処理を行わない場合(1クロック)
 	wait_ms( 1 );
-	TMKAMK = 0U;    	  /* disable INTIT interrupt */
-	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+//	TMKAMK = 0U;    	  /* disable INTIT interrupt */
+//	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
 
 	NOP();
 	NOP();
 	NOP();
 	NOP();
 	NOP();
+#if 0
 	com_srv_puts( (const B *__near)"STOP OUT\r\n" );
+#endif
 }
 
 static void halt_in( void )
@@ -1055,9 +800,14 @@ static void halt_in( void )
 // =============================================================
 STATIC void main_cpu_com_snd_sensor_data( void )
 {
+	drv_o_port_g1d_int( ON );
+
 	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_SENSOR_DATA;
 	memcpy( &s_ds.cpu_com.order.snd_data[0], &s_unit.meas.info.byte[0], CPU_COM_SND_DATA_SIZE_SENSOR_DATA );
 	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_SENSOR_DATA;
+	
+	// 以降スリープ処理の為に送信終了までの処理を呼ぶ
+	cpu_com_send_end();
 }
 
 /************************************************************************/
@@ -1089,7 +839,8 @@ STATIC void main_cpu_com_proc(void)
 				/* 受信コマンドとコマンドテーブルが一致 */
 				if( NULL != s_cpu_com_rcv_func_tbl[i].func ){
 					/* 受信処理有り */
-					s_cpu_com_rcv_func_tbl[i].func(&s_ds.cpu_com.input.rcv_data[0]);
+//					s_cpu_com_rcv_func_tbl[i].func(&s_ds.cpu_com.input.rcv_data[0]);
+					s_cpu_com_rcv_func_tbl[i].func();
 				}
 			}
 		}
@@ -1104,7 +855,7 @@ STATIC void main_cpu_com_rcv_sts( void )
 	if( SYSTEM_MODE_NON == s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
-		s_ds.cpu_com.order.snd_data[1] = 0;
+		s_ds.cpu_com.order.snd_data[1] = s_unit.dench_sts;
 		s_ds.cpu_com.order.snd_data[2] = 0;
 		s_ds.cpu_com.order.snd_data[3] = 0;
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
@@ -1113,7 +864,7 @@ STATIC void main_cpu_com_rcv_sts( void )
 	}else if( SYSTEM_MODE_SENSOR == s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
-		s_ds.cpu_com.order.snd_data[1] = 0;
+		s_ds.cpu_com.order.snd_data[1] = s_unit.dench_sts;
 		s_ds.cpu_com.order.snd_data[2] = 0;
 		s_ds.cpu_com.order.snd_data[3] = 0;
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
@@ -1165,8 +916,10 @@ STATIC void main_cpu_com_rcv_mode_chg( void )
 	// センシング開始時のタイマー
 	if(( SYSTEM_MODE_SENSOR != s_unit.system_mode ) &&
 	   ( SYSTEM_MODE_SENSOR == s_ds.cpu_com.input.rcv_data[0] )){
-		time_soft_set_10ms( TIME_TYPE_10MS_POW_SW_ACT_START, TIME_10MS_CNT_POW_SW_ACT_START );
+		time_soft_set_10ms( TIME_TYPE_10MS_SENSING_DELAY, TIME_10MS_CNT_SENSING_DELAY );
 		s_unit.sensing_end_flg = OFF;
+		s_unit.sensing_cnt_50ms = 0;
+		drv_o_port_mike( ON );		//RD8001暫定
 	}
 	
 	if( 1 ){

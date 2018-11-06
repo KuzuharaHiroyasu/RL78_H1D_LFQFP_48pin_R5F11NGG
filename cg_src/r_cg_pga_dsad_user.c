@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_pga_dsad_user.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for PGIA module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/18
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -39,7 +39,7 @@ Includes
 Pragma directive
 ***********************************************************************************************************************/
 
-#pragma interrupt r_pga_dsad_interrupt_conversion(vect=INTDSAD)
+#pragma interrupt r_pga_dsad_conversion_interrupt(vect=INTDSAD)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -50,13 +50,13 @@ Global variables and functions
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
-* Function Name: r_pga_dsad_interrupt_conversion
+* Function Name: r_pga_dsad_conversion_interrupt
 * Description  : None
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
 static unsigned short pga_finish = 0;
-static void __near r_pga_dsad_interrupt_conversion(void)
+static void __near r_pga_dsad_conversion_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */

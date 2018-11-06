@@ -1,8 +1,8 @@
 /************************************************************************/
-/* システム名   : RD1402 パチンコ/パチスロ用呼び出しランプ				*/
+/* システム名   : RD8001 快眠チェッカー									*/
 /* ファイル名   : cpu_com.h												*/
 /* 機能         : CPU間通信ミドル										*/
-/* 変更履歴     : 2014.05.08 Axia Soft Design 吉居		初版作成		*/
+/* 変更履歴     : 2018.04.10 Axia Soft Design 西島		初版作成		*/
 /* 注意事項     : なし                                                  */
 /************************************************************************/
 #ifndef _CPU_COM_H_
@@ -29,8 +29,6 @@
 // 各データサイズ
 #define CPU_COM_CMD_SIZE						(1)			/* コマンドデータサイズ 1byte */
 #define CPU_COM_SEQ_SIZE						(1)			/* SEQNoデータサイズ 1byte */
-#define CPU_COM_RTY_SIZE						(1)			/* リトライNoデータサイズ 1byte */
-#define CPU_COM_SUM_SIZE						(2)			/* SUM値データサイズ 2byte */
 #define CPU_COM_CRC_SIZE						(2)			/* CRCデータサイズ 2byte */
 #define CPU_COM_STX_SIZE						(2)			/* STXデータサイズ 2byte */
 #define CPU_COM_ETX_SIZE						(2)			/* ETXデータサイズ 2byte */
@@ -38,8 +36,6 @@
 /* メッセージの最小 */
 #define CPU_COM_MSG_SIZE_MIN					( CPU_COM_CMD_SIZE + \
 												  CPU_COM_SEQ_SIZE + \
-												  CPU_COM_RTY_SIZE + \
-												  CPU_COM_SUM_SIZE + \
 												  CPU_COM_CRC_SIZE + \
 												  CPU_COM_STX_SIZE + \
 												  CPU_COM_ETX_SIZE )
@@ -170,8 +166,7 @@ typedef enum{
 // メッセージ配列の添え字
 #define CPU_COM_MSG_TOP_POS_CMD					2				/* コマンド */
 #define CPU_COM_MSG_TOP_POS_SEQ					3				/* シーケンス */
-#define CPU_COM_MSG_TOP_POS_RTY					4				/* リトライ */
-#define CPU_COM_MSG_TOP_POS_DATA				5				/* データ部 */
+#define CPU_COM_MSG_TOP_POS_DATA				4				/* データ部 */
 
 
 
@@ -267,11 +262,10 @@ typedef struct{
 /******************/
 extern void cpu_com_init(void);
 extern void cpu_com_proc(void);
-extern void cpu_com_sub_reset(void);
+extern void cpu_com_send_end( void );
 extern UB cpu_com_get_status(void);
-extern UH cpu_com_dle_extension( UB* data, UH size );
-extern UB cpu_com_file_write( UB* p_buf, UH size, UW block, UB file_no );
-extern UB cpu_com_file_read( UB* p_buf, UH size, UW block, UB file_no );
+
+
 #endif
 /************************************************************************/
 /* END OF TEXT															*/

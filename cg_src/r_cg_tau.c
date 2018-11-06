@@ -14,23 +14,23 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_camp.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* File Name    : r_cg_tau.c
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for CAMP module.
-* Creation Date: 2017/06/01
+* Description  : This file implements device driver for TAU module.
+* Creation Date: 2018/04/10
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
 #include "r_cg_macrodriver.h"
-#include "r_cg_camp.h"
+#include "r_cg_tau.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -48,57 +48,75 @@ Global variables and functions
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
-* Function Name: R_CAMP_Create
-* Description  : This function initializes the selectable power-on-reset circuit.
+* Function Name: R_TAU0_Create
+* Description  : This function initializes the TAU0 module.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_CAMP_Create(void)
+void R_TAU0_Create(void)
 {
-    AFEEN = 1U;     /* supplies AFE input clock */
-    AFEPON = 1U;    /* power on AFE */
-    /* Wait until AFE stabilize */
-    while(0U == AFESTAT);
-    AMPEN = 1U;     /* supplies AMP input clock */
-    /* AMP Unit ★↓ */
-    AMPPON = 1U;
-    AMPTRM = 0U;	/*ソフトウェアトリガーモード */
-    AMPTRS = 0U;	
-    AMPMC = 0xB0; /* AMPSP:1 / AMPSP1:1 / AMPSP0:1 */
-//    AMPC = 0x0F; /* AMPE3:1 / AMPE2:0 / AMPE1:1 / AMPE0:1 *//* PGA1(アンプユニット0),AMP0(アンプユニット1),AMP2(アンプユニット3)スタート */
-	AMPC   = 0x0B;	/* PGA1(アンプユニット0),AMP0(アンプユニット1),AMP2(アンプユニット3)スタート */
-//    PGA1GC = 0x10; /* PGA1GC5:0 / PGA1GC4:1 / PGA1GC3:0 / PGA1GC2:0 / PGA1GC1:0 / PGA1GC0:0 */
-    PGA1GC = 0x30; /* PGA1GC5:1 / PGA1GC4:1 / PGA1GC3:0 / PGA1GC2:0 / PGA1GC1:0 / PGA1GC0:0 */
-//    PGA1S = 0x01; /* PGA1CS1:0 / PGA1CS0:1 */
-    PGA1S = 0x02; /* PGA1CS1:0 / PGA1CS0:1 *///RD8001暫定：ポート設定
-    AMP0S = 0x50; /* AMP0NFB:0 / AMP0NSO:1 /      0    / AMP0PDA:1 / 0 / AMP0PS2:0 / AMP0PS1:0 / AMP0PS0:0 */
-//    AMP1S = 0x50; /* AMP1NFB:0 / AMP1NSO:1 / AMP1PVR:1 / AMP1PDA:1 / 0 / AMP1PS2:0 / AMP1PS1:0 / AMP1PS0:0 */
-    AMP2S = 0x50; /* AMP2NFB:0 / AMP2NSO:1 / AMP2PVR:0 / AMP2PDA:1 / 1 / AMP1PS2:0 /     0     / AMP1PS0:0 */
-    /* AMP Unit ★↑ */
-	
-	R_CAMP0_Start();
+    TAU0EN = 1U;    /* enables input clock supply */
+    TPS0 = _0000_TAU0_CKM3_fCLK_8 | _0000_TAU0_CKM2_fCLK_1 | _0000_TAU0_CKM1_fCLK_0 | _0001_TAU0_CKM0_fCLK_1;
+    /* Stop all channels */
+    TT0 = _0800_TAU_CH3_H8_STOP_TRG_ON | _0200_TAU_CH1_H8_STOP_TRG_ON | _0080_TAU_CH7_STOP_TRG_ON | 
+          _0040_TAU_CH6_STOP_TRG_ON | _0020_TAU_CH5_STOP_TRG_ON | _0010_TAU_CH4_STOP_TRG_ON | 
+          _0008_TAU_CH3_STOP_TRG_ON | _0004_TAU_CH2_STOP_TRG_ON | _0002_TAU_CH1_STOP_TRG_ON | 
+          _0001_TAU_CH0_STOP_TRG_ON;
+    TMMK00 = 1U;    /* disable INTTM00 interrupt */
+    TMIF00 = 0U;    /* clear INTTM00 interrupt flag */
+    TMMK01 = 1U;    /* disable INTTM01 interrupt */
+    TMIF01 = 0U;    /* clear INTTM01 interrupt flag */
+    TMMK01H = 1U;   /* disable INTTM01H interrupt */
+    TMIF01H = 0U;   /* clear INTTM01H interrupt flag */
+    TMMK02 = 1U;    /* disable INTTM02 interrupt */
+    TMIF02 = 0U;    /* clear INTTM02 interrupt flag */
+    TMMK03 = 1U;    /* disable INTTM03 interrupt */
+    TMIF03 = 0U;    /* clear INTTM03 interrupt flag */
+    TMMK03H = 1U;   /* disable INTTM03H interrupt */
+    TMIF03H = 0U;   /* clear INTTM03H interrupt flag */
+    TMMK04 = 1U;    /* disable INTTM04 interrupt */
+    TMIF04 = 0U;    /* clear INTTM04 interrupt flag */
+    TMMK05 = 1U;    /* disable INTTM05 interrupt */
+    TMIF05 = 0U;    /* clear INTTM05 interrupt flag */
+    TMMK06 = 1U;    /* disable INTTM06 interrupt */
+    TMIF06 = 0U;    /* clear INTTM06 interrupt flag */
+    TMMK07 = 1U;    /* disable INTTM07 interrupt */
+    TMIF07 = 0U;    /* clear INTTM07 interrupt flag */
+    /* Set INTTM00 low priority */
+    TMPR100 = 1U;
+    TMPR000 = 1U;
+    /* Channel 0 used as interval timer */
+    TMR00 = _0000_TAU_CLOCK_SELECT_CKM0 | _0000_TAU_CLOCK_MODE_CKS | _0000_TAU_TRIGGER_SOFTWARE | 
+            _0000_TAU_TIMN_EDGE_FALLING | _0000_TAU_MODE_INTERVAL_TIMER | _0000_TAU_START_INT_UNUSED;
+    TDR00 = _EA5F_TAU_TDR00_VALUE;
+    TO0 &= (uint16_t)~_0001_TAU_CH0_OUTPUT_VALUE_1;
+    TOE0 &= (uint16_t)~_0001_TAU_CH0_OUTPUT_ENABLE;
+    
+    R_TAU0_Channel0_Start();
 }
 /***********************************************************************************************************************
-* Function Name: R_CAMP0_Start
-* Description  : This function starts the CAMP0.
+* Function Name: R_TAU0_Channel0_Start
+* Description  : This function starts TAU0 channel 0 counter.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_CAMP0_Start(void)
+void R_TAU0_Channel0_Start(void)
 {
-//	AMPC   = 0x0B;	/* PGA1(アンプユニット0),AMP0(アンプユニット1),AMP2(アンプユニット3)スタート */
-//	AMPMON = 0x03;	/* PGA1(アンプユニット0),AMP0(アンプユニット1)スタート */
-
+    TMIF00 = 0U;    /* clear INTTM00 interrupt flag */
+    TMMK00 = 0U;    /* enable INTTM00 interrupt */
+    TS0 |= _0001_TAU_CH0_START_TRG_ON;
 }
 /***********************************************************************************************************************
-* Function Name: R_CAMP0_Stop
-* Description  : This function stops the CAMP0.
+* Function Name: R_TAU0_Channel0_Stop
+* Description  : This function stops TAU0 channel 0 counter.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_CAMP0_Stop(void)
+void R_TAU0_Channel0_Stop(void)
 {
-
+    TT0 |= _0001_TAU_CH0_STOP_TRG_ON;
+    TMMK00 = 1U;    /* disable INTTM00 interrupt */
+    TMIF00 = 0U;    /* clear INTTM00 interrupt flag */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

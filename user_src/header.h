@@ -25,13 +25,14 @@
 #include "r_cg_cgc.h"
 #include "r_cg_port.h"
 #include "r_cg_pga_dsad.h"
-#include "r_cg_camp.h"
+#include "r_cg_amp.h"
 #include "r_cg_dac.h"
 #include "r_cg_sau.h"
 #include "r_cg_intp.h"
 #include "r_cg_it.h"
 #include "r_cg_iica.h"
 #include "r_cg_rtc.h"
+#include "r_cg_adc.h"
 
 /* ƒ~ƒhƒ‹ */
 #include "com_srv.h"

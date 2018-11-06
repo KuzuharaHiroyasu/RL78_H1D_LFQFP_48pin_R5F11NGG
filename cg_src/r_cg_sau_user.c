@@ -32,6 +32,7 @@ Includes
 #include "sys.h"
 #include "r_cg_macrodriver.h"
 #include "r_cg_sau.h"
+#include "r_cg_port.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -60,6 +61,7 @@ UB drv_uart0_send_buf[DRV_UART0_RCV_RING_LENGTH];				/* 送信バッファ(リング用) *
 UB drv_uart0_rcv_buf[DRV_UART0_SND_RING_LENGTH];				/* 受信バッファ(リング用) */
 RING_BUF drv_uart0_send_ring;									/* 送信リングバッファ用コントローラ */
 RING_BUF drv_uart0_rcv_ring;									/* 受信リングバッファ用コントローラ */
+UB dv_uart0_send_flg;											/* 送信中フラグ */
 
 UB drv_uart1_send_buf[DRV_UART1_RCV_RING_LENGTH];				/* 送信バッファ(リング用) */
 UB drv_uart1_rcv_buf[DRV_UART1_SND_RING_LENGTH];				/* 受信バッファ(リング用) */
@@ -93,6 +95,8 @@ void drv_uart0_data_init( void )
 	/* 受信リングバッファ初期化 */
 	memset( &drv_uart0_rcv_buf[0], 0x00, sizeof(drv_uart0_rcv_buf) );
 	ring_buf_init( &drv_uart0_rcv_ring, &drv_uart0_rcv_buf[0], DRV_UART0_RCV_RING_LENGTH );	
+	
+	dv_uart0_send_flg = OFF;
 }
 
 
@@ -148,6 +152,9 @@ void __near drv_uart0_snd_int(void)
 	ercd = read_ring_buf( &drv_uart0_send_ring, &snd_data );
 	if(ercd == E_OK){
 		TXD0 = snd_data;
+	}else{
+		drv_o_port_g1d_int( OFF );
+		dv_uart0_send_flg = OFF;
 	}
 #endif
 }
@@ -217,8 +224,11 @@ void __near drv_uart0_rcv_int(void)
 void drv_uart0_send_start( void )
 {
 	UB snd_data;
+
+//	drv_o_port_g1d_int( ON );
 	
 	if(E_OK == read_ring_buf( &drv_uart0_send_ring, &snd_data )){
+		dv_uart0_send_flg = ON;
         STMK0 = 1U;    /* disable INTST0 interrupt */
 		TXD0 = snd_data;
         STMK0 = 0U;    /* enable INTST0 interrupt */
@@ -450,6 +460,13 @@ RING_BUF* drv_uart1_get_rcv_ring( void )
 {
 	return &drv_uart1_rcv_ring;
 }
+
+
+UB drv_uart0_get_send( void )
+{
+	return dv_uart0_send_flg;
+}
+
 
 // debug
 void test_uart_0_send( void )

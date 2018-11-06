@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_adc.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for ADC module.
-* Creation Date: 2017/12/20
+* Creation Date: 2018/04/18
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -59,30 +59,16 @@ void R_ADC_Create(void)
     ADM0 = 0x00U;  /* disable AD conversion and clear ADM0 register */
     ADMK = 1U;      /* disable INTAD interrupt */
     ADIF = 0U;      /* clear INTAD interrupt flag */
-    /* Set INTAD low priority */
-    ADPR1 = 1U;
-    ADPR0 = 1U;
-    /* The reset status of ADPC is analog input, so it's unnecessary to set. */
-    /* Set ANI8 - ANI9 pin */
+    /* Set ANI8, ANI9, ANI10 pin */
+    PMC0 |= 0x38U;
     PM0 |= 0x38U;
-    /* Set ANI13, ANI14 pin */
-//    PM15 |= 0x60U;
-    /* Set ANI19 pin */
-//    PMC12 |= 0x01U;
-//    PM12 |= 0x01U;
-
-
-
-
-    ADM0 = _00_AD_OPERMODE_SELECT | _28_AD_CONVERSION_CLOCK_5 | _00_AD_TIME_MODE_NORMAL_1;
+    /* Set ADC registers */
+    ADM0 = _28_AD_CONVERSION_CLOCK_5 | _00_AD_TIME_MODE_NORMAL_1;
     ADM1 = _00_AD_TRIGGER_SOFTWARE | _20_AD_CONVMODE_ONESELECT;
-    ADM2 = _00_AD_POSITIVE_VDD | _00_AD_NEGATIVE_VSS | _00_AD_AREA_MODE_1 | _00_AD_RESOLUTION_10BIT;
+    ADM2 = _00_AD_POSITIVE_VDD | _00_AD_AREA_MODE_1 | _00_AD_RESOLUTION_10BIT;
     ADUL = _FF_AD_ADUL_VALUE;
     ADLL = _00_AD_ADLL_VALUE;
-//    ADS = 0x08;			// ANI8
-//    ADS = 0x09;			// ANI9
-    ADS = 0x0A;			// ANI10
-    
+    ADS = _08_AD_INPUT_CHANNEL_8;
 }
 /***********************************************************************************************************************
 * Function Name: R_ADC_Start
@@ -92,8 +78,6 @@ void R_ADC_Create(void)
 ***********************************************************************************************************************/
 void R_ADC_Start(void)
 {
-    ADIF = 0U;      /* clear INTAD interrupt flag */
-    ADMK = 0U;      /* enable INTAD interrupt */
     ADCS = 1U;      /* enables conversion operation */
 }
 /***********************************************************************************************************************
@@ -105,8 +89,6 @@ void R_ADC_Start(void)
 void R_ADC_Stop(void)
 {
     ADCS = 0U;      /* stops conversion operation */
-    ADIF = 0U;      /* clear INTAD interrupt flag */
-    ADMK = 0U;      /* enable INTAD interrupt */
 }
 /***********************************************************************************************************************
 * Function Name: R_ADC_Set_OperationOn

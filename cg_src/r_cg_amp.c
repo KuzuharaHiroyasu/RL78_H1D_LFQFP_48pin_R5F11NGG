@@ -18,11 +18,11 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_pga_dsad.c
+* File Name    : r_cg_amp.c
 * Version      :  
 * Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for PGIA module.
+* Description  : This file implements device driver for AMP module.
 * Creation Date: 2018/04/18
 ***********************************************************************************************************************/
 
@@ -30,7 +30,7 @@
 Includes
 ***********************************************************************************************************************/
 #include "r_cg_macrodriver.h"
-#include "r_cg_pga_dsad.h"
+#include "r_cg_amp.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -48,101 +48,106 @@ Global variables and functions
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
-* Function Name: R_PGA_DSAD_Create
-* Description  : This function initializes the PGA_DSAD module.
+* Function Name: R_AMP_Create
+* Description  : This function initializes the comparator module..
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_PGA_DSAD_Create(void)
+void R_AMP_Create(void)
 {
     AFEEN = 1U;     /* enables input clock supply */
     AFEPON = 1U;    /* power on AFE */
 
-    while (0U == AFESTAT) 
+    while (0U == AFESTAT)
     {
-        ;/* Wait until AFE stabilize  */
+        ;/* Wait until AFE stabilize */
     }
-
-    PGAEN = 1U;     /* enables input clock supply */
-    DSADMR = _00_PGA_DSAD_MODE_NORMAL;
-    AFECKS = _0A_AFE_CLOCK_DIVIDED3;
-    VSBIAS = _09_VSBIAS_OUTPUT_VOLTAGE_05;
-    PGAPON = 1U;    /* power on PGA and DS A/D */
-
-    while (0U == PGASTAT) 
-    {
-        ;/* Wait until PGA stabilize  */
-    }
-
-    DSADMK = 1U;    /* disable INTDSAD interrupt */
-    DSADIF = 0U;    /* clear INTDSAD interrupt flag */
-    DSADSMK = 1U;   /* disable INTDSADS interrupt */
-    DSADSIF = 0U;   /* clear INTDSADS interrupt flag */
-    /* Set INTDSAD low priority */
-    DSADPR1 = 1U;
-    DSADPR0 = 1U;
-    DSADMR |= _00_PGA_DSAD_TRIGGER_SOFTWARE;
-    DSADCTL = _00_DSAD_CONVERSION_STOP | _00_DSAD_STABILIZATION_TIME_3T | _20_DSAD_SCAN_MODE_SINGLE | 
-              _08_DSAD_INPUT3_DISABLE | _04_DSAD_INPUT2_DISABLE | _02_DSAD_INPUT1_DISABLE | 
-              _00_DSAD_INPUT0_ENABLE;
-    PGA0CTL0 = _40_PGA_MULTIPLEXERn_SAMPLE_RATIO_256 | _0C_PGA_MULTIPLEXERn_GSET01_4 | _00_PGA_MULTIPLEXERn_GSET02_1;
-    PGA0CTL1 = _00_PGA_MULTIPLEXER0_DIFFERENTIAL | _10_PGA_MULTIPLEXERn_OFFSET_16;
-    PGA0CTL2 = _01_PGA_MULTIPLEXER0_SAMPLE_COUNT;
-    PGA0CTL3 = _00_PGA_MULTIPLEXERn_MUMBER_MODE_8032 | _00_PGA_MULTIPLEXERn_AVG_NOT;
-    PGABOD = _00_DSAD_DISCONNECTION_DETECTION_UNUSED;
     
+    AMPEN = 1U;     /* enables input clock supply */
+    AMPC = 0U; /* stop all AMP units */
+    AMPPON = 0U;    /* power-off (default) */
+    AMPMC = _00_AMP_CH2_3_LOWPOWER | _00_AMP_CH1_LOWPOWER | _00_AMP_CH0_LOWPOWER;
+    AMPTRS = _00_AMP_ELC_TRIGGER_SOURCE_0;
+    AMPTRM = _00_AMP2_TRIGGER_SOFTWARE | _00_AMP0_TRIGGER_SOFTWARE | _00_PGA1_TRIGGER_SOFTWARE;
+    PGA1GC = _30_PGA1_GSET11_4 | _00_PGA1_GSET12_8;
+    PGA1S = _02_PGA1_PGA11N_PGA11P;
+    AMP0S = _40_AMP0_AMP0N_INPUT4 | _02_AMP0_AMP0P_INPUT5;
+    AMP2S = _40_AMP2_AMP2N_INPUT6 | _10_AMP2_DAC1;
+    
+    // é©ìÆê∂ê¨
+    R_AMP_Set_PowerOn();
 }
+
+
 /***********************************************************************************************************************
-* Function Name: R_PGA_DSAD_Start
-* Description  : This function starts PGA_DSAD module operation.
+* Function Name: R_PGA1_Start
+* Description  : This function starts the PGA1.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_PGA_DSAD_Start(void)
+void R_PGA1_Start(void)
 {
-    DSADIF = 0U;    /* clear INTDSAD interrupt flag */
-    DSADMK = 0U;    /* enable INTDSAD interrupt */
-    DSADST = 1U;    /* start A/D conversion */
+    AMPE0 = 1U;     /* enables comparator operation */
 }
 /***********************************************************************************************************************
-* Function Name: R_PGA_DSAD_Stop
-* Description  : This function stops PGA_DSAD module operation.
+* Function Name: R_PGA1_Stop
+* Description  : This function stops the PGA1.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_PGA_DSAD_Stop(void)
+void R_PGA1_Stop(void)
 {
-    DSADST = 0U;    /* stop A/D conversion */
-    DSADMK = 1U;    /* disable INTDSAD interrupt */
-    DSADIF = 0U;    /* clear INTDSAD interrupt flag */
+    AMPE0 = 0U;     /* disable comparator operation */
 }
 /***********************************************************************************************************************
-* Function Name: R_PGA_DSAD_Get_Result
-* Description  : This function returns the PGA_DSAD conversion result.
-* Arguments    : bufferH -
-*                    high 16 bits
-*                bufferL -
-*                    low 16 bits
+* Function Name: R_AMP0_Start
+* Description  : This function starts the AMP0.
+* Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_PGA_DSAD_Get_Result(uint16_t * const bufferH, uint16_t * const bufferL)
+void R_AMP0_Start(void)
 {
-    *bufferH = DSADCR1;
-    *bufferL = DSADCR0;
+    AMPE1 = 1U;     /* enables comparator operation */
 }
 /***********************************************************************************************************************
-* Function Name: R_PGA_DSAD_Get_AverageResult
-* Description  : This function returns the PGA_DSAD conversion average result.
-* Arguments    : bufferH -
-*                    high 16 bits
-*                bufferL -
-*                    low 16 bits
+* Function Name: R_AMP0_Stop
+* Description  : This function stops the AMP0.
+* Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_PGA_DSAD_Get_AverageResult(uint16_t * const bufferH, uint16_t * const bufferL)
+void R_AMP0_Stop(void)
 {
-    *bufferH = DSADMV1;
-    *bufferL = DSADMV0;
+    AMPE1 = 0U;     /* disable comparator operation */
+}
+/***********************************************************************************************************************
+* Function Name: R_AMP2_Start
+* Description  : This function starts the AMP2.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_AMP2_Start(void)
+{
+    AMPE3 = 1U;     /* enables comparator operation */
+}
+/***********************************************************************************************************************
+* Function Name: R_AMP2_Stop
+* Description  : This function stops the AMP2.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_AMP2_Stop(void)
+{
+    AMPE3 = 0U;     /* disable comparator operation */
+}
+/***********************************************************************************************************************
+* Function Name: R_AMP_Set_PowerOn
+* Description  : This function starts the clock supplied for AMP.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_AMP_Set_PowerOn(void)
+{
+    AMPPON = 1U;    /* power-on */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

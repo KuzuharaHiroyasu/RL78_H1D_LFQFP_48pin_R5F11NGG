@@ -14,21 +14,22 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_port.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for Port module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/11
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "sys.h"
 #include "r_cg_macrodriver.h"
 #include "r_cg_port.h"
 /* Start user code for include. Do not edit comment generated here */
@@ -55,20 +56,21 @@ Global variables and functions
 ***********************************************************************************************************************/
 void R_PORT_Create(void)
 {
-//    P1 = _00_Pn5_OUTPUT_0;
-//    POM1 = _00_POMn5_NCH_OFF;
-//    PM1 = _80_PMn7_MODE_UNUSED | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED | _10_PMn4_MODE_UNUSED | 
-//          _08_PMn3_MODE_UNUSED | _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-//    PM3 = _80_PMn7_MODE_INPUT | _40_PMn6_MODE_INPUT | _20_PMn5_MODE_UNUSED |
-//    PM3 = _80_PMn7_MODE_UNUSED | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED |
-    PM3 = _00_PMn7_MODE_OUTPUT | _40_PMn6_MODE_UNUSED | _20_PMn5_MODE_UNUSED |
-          _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-	// 赤外線(P77)、赤色フォトダイオード(P76)ON/OFF切替
-    PM7 = _00_PMn7_MODE_OUTPUT | _00_PMn6_MODE_OUTPUT | _20_PMn5_MODE_UNUSED |
-          _04_PMn2_MODE_UNUSED | _02_PMn1_MODE_UNUSED | _01_PMn0_MODE_UNUSED;
-    P7  = 0xBF;
-
-
+    P3 = _00_Pn7_OUTPUT_0 | _00_Pn6_OUTPUT_0 | _00_Pn5_OUTPUT_0 | _00_Pn2_OUTPUT_0 | _00_Pn0_OUTPUT_0;
+    P5 = _00_Pn3_OUTPUT_0 | _04_Pn2_OUTPUT_1 | _00_Pn1_OUTPUT_0 | _00_Pn0_OUTPUT_0;
+    P7 = _80_Pn7_OUTPUT_1 | _40_Pn6_OUTPUT_1 | _00_Pn1_OUTPUT_0 | _00_Pn0_OUTPUT_0;
+    PU1 = _00_PUn0_PULLUP_OFF;
+    PU7 = _00_PUn7_PULLUP_OFF | _00_PUn6_PULLUP_OFF | _00_PUn1_PULLUP_OFF | _00_PUn0_PULLUP_OFF;
+    PIM1 = _00_PIMn0_TTL_OFF;
+    POM3 = _00_POMn7_NCH_OFF | _00_POMn6_NCH_OFF | _00_POMn5_NCH_OFF;
+    POM5 = _00_POMn2_NCH_OFF | _00_POMn1_NCH_OFF | _00_POMn0_NCH_OFF;
+    PM1 = _FE_PM1_DEFAULT_VALUE | _01_PMn0_MODE_INPUT;
+    PM3 = _1A_PM3_DEFAULT_VALUE | _80_PMn7_MODE_INPUT | _40_PMn6_MODE_INPUT | _20_PMn5_MODE_INPUT | 
+          _00_PMn2_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
+    PM5 = _F0_PM5_DEFAULT_VALUE | _08_PMn3_MODE_INPUT | _00_PMn2_MODE_OUTPUT | _02_PMn1_MODE_INPUT | 
+          _01_PMn0_MODE_INPUT;
+    PM7 = _3C_PM7_DEFAULT_VALUE | _00_PMn7_MODE_OUTPUT | _00_PMn6_MODE_OUTPUT | _02_PMn1_MODE_INPUT | 
+          _01_PMn0_MODE_INPUT;
 }
 
 /* Start user code for adding. Do not edit comment generated here */

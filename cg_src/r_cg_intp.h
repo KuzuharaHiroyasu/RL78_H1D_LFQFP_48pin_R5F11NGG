@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_intp.h
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for INTP module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/11
 ***********************************************************************************************************************/
 #ifndef INTP_H
 #define INTP_H
@@ -32,7 +32,7 @@
 Macro definitions (Register bit)
 ***********************************************************************************************************************/
 /*
-    Specify the valid edge for INTP0 to INTP6 (EGP0) 
+    Specify the valid edge for INTP0 to INTP7 (EGP0) 
 */
 /* Valid edge selection (EGP7) */
 #define _00_INTP7_EDGE_FALLING_DISABLE          (0x00U) /* edge detection disabled or falling edge */
@@ -60,7 +60,7 @@ Macro definitions (Register bit)
 #define _01_INTP0_EDGE_RISING_BOTH              (0x01U) /* rising or both edge */
 
 /*
-    Specify the valid edge for INTP0 to INTP6 (EGN0) 
+    Specify the valid edge for INTP0 to INTP7 (EGN0) 
 */
 /* Valid edge selection (EGN7) */
 #define _00_INTP7_EDGE_RISING_DISABLE           (0x00U) /* edge detection disabled or rising edge */
@@ -95,6 +95,11 @@ Macro definitions
 /***********************************************************************************************************************
 Typedef definitions
 ***********************************************************************************************************************/
+// ユーザー定義
+#define DRV_I_PORT_POW_SW			P12_bit.no1			// 電源SW
+#define DRV_I_PORT_G1D_INT			P3_bit.no0			// G1D割り込み入力状態
+
+
 
 /***********************************************************************************************************************
 Global functions
@@ -102,7 +107,13 @@ Global functions
 void R_INTC_Create(void);
 void R_INTC1_Start(void);
 void R_INTC1_Stop(void);
-UB drv_read_pow_sw(void);
+void R_INTC3_Start(void);
+void R_INTC3_Stop(void);
+void R_INTC5_Start(void);
+void R_INTC5_Stop(void);
+
+UB drv_intp_read_pow_sw(void);
+UB drv_intp_read_g1d_int(void);
 
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */

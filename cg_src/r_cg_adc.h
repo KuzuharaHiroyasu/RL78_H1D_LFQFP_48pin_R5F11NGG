@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_adc.h
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for ADC module.
-* Creation Date: 2017/12/20
+* Creation Date: 2018/04/18
 ***********************************************************************************************************************/
 #ifndef ADC_H
 #define ADC_H
@@ -37,8 +37,6 @@ Macro definitions (Register bit)
 /* A/D conversion operation control (ADCS) */
 #define _00_AD_CONVERSION_DISABLE               (0x00U) /* stops conversion operation */
 #define _80_AD_CONVERSION_ENABLE                (0x80U) /* enables conversion operation */
-/* Specification of the A/D conversion channel selection mode (ADMD) */
-#define _00_AD_OPERMODE_SELECT                  (0x00U) /* select mode */
 /* A/D conversion clock selection (FR2,FR1,FR0) */
 #define _00_AD_CONVERSION_CLOCK_64              (0x00U) /* fCLK/64 */
 #define _08_AD_CONVERSION_CLOCK_32              (0x08U) /* fCLK/32 */
@@ -68,7 +66,7 @@ Macro definitions (Register bit)
 /* AD convertion mode selection (ADSCM) */
 #define _00_AD_CONVMODE_CONSELECT               (0x00U) /* sequential convertion mode */
 #define _20_AD_CONVMODE_ONESELECT               (0x20U) /* one-shot convertion mode */
-/* Trigger signal selection (ADTRS1, ADTRS0) (ADTRS1,ADTRS0) */
+/* Trigger signal selection (ADTRS1,ADTRS0) */
 #define _00_AD_TRIGGER_INTTM01                  (0x00U) /* INTTM01 */
 #define _01_AD_TRIGGER_ELC                      (0x01U) /* ELC */
 #define _02_AD_TRIGGER_INTRTC                   (0x02U) /* INTRTC */
@@ -77,12 +75,9 @@ Macro definitions (Register bit)
 /*
     A/D converter mode register 2 (ADM2) 
 */
-/* AD VREF(+) selection (ADREFP0) */
+/* AD VREF(+) selection (ADREFP1,ADREFP0) */
 #define _00_AD_POSITIVE_VDD                     (0x00U) /* use VDD as VREF(+) */
-#define _40_AD_POSITIVE_AVREFP                  (0x40U) /* use AVREFP as VREF(+) */
-/* AD VREF(-) selection (ADREFM) */
-#define _00_AD_NEGATIVE_VSS                     (0x00U) /* use VSS as VREF(-) */
-#define _20_AD_NEGATIVE_AVREFM                  (0x20U) /* use AVREFM as VREF(-) */
+#define _80_AD_POSITIVE_INTERVOLT               (0x80U) /* use internal voltage as VREF(+) */
 /* AD conversion result upper/lower bound value selection (ADRCK) */
 #define _00_AD_AREA_MODE_1                      (0x00U) /* generates INTAD when ADLL <= ADCRH <= ADUL */
 #define _08_AD_AREA_MODE_2_3                    (0x08U) /* generates INTAD when ADUL < ADCRH or ADLL > ADCRH */
@@ -96,21 +91,24 @@ Macro definitions (Register bit)
 /*
     Analog input channel specification register (ADS) 
 */
-/* Specification of analog input channel (ADS4,ADS3,ADS2,ADS1,ADS0) */
-#define _00_AD_INPUT_CHANNEL_0                  (0x00U) /* ANI0 */
-#define _01_AD_INPUT_CHANNEL_1                  (0x01U) /* ANI1 */
-#define _02_AD_INPUT_CHANNEL_2                  (0x02U) /* ANI2 */
+/* Specification of analog input channel (ADISS,ADS3,ADS2,ADS1,ADS0) */
+#define _08_AD_INPUT_CHANNEL_8                  (0x08U) /* ANI8 */
+#define _09_AD_INPUT_CHANNEL_9                  (0x09U) /* ANI9 */
+#define _0A_AD_INPUT_CHANNEL_10                 (0x0AU) /* ANI10 */
+#define _0B_AD_INPUT_CHANNEL_11                 (0x0BU) /* ANI11 */
+#define _0C_AD_INPUT_CHANNEL_12                 (0x0CU) /* ANI12 */
 #define _0D_AD_INPUT_CHANNEL_13                 (0x0DU) /* ANI13 */
 #define _0E_AD_INPUT_CHANNEL_14                 (0x0EU) /* ANI14 */
-#define _13_AD_INPUT_CHANNEL_19                 (0x13U) /* ANI19 */
+#define _80_AD_INPUT_TEMPERSENSOR               (0x80U) /* temperature sensor output */
+#define _81_AD_INPUT_INTERREFVOLT               (0x81U) /* internal reference voltage output */
 
 /*
     AD test function register (ADTES) 
 */
 /* AD test mode signal (ADTES1,ADTES0) */
 #define _00_AD_NORMAL_INPUT                     (0x00U) /* normal mode */
-#define _02_AD_TEST_AVREFM                      (0x02U) /* use AVREFM as test signal */
-#define _03_AD_TEST_AVREFP                      (0x03U) /* use AVREFP as test signal */
+#define _02_AD_TEST_NEGATIVE                    (0x02U) /* use VSS as test signal */
+#define _03_AD_TEST_POSITIVE                    (0x03U) /* use VDD as test signal */
 
 
 /***********************************************************************************************************************
@@ -131,12 +129,15 @@ Typedef definitions
 ***********************************************************************************************************************/
 typedef enum
 {
-    ADCHANNEL0,
-    ADCHANNEL1,
-    ADCHANNEL2,
-    ADCHANNEL13 = 13U,
+    ADCHANNEL8 = 8U,
+    ADCHANNEL9,
+    ADCHANNEL10,
+    ADCHANNEL11,
+    ADCHANNEL12,
+    ADCHANNEL13,
     ADCHANNEL14,
-    ADCHANNEL19 = 19U,
+    ADTEMPERSENSOR0 = 128U,
+    ADINTERREFVOLT
 } ad_channel_t;
 
 typedef enum
@@ -155,6 +156,11 @@ void R_ADC_Stop(void);
 void R_ADC_Set_OperationOn(void);
 void R_ADC_Set_OperationOff(void);
 void R_ADC_Get_Result(uint16_t * const buffer);
+
+void adc_ibiki_kokyu( uint16_t* ibiki, uint16_t* kokyu );
+void adc_dench( uint16_t* dench );
+
+
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #endif

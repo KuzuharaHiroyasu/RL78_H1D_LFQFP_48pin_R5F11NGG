@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_adc_user.c
-* Version      : Code Generator for RL78/G1H V1.00.00.04 [08 Mar 2016]
-* Device(s)    : R5F11FLJ
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for ADC module.
-* Creation Date: 2017/12/20
+* Creation Date: 2018/04/18
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -38,7 +38,6 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-#pragma interrupt r_adc_interrupt(vect=INTAD)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -47,31 +46,20 @@ Global variables and functions
 ***********************************************************************************************************************/
 /* Start user code for global. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
-unsigned short adc_sub( unsigned char ad_type);
+static unsigned short adc_sub( unsigned char ad_type);
 
-/***********************************************************************************************************************
-* Function Name: r_adc_interrupt
-* Description  : None
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
-static unsigned short ad_finish = 0;
-static void __near r_adc_interrupt(void)
+void adc_ibiki_kokyu( uint16_t* ibiki, uint16_t* kokyu )
 {
-    /* Start user code. Do not edit comment generated here */
-    /* End user code. Do not edit comment generated here */
-    
-	ad_finish = 1;
+	*ibiki = adc_sub( ADCHANNEL9 );
+	*kokyu = adc_sub( ADCHANNEL10 );
 }
 
-void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 )
+void adc_dench( uint16_t* dench )
 {
-	*ad1 = adc_sub( AD_TYPE_ANI8 );
-	*ad2 = adc_sub( AD_TYPE_ANI9 );
-	*ad3 = adc_sub( AD_TYPE_ANI10 );
+	*dench = adc_sub( ADCHANNEL8 );
 }
 
-unsigned short adc_sub( unsigned char ad_type)
+static unsigned short adc_sub( unsigned char ad_type)
 {
 	unsigned short ad_val;
 	
@@ -81,9 +69,8 @@ unsigned short adc_sub( unsigned char ad_type)
 	R_ADC_Start();
 	
 	while(1){
-		if( 1 == ad_finish ){
+		if( 0 == ADCS ){
 			R_ADC_Get_Result( &ad_val );
-			ad_finish = 0;
 			break;
 		}
 	}

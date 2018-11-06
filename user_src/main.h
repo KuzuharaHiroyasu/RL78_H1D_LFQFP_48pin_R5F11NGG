@@ -9,25 +9,32 @@
 #define		_MAIN_H_
 
 
-/* ファイル名(SD画像書換え,ダウンロード) */
+// システムモード
 #define			SYSTEM_MODE_NON						0
 #define			SYSTEM_MODE_SENSOR					1
 #define			SYSTEM_MODE_GET_MODE				2
 
+
+
+// 電池残量閾値
+#define DENCH_ZANRYO_1_VAL			(UH)( 1023.0 * (1.95 / 3.0 ))		// 1.95V以上
+#define DENCH_ZANRYO_2_VAL			(UH)( 1023.0 * (1.72 / 3.0 ))		// 1.72V以上
+#define DENCH_ZANRYO_3_VAL			(UH)( 1023.0 * (1.5 / 3.0 ))		// 1.5V以上
+
+
+#define			HOUR12_CNT_50MS		( 12 * 60 * 60 * (1000 / 50))	//12時間のカウント値[50ms]
+//#define			HOUR12_CNT_50MS			( 1 * 10 * 60 * (1000 / 50))	//12時間のカウント値[50ms]		短縮版10分
+
+
+
+
+
+
 // EEP
 #define EEP_DEVICE_ADR			0xA0				// デバイスアドレス
-#define EEP_RECORD_SIZE			16					// 1レコードサイズ ※256の約数である必要がある
-#define EEP_ADRS_SIZE			2					// 1レコードサイズ
 
 // 加速度センサ
 #define ACL_DEVICE_ADR			0x1C				// 加速度センサデバイスアドレス
-
-#define EEP_DATA_SIZE_ALL		131072				// EEP全サイズ
-#define EEP_DATA_SIZE_PAGE		( 131072 / 2 )		// EEPページサイズ
-
-
-#define EEP_RECORD_1P_MAX			( EEP_DATA_SIZE_PAGE / EEP_RECORD_SIZE )			// 1レコードサイズ(1ページ目)
-#define EEP_RECORD_2P_MAX			( EEP_RECORD_1P_MAX * 2 )							// 1レコードサイズ(2ページ目)
 
 // 30秒[20ms]
 #define SEC_30_CNT				( 30 * 1000 / 20 )
@@ -40,51 +47,6 @@
 #define I2C_RCV_SND_SIZE	50		//RD8001暫定：サイズ要調整
 
 
-
-
-// EEP書き込み用レコード(アドレス付き)
-typedef struct{
-	union{
-		UB	byte[EEP_RECORD_SIZE + EEP_ADRS_SIZE];
-		struct{
-			UH		wr_adrs;				/* EEPアドレス */
-			UH	kokyu_val;		
-			UH	ibiki_val;		
-			W	sekishoku_val;	// 差動入力の為に符号あり
-			W	sekigaival;		// 差動入力の為に符号あり
-			UB	valid;			/* レコード有効/無効				*/
-			B acl_x;
-			B acl_y;
-			B acl_z;
-		}data;
-	}record;
-}WR_EEP_RECORD;
-
-// EEPレコード
-typedef struct{
-	union{
-		UB	byte[EEP_RECORD_SIZE];
-		struct{
-			UH	kokyu_val;		
-			UH	ibiki_val;		
-			W	sekishoku_val;	// 差動入力の為に符号あり
-			W	sekigaival;		// 差動入力の為に符号あり
-			UB	valid;			/* レコード有効/無効				*/
-			B acl_x;
-			B acl_y;
-			B acl_z;
-#if 0
-			double	ibiki_val;				/* いびき */
-			double	myaku_val_sekishoku;	/* 脈拍_赤外 */
-			double	myaku_val_sekigai;		/* 脈拍_赤色 */
-			double	spo2_val_normal;		/* SPO2_通常 */
-			double	spo2_val_konica;		/* SPO2 */
-			UB state_flg;					/* フラグ(呼吸状態,睡眠ステージ,いびき有無 */
-			UB	valid;						/* レコード有効/無効 */
-#endif
-		}data;
-	}record;
-}EEP_RECORD;
 typedef struct{
 	union{
 		UB	byte[CPU_COM_SND_DATA_SIZE_SENSOR_DATA];
@@ -96,7 +58,7 @@ typedef struct{
 			B acl_x;
 			B acl_y;
 			B acl_z;
-			B dummy;			// 空き[パディング調整]
+			B dummy;			// ダミー[パディング調整]
 		}dat;
 	}info;
 }MEAS;
@@ -107,23 +69,9 @@ typedef struct{
 	
 	UB system_mode_chg_req;	/* システムモード変更要求 */
 	
-	
-	
-	UH eep_wr_record_cnt;	/* 書き込みレコード */
-	UH eep_rd_record_cnt;	/* 読み出しレコード */	
-	// 計測値(20ms)
 	MEAS meas;				/* 計測値(50ms) */
-	UH dench_val;
-#if 0
-	UH kokyu_val;		
-	UH ibiki_val;		
-	W sekishoku_val;	// 差動入力の為に符号あり
-	W sekigaival;		// 差動入力の為に符号あり
-	B acl_x;			// 加速度センサ(8bit)
-	B acl_y;
-	B acl_z;
-#endif
-	EEP_RECORD	eep;		// データレコード(EEP読み書き、UART送信)
+//	UH dench_val;
+	UH dench_sts;			/* 電池残量状態 */
 	
 	UB hour;
 	UB min;
@@ -134,7 +82,7 @@ typedef struct{
 	UB sensing_start_trig;		// センシング開始トリガ
 	UB sensing_end_flg;			// センシング終了
 
-	UB sensing_cnt;			// センシング終了
+	UW sensing_cnt_50ms;		// センシング終了[50ms]
 	
 	UB pow_sw_last;				// 電源ボタン状態(前回)
 	
@@ -170,7 +118,8 @@ typedef struct _DS_CPU_COM{
 
 typedef struct _CPU_COM_RCV_CMD_TBL{
 	UB cmd;							/* 受信コマンド */
-	void (*func)(UB *p_data);		/* 受信処理 */
+//	void (*func)(UB *p_data);		/* 受信処理 */
+	void (*func)(void);		/* 受信処理 */
 	UB res;							/* 応答有(ON)無(OFF) */
 }CPU_COM_RCV_CMD_TBL;
 
@@ -192,7 +141,6 @@ extern void R_IICA0_Create(void);
 extern void R_PGA_DSAD_Get_AverageResult(uint16_t * const bufferH,uint16_t * const bufferL);
 extern void R_PGA_DSAD_Get_Result(uint16_t * const bufferH,uint16_t * const bufferL);
 extern void R_DAC_Change_OutputVoltage_12bit(uint16_t outputVoltage);
-extern void adc_do( uint16_t* ad1, uint16_t* ad2, uint16_t* ad3 );
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
 extern void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data );

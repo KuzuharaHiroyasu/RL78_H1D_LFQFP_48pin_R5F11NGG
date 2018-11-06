@@ -14,16 +14,16 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014, 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) . All rights reserved.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * File Name    : r_cg_dac.c
-* Version      : Code Generator for RL78/I1E V1.02.02.01 [11 Nov 2016]
-* Device(s)    : R5F11CCC
+* Version      :  
+* Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
 * Description  : This file implements device driver for DAC module.
-* Creation Date: 2017/06/01
+* Creation Date: 2018/04/18
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -49,69 +49,75 @@ Global variables and functions
 
 /***********************************************************************************************************************
 * Function Name: R_DAC_Create
-* Description  : This function initializes the selectable power-on-reset circuit.
+* Description  : This function initializes the DA converter.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
 void R_DAC_Create(void)
 {
-    AFEEN = 1U;     /* supplies AFE input clock */
+    AFEEN = 1U;     /* enables input clock supply */
     AFEPON = 1U;    /* power on AFE */
-    /* Wait until AFE stabilize  */ 
-    while(0U == AFESTAT);
-    DACEN = 1U;     /* supplies DAC input clock */
-//    DACM0 = _00_DAC_TRIG_SOFTWARE | _01_DAC_BIT_8;
-    DACM0 = 0x00;		/* 通常モード,ビット右詰め */
-    DACM1 = 0x00;		/* 基準電圧AVDD */
- //   DAC1DR = 0x09E7;/* SBIAS 2.1V DAC1= 1.3V ★ */
-//    DAC1DR = 0x0177;
-//    DAC1DR = 0x00;
-    DAC1PON = 1U;   /* power on 12bit DAC1 ★ */
-    DAC0PON = 1U;   /* power on 8bit DAC1 ★ */
-    DAC1DR = 0x0000;/* SBIAS 2.1V DAC1= 1.3V ★ */
-//    DAC1DR = 0x0177;
+
+    while (0U == AFESTAT)
+    {
+        ;/* Wait until AFE stabilize  */
+    }
+
+    DACEN = 1U;     /* enables input clock supply */
+    DACM0 |= _00_DA1_FLUSH_RIGHT_FORMAT | _00_DA1_NORMAL_MODE;
+    DACM1 = _00_DA1_REFERENCE_AVDD;
+    DAC1DR = _0000_DA1_COUVERSION_VALUE;
     
 }
 /***********************************************************************************************************************
-* Function Name: R_DAC_Start
-* Description  : This function starts the DAC.
+* Function Name: R_DAC1_Start
+* Description  : This function enables the DA converter channel1.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_DAC_Start(void)
-{	
+void R_DAC1_Start(void)
+{
+    volatile uint16_t w_count;
 
+    DAC1PON = 1U;   /* enables D/A conversion operation */
+
+    /* Change the waiting time according to the system */
+    for (w_count = 0U; w_count <= DA1_WAITTIME; w_count++)
+    {
+        NOP();
+    }
 }
 /***********************************************************************************************************************
-* Function Name: R_DAC_Stop
-* Description  : This function stops the DAC.
+* Function Name: R_DAC1_Stop
+* Description  : This function stops the DA converter channel1.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_DAC_Stop(void)
+void R_DAC1_Stop(void)
 {
-
+    DAC1PON = 0U;   /* stops D/A conversion operation */
 }
 /***********************************************************************************************************************
-* Function Name: R_DAC_Change_OutputVoltage_8bit
-* Description  : This function change the lower 8 bits outputvoltage of DAC.
-* Arguments    : None
+* Function Name: R_DAC1_Set_ConversionValue
+* Description  : This function sets the DA converter channel1 value.
+* Arguments    : reg_value -
+*                    value of conversion
 * Return Value : None
 ***********************************************************************************************************************/
-void R_DAC_Change_OutputVoltage_8bit(uint8_t outputVoltage)
+void R_DAC1_Set_ConversionValue(uint16_t regvalue)
 {
-
+//    DAC1DR = regvalue;
+	DAC1DR = ( regvalue & 0x0FFF );
 }
-
 /***********************************************************************************************************************
-* Function Name: R_DAC_Change_OutputVoltage_8bit
-* Description  : This function change the lower 8 bits outputvoltage of DAC.
+* Function Name: R_DAC_Set_PowerOff
+* Description  : This function stops supply of input clock and reset all SFR.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_DAC_Change_OutputVoltage_12bit(uint16_t outputVoltage)
+void R_DAC_Set_PowerOff(void)
 {
-	DAC1DR = ( outputVoltage & 0x0FFF );
+    DACEN = 0U;     /* stops input clock supply */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

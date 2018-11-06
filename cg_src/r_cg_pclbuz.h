@@ -18,45 +18,47 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_dac.h
+* File Name    : r_cg_pclbuz.h
 * Version      :  
 * Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for DAC module.
-* Creation Date: 2018/04/18
+* Description  : This file implements device driver for PCLBUZ module.
+* Creation Date: 2018/04/12
 ***********************************************************************************************************************/
-#ifndef DAC_H
-#define DAC_H
+#ifndef PCLBUZ_H
+#define PCLBUZ_H
 
 /***********************************************************************************************************************
 Macro definitions (Register bit)
 ***********************************************************************************************************************/
 /*
-    D/A Converter Mode Register 0 (DACM0) 
+    Clock output select registers n (CKSn) 
 */
-/* D/A converter operation mode selection (DAMD0) */
-#define _00_DA0_NORMAL_MODE                 (0x00U) /* normal mode */
-#define _01_DA0_TIME_OUTPUT_MODE            (0x01U) /* real-time output mode */
-/* D/A converter operation mode selection (DAMD1) */
-#define _00_DA1_NORMAL_MODE                 (0x00U) /* normal mode */
-#define _02_DA1_TIME_OUTPUT_MODE            (0x02U) /* real-time output mode */
-/* D/A conversion data format selection (DPSEL) */
-#define _00_DA1_FLUSH_RIGHT_FORMAT          (0x00U) /* flush-right */
-#define _80_DA1_FLUSH_LEFT_FORMAT           (0x80U) /* flush-left */
-
-/*
-    D/A Converter Mode Register 1 (DACM1) 
-*/
-/* D/A converter reference voltage source selection (DAVR1) */
-#define _00_DA1_REFERENCE_AVDD              (0x00U) /* AVDD */
-#define _02_DA1_REFERENCE_SBIAS             (0x02U) /* SBIAS output */
+/* PCLBUZn output enable/disable specification (PCLOEn) */
+#define _00_PCLBUZ_OUTPUT_DISABLE          (0x00U) /* output disable */
+#define _80_PCLBUZ_OUTPUT_ENABLE           (0x80U) /* output enable */
+/* PCLBUZn output clock selection (CSELn,CCSn2,CCSn1,CCSn0) */
+#define _00_PCLBUZ_OUTCLK_fMAIN0           (0x00U) /* fMAIN */
+#define _01_PCLBUZ_OUTCLK_fMAIN1           (0x01U) /* fMAIN/2 */
+#define _02_PCLBUZ_OUTCLK_fMAIN2           (0x02U) /* fMAIN/2^2 */
+#define _03_PCLBUZ_OUTCLK_fMAIN3           (0x03U) /* fMAIN/2^3 */
+#define _04_PCLBUZ_OUTCLK_fMAIN4           (0x04U) /* fMAIN/2^4 */
+#define _05_PCLBUZ_OUTCLK_fMAIN5           (0x05U) /* fMAIN/2^11 */
+#define _06_PCLBUZ_OUTCLK_fMAIN6           (0x06U) /* fMAIN/2^12 */
+#define _07_PCLBUZ_OUTCLK_fMAIN7           (0x07U) /* fMAIN/2^13 */
+#define _08_PCLBUZ_OUTCLK_fSUB0            (0x08U) /* fSUB */
+#define _09_PCLBUZ_OUTCLK_fSUB1            (0x09U) /* fSUB/2 */
+#define _0A_PCLBUZ_OUTCLK_fSUB2            (0x0AU) /* fSUB/2^2 */
+#define _0B_PCLBUZ_OUTCLK_fSUB3            (0x0BU) /* fSUB/2^3 */
+#define _0C_PCLBUZ_OUTCLK_fSUB4            (0x0CU) /* fSUB/2^4 */
+#define _0D_PCLBUZ_OUTCLK_fSUB5            (0x0DU) /* fSUB/2^5 */
+#define _0E_PCLBUZ_OUTCLK_fSUB6            (0x0EU) /* fSUB/2^6 */
+#define _0F_PCLBUZ_OUTCLK_fSUB7            (0x0FU) /* fSUB/2^7 */
 
 
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-#define DA1_WAITTIME                        (0x78U) /* set the waiting time */
-#define _0000_DA1_COUVERSION_VALUE          (0x0000U) /* set the analog voltage value */
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -65,10 +67,10 @@ Typedef definitions
 /***********************************************************************************************************************
 Global functions
 ***********************************************************************************************************************/
-void R_DAC_Create(void);
-void R_DAC1_Start(void);
-void R_DAC1_Stop(void);
-void R_DAC1_Set_ConversionValue(uint16_t regvalue);
+void R_PCLBUZ0_Create(void);
+void R_PCLBUZ0_Start(void);
+void R_PCLBUZ0_Stop(void);
+
 /* Start user code for function. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #endif
