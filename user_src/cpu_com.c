@@ -13,9 +13,6 @@
 /********************/
 /* プロトタイプ宣言 */
 /********************/
-
-
-
 STATIC void cpu_com_crcset(UB *msg, UH size, UH *crc);
 STATIC void cpu_com_rcv_proc(void);
 STATIC UB cpu_com_analyze_msg(void);
@@ -25,8 +22,6 @@ STATIC void cpu_com_send_proc(void);
 STATIC UB cpu_com_make_send_data(void);
 STATIC UH cpu_com_dle_extension( UB* data, UH size );
 
-
-
 /********************/
 /*     内部変数     */
 /********************/
@@ -34,17 +29,14 @@ STATIC UH cpu_com_dle_extension( UB* data, UH size );
 STATIC DS_CPU_COM_INPUT s_cpu_com_ds_input;					/* データ管理部のコピーエリア アプリへのデータ受け渡し用 */
 STATIC DS_CPU_COM_ORDER *s_p_cpu_com_ds_order;				/* データ管理部のポインタ アプリからの指示用 */
 
-
 STATIC UB s_cpu_com_snd_cmd;								/* 送信コマンド */
-STATIC UB s_cpu_com_snd_data[CPU_COM_MSG_SIZE_MAX];			/* 送信メッセージ */
+STATIC UB s_cpu_com_snd_data[CPU_COM_BUF_SIZE_MAX];			/* 送信メッセージ */
 STATIC UH s_cpu_com_snd_size;								/* 送信メッセージ長 */
 STATIC UB s_cpu_com_snd_seq_no;								/* 送信シーケンスNo */
 STATIC UB s_cpu_com_res_seq_no;								/* 受信シーケンスNo */
 
-STATIC CPU_COM_RCV_MSG	s_cpu_com_rcv_msg;					/* 受信メッセージ */
+STATIC CPU_COM_ANA_RCV_MSG	s_cpu_com_rcv_msg;				/* 解析用受信メッセージ */
 STATIC UH s_cpu_com_rcv_msg_size;							/* 受信メッセージサイズ */
-
-
 
 
 /********************/
@@ -76,7 +68,7 @@ STATIC const T_CPU_COM_CMD_INFO s_tbl_cmd_info[CPU_COM_CMD_MAX] = {
 /* 関数名   : 初期化処理												*/
 /* 引数     : なし														*/
 /* 戻り値   : なし														*/
-/* 変更履歴 : 2014.05.08  Axia Soft Design 吉居		初版作成			*/
+/* 変更履歴     : 2018.04.10 Axia Soft Design 西島		初版作成		*/
 /************************************************************************/
 /* 機能 : 初期化処理													*/
 /************************************************************************/
@@ -109,8 +101,7 @@ void cpu_com_init(void)
 /*			: UH size : 対象データ長									*/
 /*          : UH crc : CRC計算結果										*/
 /* 戻り値   : なし														*/
-/* 変更履歴 : 2012.11.30  Axia Soft Design 浦久保   初版作成			*/
-/*          : 2014.05.13  Axia Soft Design 吉居		CPU間通信用に移植	*/
+/* 変更履歴     : 2018.04.10 Axia Soft Design 西島		初版作成		*/
 /************************************************************************/
 /* 機能 :																*/
 /************************************************************************/
@@ -128,7 +119,7 @@ STATIC void cpu_com_crcset(UB *msg, UH size, UH *crc)
 /* 関数名   : CPU間通信周期処理											*/
 /* 引数     : なし														*/
 /* 戻り値   : なし														*/
-/* 変更履歴 : 2014.05.08  Axia Soft Design 吉居		初版作成			*/
+/* 変更履歴     : 2018.04.10 Axia Soft Design 西島		初版作成		*/
 /************************************************************************/
 /* 機能 : 周期処理														*/
 /************************************************************************/
@@ -207,7 +198,7 @@ void cpu_com_send_end_wait( void )
 /* 関数名   : 周期受信処理												*/
 /* 引数     : なし														*/
 /* 戻り値   : なし														*/
-/* 変更履歴 : 2014.05.08  Axia Soft Design 吉居		初版作成			*/
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : 周期処理														*/
 /************************************************************************/
@@ -219,7 +210,7 @@ STATIC void cpu_com_rcv_proc(void)
 		/* 受信データ正常 */
 		s_cpu_com_ds_input.rcv_cmd = s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_CMD];
 		/* アプリ通知用のデータに受信データをセット */
-		memcpy( s_cpu_com_ds_input.rcv_data, &s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_DATA], ( s_cpu_com_rcv_msg_size- CPU_COM_MSG_SIZE_MIN ));
+		memcpy( s_cpu_com_ds_input.rcv_data, &s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_DATA], ( s_cpu_com_rcv_msg_size - CPU_COM_MSG_SIZE_MIN ));
 	}
 }
 
@@ -230,7 +221,7 @@ STATIC void cpu_com_rcv_proc(void)
 /* 引数     : なし														*/
 /* 戻り値   : ON :1メッセージ受信										*/
 /*          : OFF:未受信												*/
-/* 変更履歴 : 2014.05.08  Axia Soft Design 吉居		初版作成			*/
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : 周期処理														*/
 /************************************************************************/
@@ -262,7 +253,7 @@ STATIC UB cpu_com_analyze_msg(void)
 /* 引数     : なし														*/
 /* 戻り値   : ON :1メッセージ受信										*/
 /*          : OFF:未受信												*/
-/* 変更履歴 : 2015.10.23 Axia Soft Design 西島		初版作成			*/
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : 受信メッセージ解析(ETX)										*/
 /************************************************************************/
@@ -280,14 +271,13 @@ STATIC UB cpu_com_analyze_msg_check_etx(void)
 	p_ring_buf = drv_uart1_get_rcv_ring();
 #endif
 	
-	
 	// 1バイト毎に受信しETXまでチェック
 	while(1){
 		if( E_OK != read_ring_buf(p_ring_buf, &rcv_data ) ){
 			break;
 		}
 		//バッファオーバーラン対策
-		if( s_cpu_com_rcv_msg.pos >= CPU_COM_MSG_SIZE_MAX ){
+		if( s_cpu_com_rcv_msg.pos >= sizeof(s_cpu_com_rcv_msg.buf) ){
 			s_cpu_com_rcv_msg.pos = 0;
 			s_cpu_com_rcv_msg.state = CPU_COM_RCV_MSG_STATE_STX_WAIT;
 		}
@@ -342,7 +332,7 @@ STATIC UB cpu_com_analyze_msg_check_etx(void)
 /* 引数     : なし														*/
 /* 戻り値   : ON :1メッセージ受信										*/
 /*          : OFF:未受信												*/
-/* 変更履歴 : 2015.10.23 Axia Soft Design 西島		初版作成			*/
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : 受信メッセージ解析(CRC,SUMチェック)							*/
 /************************************************************************/
@@ -361,9 +351,7 @@ STATIC UB cpu_com_analyze_msg_check_data(void)
 	if(( CPU_COM_MSG_SIZE_MIN > s_cpu_com_rcv_msg_size ) ||
 		( CPU_COM_MSG_SIZE_MAX < s_cpu_com_rcv_msg_size )){
 		/* メッセージサイズ異常 */
-#if FUNC_DBG_CPU_COM_LOG_ERR == ON
-		com_srv_puts(COM_SRV_LOG_DEBUG,(const B*)"CPU_COM DATA_SIZE_NG\r\n");
-#endif
+		err_info(ERR_ID_CPU_COM);
 		return OFF;
 	}
 	/* STX,ETX,SUM、CRCを除いたデータ長 */
@@ -375,9 +363,7 @@ STATIC UB cpu_com_analyze_msg_check_data(void)
 	cpu_com_crcset( &s_cpu_com_rcv_msg.buf[CPU_COM_MSG_TOP_POS_CMD], data_size, &tmp );
 
 	if( crc_rcv != tmp ){
-#if FUNC_DBG_CPU_COM_LOG_ERR == ON
-		com_srv_puts(COM_SRV_LOG_DEBUG,(const B*)"CPU_COM CRC_NG\r\n");
-#endif
+		err_info(ERR_ID_CPU_COM);
 		return OFF;
 	}
 
@@ -411,8 +397,7 @@ STATIC UB cpu_com_analyze_msg_check_data(void)
 /* 関数名   : 周期送信処理												*/
 /* 引数     : なし														*/
 /* 戻り値   : なし														*/
-/* 変更履歴 : 2014.05.08  Axia Soft Design 吉居		初版作成			*/
-/*          : 2016.03.10  Axia Soft Design 西島		シーケンスチェック削除(RD1508対応) */
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : 周期送信処理													*/
 /* 周期送信処理を行う													*/
@@ -434,7 +419,7 @@ STATIC void cpu_com_send_proc(void)
 /* 関数名   : 送信データ生成											*/
 /* 引数     : なし														*/
 /* 戻り値   : TRUE:正常 FALSE:異常										*/
-/* 変更履歴 : 2014.05.08  Axia Soft Design 吉居		初版作成			*/
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : アプリからの指示に従い送信データを生成する					*/
 /************************************************************************/
@@ -457,13 +442,17 @@ STATIC UB cpu_com_make_send_data(void)
 	/* リトライ回数、タイムアウト時間、連送回数クリア */
 	if(( CPU_COM_CMD_NONE == s_p_cpu_com_ds_order->snd_cmd_id ) || ( CPU_COM_CMD_MAX <= s_p_cpu_com_ds_order->snd_cmd_id )){
 		/* コマンドID異常 */
+		err_info(ERR_ID_CPU_COM);
 		return FALSE;
 	}
-	if( CPU_COM_DATA_SIZE_MAX <= s_p_cpu_com_ds_order->data_size ){
+	if( CPU_COM_DATA_SIZE_MAX < s_p_cpu_com_ds_order->data_size ){
 		/* データ長異常 */
+		err_info(ERR_ID_CPU_COM);
 		return FALSE;
 	}
 	
+	drv_o_port_g1d_int( ON );
+
 	/* コマンドID、データ長取得 */
 	cmd_id = s_p_cpu_com_ds_order->snd_cmd_id;
 	size = s_p_cpu_com_ds_order->data_size;
@@ -513,6 +502,7 @@ STATIC UB cpu_com_make_send_data(void)
 	p_ring = drv_uart0_get_snd_ring();
 	for( i = 0;i < s_cpu_com_snd_size ; i++ ){
 		if( E_OK != write_ring_buf( p_ring, s_cpu_com_snd_data[i] )){	/* リングバッファ書き込み */
+			err_info(ERR_ID_CPU_COM);
 			break;
 		}
 	}
@@ -532,7 +522,7 @@ STATIC UB cpu_com_make_send_data(void)
 /* 引数     : *data	DLE伸長するデータ									*/
 /*          : size	DLE伸長するサイズ									*/
 /* 戻り値   : DLE伸長後のサイズ											*/
-/* 変更履歴 : 2015.10.23 Axia Soft Design 西島		初版作成			*/
+/* 変更履歴 : 2018.04.10 Axia Soft Design 西島		初版作成			*/
 /************************************************************************/
 /* 機能 : DLE伸長														*/
 /************************************************************************/
@@ -540,9 +530,15 @@ STATIC UB cpu_com_make_send_data(void)
 /************************************************************************/
 STATIC UH cpu_com_dle_extension( UB* data, UH size )
 {
-	UB cpu_com_buf_org[CPU_COM_DATA_SIZE_MAX];
+	UB cpu_com_buf_org[CPU_COM_MSG_SIZE_MAX];
 	int i = 0;
 	UH extension_size = 0;
+	
+	// 異常チェック
+	if(size > CPU_COM_MSG_SIZE_MAX ){
+		err_info(ERR_ID_LOGIC);
+		return ( size + extension_size );
+	}
 	
 	memcpy( &cpu_com_buf_org[0], data, size );
 	
@@ -562,24 +558,14 @@ STATIC UH cpu_com_dle_extension( UB* data, UH size )
 	*data++ = cpu_com_buf_org[i++];
 	*data   = cpu_com_buf_org[i];
 
+	// 異常チェック
+	if(( size + extension_size ) > CPU_COM_BUF_SIZE_MAX ){
+		err_info(ERR_ID_LOGIC);
+	}
+
 	return ( size + extension_size );
 }
 
-
-// ==================================================
-// デバッグ用処理：テストコード↓↓↓↓↓↓↓↓↓↓↓
-// ==================================================
-void test_cpu_com_send( void )
-{
-#if 0
-	s_p_cpu_com_ds_order->snd_cmd_id = CPU_COM_CMD_STATUS_CHG_REQ;		/* 送信コマンドID */
-	s_p_cpu_com_ds_order->snd_data[0] = 0xAA;								/* 送信データ */
-	s_p_cpu_com_ds_order->data_size = 1;										/* 送信データ長 */
-	
-	// データ作成
-	cpu_com_make_send_data();
-#endif
-}
 /************************************************************************/
 /* END OF TEXT															*/
 /************************************************************************/

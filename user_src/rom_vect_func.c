@@ -18,7 +18,7 @@
 /* ここにプログラムのベクタ関数を登録する */
 
 const ST_VECT_FUNC	__far  vect_tbl[VECT_NUM_COUNT] = {
-	(void __far *)0x7000
+	(VECT_FUNC)0x7000
 ,	dummy	/*	1	0x0004	INTWDTI	*/
 ,	dummy	/*	2	0x0006	INTLVI	*/
 ,	dummy	/*	3	0x0008	INTP0	*/
@@ -35,7 +35,7 @@ const ST_VECT_FUNC	__far  vect_tbl[VECT_NUM_COUNT] = {
 ,	dummy	/*	14	0x001E	INTCSI00	*/
 ,	dummy	/*	15	0x001E	INTIIC00	*/
 ,	drv_uart0_snd_int	/*	16	0x001E	INTST0	*/
-,	r_tau0_channel0_interrupt	/*	17	0x0020	INTTM00	*/
+,	dummy	/*	17	0x0020	INTTM00	*/
 ,	drv_uart0_rcv_int	/*	18	0x0022	INTSR0	*/
 ,	dummy	/*	19	0x0024	INTSRE0	*/
 ,	dummy	/*	20	0x0024	INTTM01H	*/
@@ -58,7 +58,7 @@ const ST_VECT_FUNC	__far  vect_tbl[VECT_NUM_COUNT] = {
 ,	dummy	/*	37	0x0046	INTP6	*/
 ,	dummy	/*	38	0x004C	INTTM06	*/
 ,	dummy	/*	39	0x004E	INTTM07	*/
-,	dummy	/*	40	0x0050	INTIT00	*/
+,	r_it8bit0_channel0_interrupt	/*	40	0x0050	INTIT00	*/
 ,	dummy	/*	41	0x0052	INTIT01	*/
 ,	r_pga_dsad_conversion_interrupt	/*	42	0x005C	INTDSAD	*/
 ,	dummy	/*	43	0x0060	INTDSADS	*/

@@ -338,14 +338,6 @@ Macro definitions
 #define _0A0A_SO0_DEFAULT_VALUE                 (0x0A0AU) /* SO0 default value */
 
 
-#define	DRV_UART0_DATA_LENGH					100									/* CPU間通信データ長(送受、共通) ヘッダXXXバイト＋オプションデータXXXバイト */
-#define	DRV_UART0_RCV_RING_LENGTH				( DRV_UART0_DATA_LENGH * 1 + 1 )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
-#define	DRV_UART0_SND_RING_LENGTH				( DRV_UART0_DATA_LENGH * 1 + 1 )		/* リングバッファ長(3メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
-
-#define	DRV_UART1_DATA_LENGH					100									/* RS232C通信データ長(送受、共通) ヘッダ８バイト＋オプションデータ６バイト */
-#define	DRV_UART1_RCV_RING_LENGTH				( DRV_UART1_DATA_LENGH * 1 + 1 )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
-#define	DRV_UART1_SND_RING_LENGTH				( DRV_UART1_DATA_LENGH * 1 + 1 )		/* リングバッファ長(3メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
-
 /***********************************************************************************************************************
 Typedef definitions
 ***********************************************************************************************************************/
@@ -381,6 +373,7 @@ void drv_uart0_send_start( void );
 void drv_uart1_data_init( void );
 void drv_uart1_send_start( void );
 UB drv_uart0_get_send( void );
+UB drv_uart1_get_send( void );
 void test_uart_0_send( void );
 void __near drv_uart0_snd_int(void);
 void __near drv_uart0_rcv_int(void);

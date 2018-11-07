@@ -43,7 +43,7 @@ Includes
 #include "r_cg_iica.h"
 #include "r_cg_rtc.h"
 #include "r_cg_pclbuz.h"
-#include "r_cg_tau.h"
+#include "r_cg_it8bit.h"
 #include "r_cg_wdt.h"
 
 /* Start user code for include. Do not edit comment generated here */
@@ -76,8 +76,6 @@ void R_Systeminit(void)
     R_CGC_Get_ResetSource();
     R_PORT_Create();
     R_CGC_Create();
-    R_TAU0_Create();
-//RD8001暫定：初期化を行うと動作しない
 #if FUNC_VALID_AMP == ON
     R_PGA_DSAD_Create();
     R_AMP_Create();
@@ -86,6 +84,7 @@ void R_Systeminit(void)
     R_SAU0_Create();
     R_INTC_Create();
     R_IT_Create();
+    R_IT8Bit0_Channel0_Create();
     R_IICA0_Create();
     R_RTC_Create();
     R_PCLBUZ0_Create();

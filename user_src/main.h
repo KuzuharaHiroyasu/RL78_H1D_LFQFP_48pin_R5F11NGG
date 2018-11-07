@@ -12,8 +12,8 @@
 // システムモード
 typedef enum{
 	SYSTEM_MODE_INITIAL,					// イニシャル
-	SYSTEM_MODE_IDLE_REST,					// アイドル_残量表示 ※RD8001暫定：IDLEを統合するか要検討
-	SYSTEM_MODE_IDLE_COM,					// アイドル_通信待機 ※RD8001暫定：IDLEを統合するか要検討
+	SYSTEM_MODE_IDLE_REST,					// アイドル_残量表示
+	SYSTEM_MODE_IDLE_COM,					// アイドル_通信待機
 	SYSTEM_MODE_SENSING,					// センシング
 	SYSTEM_MODE_GET,						// データ取得
 	SYSTEM_MODE_PRG_H1D,					// H1Dプログラム更新
@@ -45,6 +45,18 @@ typedef enum{
 	EVENT_MAX,					// 最大
 }EVENT_NUM;
 
+/* 異常ID定義(デバッグ機能) */
+typedef enum{
+	ERR_ID_I2C = 1					,			/* I2C(汎用) */
+	ERR_ID_MAIN						,			/* MAIN(汎用) */
+	ERR_ID_CPU_COM					,			/* CPU間通信(汎用) */
+	ERR_ID_ACL						,			/* 加速度センサ(汎用) */
+
+	// 高レベル異常
+	ERR_ID_LOGIC = 99				,			/* ロジック不具合(汎用) */
+	ERR_ID_MAX									/* 異常ID最大	*/
+}ERR_ID;
+
 
 // 電池残量閾値
 #define DENCH_ZANRYO_1_VAL						(UH)( 1023.0 * (1.95 / 3.0 ))		// 1.95V以上
@@ -64,21 +76,35 @@ typedef enum{
 
 
 
-
+// センシング中カウント
 #define			HOUR12_CNT_50MS		(UW)( 12L * 60L * 60L * (1000L / 50L))	//12時間のカウント値[50ms]
 //#define			HOUR12_CNT_50MS			( 1L * 10L * 60L * (1000L / 50L))	//12時間のカウント値[50ms]		短縮版10分
 
 
 
+#define			SENSING_SW_LONG_CNT_50MS		60	/* 電源SW_長(3秒) */
 
 
 
-// EEP
-#define EEP_DEVICE_ADR			0xA0				// デバイスアドレス
 
 // 加速度センサ
 #define ACL_DEVICE_ADR			0x1C				// 加速度センサデバイスアドレス
 #define ACL_TIMING_VAL			10					// 加速度センサ処理タイミング
+#define I2C_LOCK_ERR_VAL		1000				// ロック異常判定閾値
+
+#define I2C_WAIT		255					// スタートコンディション待ち ※200us程度なので最大値を設定しておく
+
+// レジスタアドレス
+#define ACL_REG_ADR_WHO_AM_I			0x0F				// WHO AM I
+#define ACL_REG_ADR_DATA_XYZ			0x06				// XOUT,YOUT,ZOUT
+#define ACL_REG_ADR_INT_SRC1			0x16				// INT_SOURCE1
+#define ACL_REG_ADR_INT_REL				0x1A				// INT_REL
+#define ACL_REG_ADR_CTRL_REG1			0x1B				// CTRL_REG1
+#define ACL_REG_ADR_CTRL_REG2			0x1F				// CTRL_REG2
+
+
+// レジスタデータ
+#define ACL_REG_RECOGNITION_CODE		0x35				// 認識コード(0x35)
 
 
 typedef struct{
@@ -138,7 +164,6 @@ typedef struct{
 typedef struct{
 	union {
 		UB	byte;
-		/*呼出ランプ状態*/
 		struct{
 			UB	ble				:1;		/* 1  BLE    */
 			UB	dummy1			:1;		/* 2  未定義 */
@@ -156,7 +181,6 @@ typedef struct{
 typedef struct{
 	union {
 		UB	byte;
-		/*呼出ランプ状態*/
 		struct{
 			UB	bat_chg			:1;		/* 1  充電検知ポート */
 			UB	kensa			:1;		/* 2  検査ポート */
@@ -173,52 +197,55 @@ typedef struct{
 
 
 typedef struct{
+	// I2Cドライバのフラグ ※i2cドライバで設定される
+	UB i2c_snd_flg;			//送信フラグ(I2C)
+	UB i2c_rcv_flg;			//受信フラグ(I2C)
+	// RD8001暫定：ACLの異常時の動作が仕様上未定義
+	 UB i2c_err_flg;			//エラーフラグ(I2C)
+}ACL_INFO;
+
+typedef struct{
 	UB main_cyc_req;		/* メイン周期要求(20ms) */
 
 	SYSTEM_MODE system_mode;			/* システムモード */
 	SYSTEM_MODE last_system_mode;		/* システムモード */
-	EVENT_NUM system_evt;	/* システムモード変更要求 */
-	
+	EVENT_NUM system_evt;				/* システムモード変更要求 *///RD8001暫定：今後仕様によってはイベントをバッファリングする必要がある
+		
 	MEAS meas;				/* 計測値(50ms) */
 	UH dench_sts;			/* 電池残量状態 */
 	UB bat_chg;				/* 充電検知ポート */
 	UB bat_chg_fin_state;	/* 充電完了イベント */
 	UB kensa;				/* 検査状態 */
-	
-	UB hour;
-	UB min;
-	UB sec;
-	
-	// イベント
-//	UB event_sw_long;			// SW押下(長)
-//	UB event_sw_short;			// SW押下(短)
-	
+		
 	G1D_INFO g1d;				// G1D情報
 
+	// センシング関連
 	UB sensing_end_flg;			// センシング終了
 	UB sensing_sekigai_flg;		// 赤外フラグ(ON:有効、OFF:無効)
 	
-	
-	
-
 	UW sensing_cnt_50ms;		// センシング終了[50ms]
-	UB acl_sensor_timing;			// 加速度センサタイミング
+	UB acl_sensor_timing;		// 加速度センサタイミング
+	UW sensing_sw_on_cnt;				// センシングSW[50ms]
 	
 	
 	UB non_wdt_refresh;			// WDTリフレッシュなし
 	
 	DISP disp;					// 表示	
 	
+	ACL_INFO	acl_info;		// 加速度センサ情報(I2C)
+	
+	
 	// ワーク
 	UB pow_sw_last;				// 電源ボタン状態(前回)
 	UB bat_chg_last;			// 充電状態(前回)
 	UB kensa_last;				/* 検査状態(前回) */
 	
-	UW err_cnt;			//異常回数(デバッグ用途)
+	// 異常関連デバッグ用途
+	UW err_cnt;				//異常回数(デバッグ用途)
+	ERR_ID last_err_id;		//前回異常ID(デバッグ用途)
 }T_UNIT;
 
 
-//RD8001暫定：DSをどうするか検討
 /*##################################################################*/
 /*							CPU間通信部								*/
 /*##################################################################*/
@@ -247,7 +274,7 @@ typedef struct _CPU_COM_RCV_CMD_TBL{
 	UB cmd;							/* 受信コマンド */
 //	void (*func)(UB *p_data);		/* 受信処理 */
 	void (*func)(void);		/* 受信処理 */
-	UB res;							/* 応答有(ON)無(OFF) */
+//	UB res;							/* 応答有(ON)無(OFF) */
 }CPU_COM_RCV_CMD_TBL;
 
 
@@ -258,21 +285,27 @@ typedef struct{
 
 
 /************************************************************/
-/* 外部参照宣言 ※無いと正常に動かない						*/
+/* 外部参照宣言												*/
 /************************************************************/
+// ドライバ
 extern void R_IICA0_Create(void);
-//extern MD_STATUS com_srv_send(uint8_t * const tx_buf, uint16_t tx_num);
-//extern MD_STATUS R_UART1_Receive(uint8_t * const rx_buf, uint16_t rx_num);
-
 extern void R_PGA_DSAD_Get_AverageResult(uint16_t * const bufferH,uint16_t * const bufferL);
 extern void R_PGA_DSAD_Get_Result(uint16_t * const bufferH,uint16_t * const bufferL);
 extern void R_DAC_Change_OutputVoltage_12bit(uint16_t outputVoltage);
 extern unsigned short pga_do( void );
 extern void R_IICA0_StopCondition(void);
+
+
+// メイン処理
+extern void user_main(void);
+extern void set_req_main_cyc(void);
+extern void err_info( ERR_ID id );
+extern void i2c_set_snd_flg( UB data );
+extern void i2c_set_rcv_flg( UB data );
+extern void i2c_set_err_flg( UB data );
 extern void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data );
 extern void ds_set_cpu_com_input( DS_CPU_COM_INPUT *p_data );
-
-
+extern void getmode_in(void);
 
 
 #endif

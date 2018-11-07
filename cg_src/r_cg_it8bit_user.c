@@ -18,19 +18,21 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_tau_user.c
+* File Name    : r_cg_it8bit_user.c
 * Version      :  
 * Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for TAU module.
-* Creation Date: 2018/04/10
+* Description  : This file implements device driver for IT8Bit module.
+* Creation Date: 2018/09/12
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "header.h"			//ユーザー定義
+
 #include "r_cg_macrodriver.h"
-#include "r_cg_tau.h"
+#include "r_cg_it8bit.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -38,7 +40,7 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
-//#pragma interrupt r_tau0_channel0_interrupt(vect=INTTM00)
+//#pragma interrupt r_it8bit0_channel0_interrupt(vect=INTIT00)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 
@@ -49,19 +51,15 @@ Global variables and functions
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
-* Function Name: r_tau0_channel0_interrupt
-* Description  : This function INTTM00 interrupt service routine.
+* Function Name: r_it8bit0_channel0_interrupt
+* Description  : None
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-//int time_10ms_cnt = 0;
-extern void time_soft_dec_10ms( void );
-/* static */ void __near r_tau0_channel0_interrupt(void)
+/* static */void __near r_it8bit0_channel0_interrupt(void)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-//    P5 = ~P5;	
-	
 	time_soft_dec_10ms();	/* 10msソフトウェアタイマ減算処理 */
 }
 

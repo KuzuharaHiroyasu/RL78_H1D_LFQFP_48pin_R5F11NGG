@@ -2,8 +2,9 @@
 /* システム名   : RD8001 快眠チェッカー											*/
 /* ファイル名   : time.h														*/
 /* 機能         : 時間管理(マクロ定義、型定義、関数の外部参照宣言)				*/
-/* 変更履歴     : 2018.01.25 Axia Soft Design 西島 稔	初版作成		*/
-/* 注意事項     : なし															*/
+/* 変更履歴     : 2018.01.25 Axia Soft Design 西島 稔	初版作成				*/
+/* 注意事項     : ①センシング中は正しい値が取れない。※設定時時間より長くなる。*/
+/*              : ②1msとetc処理は現在未使用									*/
 /********************************************************************************/
 #ifndef		_TIME_H_			/* 二重定義防止 */
 #define		_TIME_H_
@@ -52,7 +53,8 @@ typedef enum{
 
 #define	TIME_10MS_CNT_SENSING_DELAY			100			/* センシング開始待(1秒) */
 
-#define	TIME_10MS_CNT_WAIT_SLEEP			( 2 + 1 )	/* sleep待ち[10ms以上] */
+//#define	TIME_10MS_CNT_WAIT_SLEEP			( 2 + 1 )	/* sleep待ち[10ms以上] */
+//#define	TIME_10MS_CNT_WAIT_SLEEP			( 1 )	/* sleep待ち[10ms以上] */
 
 #define	TIME_10MS_CNT_BAT_CHG_FIN			( 50 + 1 )	/* 充電完了チェック[500ms以上] */
 
