@@ -25,18 +25,29 @@ typedef enum{
 
 /* タイマ種別[10ms] */
 typedef enum{
-	TIME_TYPE_10MS_POW_SW_ACT_START = 0		,			/* 電源SW動作開始(1秒) */
+	TIME_TYPE_10MS_POW_SW_LONG = 0			,			/* 電源SW動作開始(1秒) */
 	TIME_TYPE_10MS_CPU_COM_RETRY			,			/* CPU間通信リトライ待ちタイマ */
 	TIME_TYPE_10MS_SENSING_DELAY			,			/* センシング開始待ち */
+	TIME_TYPE_10MS_DISP_FLASH				,			/* 表示点滅 */
 	TIME_TYPE_10MS_NUM									/* ソフトウェアタイマの数(10ms) */
 }TIME_TYPE_10MS;
 
 /* タイマカウント値[10ms] */
-#define	TIME_10MS_CNT_POW_SW_ACT_START		100				/* 電源SW動作開始(1秒) */
+#define	TIME_10MS_CNT_POW_SW_LONG		300				/* 電源SW_長(3秒) */
+#define	TIME_10MS_CNT_POW_SW_SHORT		100				/* 電源SW_短(1秒) */
+
+
+
 #define	TIME_10MS_CNT_STATE_STOP			1000			/* 休止状態遷移時間(10秒) */
 
-#define	TIME_10MS_CNT_SENSING_DELAY				100				/* センシング開始待(1秒) */
+#define	TIME_10MS_CNT_SENSING_DELAY				100			/* センシング開始待(1秒) */
 
+// 表示点滅
+#define	TIME_10MS_CNT_DISP_FLASH_50MS		5				/* 表示点滅(50ms) */
+#define	TIME_10MS_CNT_DISP_FLASH_100MS		10				/* 表示点滅(100ms) */
+#define	TIME_10MS_CNT_DISP_FLASH_500MS		50				/* 表示点滅(500ms) */
+#define	TIME_10MS_CNT_DISP_FLASH_1S			100				/* 表示点滅(1s) */
+#define	TIME_10MS_CNT_DISP_FLASH_3S			300				/* 表示点滅(3s) */
 
 /************************************************************/
 /* 型定義													*/

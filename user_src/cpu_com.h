@@ -12,15 +12,24 @@
 /******************/
 /* 定数マクロ定義 */
 /******************/
+// 送信データサイズ
 #define CPU_COM_SND_DATA_SIZE_STATUS_REQ			13				/* ステータス要求			*/
 #define CPU_COM_SND_DATA_SIZE_MODE_CHG				1				/* 状態変更(G1D)			*/
 #define CPU_COM_SND_DATA_SIZE_PC_LOG				7				/* PCログ送信(内部コマンド)	*/
-#define CPU_COM_SND_DATA_SIZE_SENSOR_DATA			11				/* センサーデータ	*/
+#define CPU_COM_SND_DATA_SIZE_SENSOR_DATA			15				/* センサーデータ	*/
+
+// 受信データサイズ
+#define CPU_COM_RCV_DATA_SIZE_PC_LOG				10				/* PCログ */
+
+
 
 // モード変更要求
+// RD8001暫定：削除予定
+#if 0
 #define			SYSTEM_MODE_HD_CHG_NON				0		// なし
 #define			SYSTEM_MODE_HD_CHG_SENSING			1		// あり(センシング)
 #define			SYSTEM_MODE_HD_CHG_IDLE				2		// あり(アイドル)
+#endif
 
 /* データ長範囲 */								// RD8001暫定
 #define CPU_COM_DATA_SIZE_MAX					(262+1)		/* データの最大長 */
@@ -61,6 +70,7 @@ typedef enum _CPU_COM_CMD_ID{
 	CPU_COM_CMD_PRG_DOWNLORD_DATA,				/* 【CPU間通信コマンド】プログラム転送データ	*/
 	CPU_COM_CMD_PRG_DOWNLORD_RESLUT,			/* 【CPU間通信コマンド】プログラム転送結果		*/
 	CPU_COM_CMD_PRG_DOWNLORD_CHECK,				/* 【CPU間通信コマンド】プログラム転送確認		*/
+	CPU_COM_CMD_DISP_ORDER,						/* 【CPU間通信コマンド】表示指示				*/
 	CPU_COM_CMD_MAX								/* 【CPU間通信コマンド】最大値					*/
 }CPU_COM_CMD_ID;
 
@@ -92,6 +102,13 @@ typedef enum{
 #define CPU_COM_MSG_TOP_POS_SEQ					3				/* シーケンス */
 #define CPU_COM_MSG_TOP_POS_DATA				4				/* データ部 */
 
+// =========================
+// データ種別
+// =========================
+// 表示指示
+#define CPU_COM_DISP_ORDER_NON				0	// 表示なし
+#define CPU_COM_DISP_ORDER_SELF_CHECK_ERR	1	// 異常
+#define CPU_COM_DISP_ORDER_SELF_CHECK_FIN	2	// 完了
 
 /******************/
 /*   構造体定義   */

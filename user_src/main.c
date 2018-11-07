@@ -28,9 +28,8 @@ void main_acl_init(void);
 void main_acl_read(void);
 void main_acl_write(void);
 STATIC W main_ad24_to_w( UH bufferH, UH bufferL );
-static void stop_in( void );
-static void halt_in( void );
-STATIC void main_cpu_com_snd_sensor_data( void );
+STATIC void stop_in( void );
+STATIC void stop_restore_ram( void );STATIC void main_cpu_com_snd_sensor_data( void );
 STATIC void main_cpu_com_proc(void);
 STATIC void main_cpu_com_rcv_sts( void );
 STATIC void main_cpu_com_rcv_date_set( void );
@@ -39,8 +38,10 @@ STATIC void main_cpu_com_rcv_mode_chg( void );
 void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data );
 void ds_set_cpu_com_input( DS_CPU_COM_INPUT *p_data );
 STATIC void main_cyc(void);
+STATIC void disp_cyc(void);
 STATIC void main_cpu_com_rcv_prg_hd_ready(void);
 STATIC void main_cpu_com_rcv_prg_hd_check(void);
+STATIC void main_cpu_com_rcv_disp(void);
 
 /************************************************************/
 /* 変数定義													*/
@@ -65,7 +66,7 @@ STATIC DS s_ds;
 /************************************************************/
 /* テーブル定義												*/
 /************************************************************/
-const B		version_product_tbl[]= {0, 0, 0, 17};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 18};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
@@ -86,7 +87,7 @@ STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
 	{	0xD4,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送消去			*/
 	{	0xD0,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送データ		*/
 	{	0xD1,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送結果			*/
-	{	0xD3,			main_cpu_com_rcv_prg_hd_check,							OFF	},	/* 【CPU間通信コマンド】プログラム転送確認			*/
+	{	0xB2,			main_cpu_com_rcv_disp,			OFF	},	/* 【CPU間通信コマンド】プログラム転送確認			*/
 };
 
 extern void test_uart_0_send( void );
@@ -149,37 +150,18 @@ void user_main(void)
 		cpu_com_proc();
 		main_cpu_com_proc();
 		main_cyc();
+		disp_cyc();
 		
-		if( SYSTEM_MODE_NON == s_unit.system_mode ){
+		if( SYSTEM_MODE_INITAL == s_unit.system_mode ){
 			drv_o_port_mike( OFF );		//RD8001暫定
 			/* 何もしない */
-			// RD8001暫定：スリープ突入時間
-			if( sleep_cnt++ > 5000 ){
-				sleep_cnt = 0;
-#if 0			//RTCデバッグ
-				R_RTC_Get_CounterValue( &dbg_rtc );
-				
-				if( 1 == dbg_rtc_flg ){
-					dbg_rtc_flg = 0;
-					dbg_rtc_set.year = 9;
-					dbg_rtc_set.sec = 0;
-					dbg_rtc_set.min = 0;
-					dbg_rtc_set.hour = 5;
-					dbg_rtc_set.day = 0;
-					dbg_rtc_set.week = 0;
-					dbg_rtc_set.month = 0;
-//					R_RTC_Stop();
-					R_RTC_Set_CounterValue( dbg_rtc_set );
-//					R_RTC_Start();
-				}
-#endif
-//				drv_uart1_send_start();
-//				test_cpu_com_send();		//ミドルレベルCPU間通信
-//				test_uart_0_send();			//ドライバレベルCPU間通信
-
-				//stop_in();
+			// スリープ突入条件検討　※関数化も含めて
+			if(( OFF == drv_intp_read_g1d_int() ) &&
+			   ( OFF == s_unit.pow_sw_last )  &&
+			   ( OFF == drv_uart0_get_send() )){
+				stop_in();
 			}
-		}else if( SYSTEM_MODE_GET_MODE == s_unit.system_mode ){
+		}else if( SYSTEM_MODE_GET == s_unit.system_mode ){
 			drv_o_port_mike( OFF );		//RD8001暫定
 			// ゲットモード
 			
@@ -188,7 +170,7 @@ void user_main(void)
 			
 			NOP();
 		
-		}else if( SYSTEM_MODE_SENSOR == s_unit.system_mode ){
+		}else if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
 			user_main_mode_sensor();
 		}else{
 			drv_o_port_mike( OFF );		//RD8001暫定
@@ -240,7 +222,27 @@ static void user_main_mode_sensor(void)
 	// センサーモード
 	// メイン周期(50ms)
 	if( ON == s_unit.main_cyc_req ){
-		R_DAC1_Start();			// ■DAC        ON
+		R_DAC1_Start();			// ■DAC ON　※共通用途
+
+		// ↓↓マイク用(呼吸、イビキ)開始↓↓
+		R_DAC1_Set_ConversionValue( 0x0000 );
+		R_AMP0_Start();		// ■AMP0 ON
+		R_PGA1_Start();		// ■PGA1 ON
+
+		wait_ms( 2 );
+		adc_ibiki_kokyu( &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
+		
+		// RD8001暫定：いびきデータをデバッグ用カウント
+#ifdef	IBIKI_COUNT
+		s_unit.meas.info.dat.ibiki_val = dbg_ibiki_cnt++;
+#endif
+		wait_ms( 2 );
+#if 0	// RD8001暫定：AMP0,PGA1をOFFすると正常にイビキ等が取得できない
+		R_AMP0_Stop();		// □AMP0 OFF
+		R_PGA1_Stop();		// □PGA1 OFF
+#endif
+		// ↑↑マイク用(呼吸、イビキ)終了↑↑
+
 		R_PGA_DSAD_Start();		// ■PGA0_DSAD  ON
 		R_AMP2_Start();			// ■AMP2       ON
 		
@@ -278,30 +280,16 @@ static void user_main_mode_sensor(void)
 		drv_o_port_sekigai( OFF );
 		drv_o_port_sekishoku( OFF );
 		
-		// マイク用(呼吸、イビキ)開始
-		R_DAC1_Set_ConversionValue( 0x0000 );
-		R_AMP0_Start();		// ■AMP0 ON
-		R_PGA1_Start();		// ■PGA1 ON
-
-		wait_ms( 2 );
-		adc_ibiki_kokyu( &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
-		
-		// RD8001暫定：いびきデータをデバッグ用カウント
-#ifdef	IBIKI_COUNT
-		s_unit.meas.info.dat.ibiki_val = dbg_ibiki_cnt++;
-#endif
-		wait_ms( 2 );
 		R_DAC1_Stop();		// □DAC  OFF
-
-#if 0	// RD8001暫定：AMP0,PGA1をOFFすると正常にイビキ等が取得できない
-		R_AMP0_Stop();		// □AMP0 OFF
-		R_PGA1_Stop();		// □PGA1 OFF
-#endif
 		
 		// 加速度センサ取得
 		// RD8001暫定：30msかかるが50ms毎に取得
 #if FUNC_DEBUG_RAW_VAL_OUT == OFF
-		main_acl_read();
+		if( ++s_unit.acl_sensor_timing >= ACL_TIMING_VAL ){
+			s_unit.acl_sensor_timing = 0;
+			main_acl_read();
+		}
+		
 #else
 		//生値デバッグ出力　※加速度は無効
 		if( dbg_send_cnt++ >= 0 ){	
@@ -406,6 +394,10 @@ static void main_init(void)
 	memset( &s_unit, 0, sizeof(s_unit) );
 	/* Start user code. Do not edit comment generated here */
 	
+	//データ初期化(0以外)
+	s_unit.disp.last_ptn = 0xFF;
+	
+	
 	
 	// ミドル初期化
 	com_srv_init();
@@ -440,14 +432,18 @@ static void sw_cyc(void)
 	}else{
 		if( ON == s_unit.pow_sw_last ){
 			// ON→OFFエッジ
-			time_soft_get_10ms( TIME_TYPE_10MS_POW_SW_ACT_START, &time );
+			time_soft_get_10ms( TIME_TYPE_10MS_POW_SW_LONG, &time );
 			if( 0 == time ){
 				// 規定時間以上連続押下と判断
-				s_unit.sensing_start_trig = ON;
+				s_unit.event_sw_long = ON;
+			}else if( time <= ( TIME_10MS_CNT_POW_SW_LONG - TIME_10MS_CNT_POW_SW_SHORT )){
+				s_unit.event_sw_short = ON;
+			}else{
+				// 何もしない
 			}
 		}
 		// 電源SW押下タイマー再スタート 
-		time_soft_set_10ms( TIME_TYPE_10MS_POW_SW_ACT_START, TIME_10MS_CNT_POW_SW_ACT_START );
+		time_soft_set_10ms( TIME_TYPE_10MS_POW_SW_LONG, TIME_10MS_CNT_POW_SW_LONG );
 	}
 	s_unit.pow_sw_last = pow_sw;
 }
@@ -468,22 +464,36 @@ static void sw_cyc(void)
 static void mode_cyc(void)
 {
 	//RD8001暫定：状態変更箇所が一箇所
-	if( ON == s_unit.sensing_start_trig ){
-		s_unit.sensing_start_trig = OFF;
-		if( SYSTEM_MODE_NON == s_unit.system_mode ){
+	if( ON == s_unit.event_sw_long ){
+		s_unit.event_sw_long = OFF;
+		s_unit.system_mode_chg_req = SYSTEM_MODE_INITAL;
+	}
+	
+	if( ON == s_unit.event_sw_short ){
+		s_unit.event_sw_short = OFF;
+		if( SYSTEM_MODE_INITAL == s_unit.system_mode ){
+			s_unit.system_mode_chg_req = SYSTEM_MODE_IDLE_REST;
+		}
+		// RD8001暫定：状態変更
+		if(( SYSTEM_MODE_IDLE_COM == s_unit.system_mode ) ||
+		   ( SYSTEM_MODE_IDLE_REST == s_unit.system_mode )){
+
 			s_unit.main_cyc_req = OFF;
-			s_unit.system_mode_chg_req = SYSTEM_MODE_HD_CHG_SENSING;
+			s_unit.system_mode_chg_req = SYSTEM_MODE_SENSING;
 			
-			
-			
-		}else if( SYSTEM_MODE_SENSOR == s_unit.system_mode ){
+		}else if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
 			s_unit.sensing_end_flg = ON;
-			s_unit.system_mode_chg_req = SYSTEM_MODE_HD_CHG_IDLE;
-//			s_unit.system_mode = SYSTEM_MODE_NORMAL;
-//		}else if( SYSTEM_MODE_NORMAL == s_unit.system_mode ){
-//			s_unit.system_mode = SYSTEM_MODE_NON;
+			s_unit.system_mode_chg_req = SYSTEM_MODE_IDLE_COM;
 		}else{
 			/* 何もしない */
+		}
+	}
+	if( ON == s_unit.kensa ){
+		if( SYSTEM_MODE_INITAL == s_unit.system_mode ){
+			s_unit.system_mode_chg_req = SYSTEM_MODE_IDLE_COM;
+		}
+		if( SYSTEM_MODE_IDLE_COM == s_unit.system_mode ){
+			s_unit.system_mode_chg_req = SYSTEM_MODE_SELF_CHECK;
 		}
 	}
 }
@@ -504,8 +514,11 @@ static void mode_cyc(void)
 STATIC void main_cyc(void)
 {
 	UH dench_val;
+	UB bat_chg;
+	UB kensa;
 	
 	
+	// 電池残量
 	dench_val = DENCH_ZANRYO_1_VAL;
 	
 	adc_dench( &dench_val );
@@ -519,6 +532,186 @@ STATIC void main_cyc(void)
 	}else{
 		s_unit.dench_sts = 4;
 	}
+	
+	// 充電状態
+	bat_chg = drv_i_port_bat_chg();
+	
+	if( s_unit.bat_chg_last == bat_chg ){
+		// 2回一致で更新
+		s_unit.bat_chg = bat_chg;
+	}
+	s_unit.bat_chg_last = bat_chg;
+	
+	
+	// 検査状態
+	kensa = drv_i_port_kensa();
+	
+	if( s_unit.kensa_last == kensa ){
+		// 2回一致で更新
+		s_unit.kensa = kensa;
+	}
+	s_unit.kensa_last = kensa;
+	
+}
+
+
+/************************************************************************/
+/* 関数     : disp_cyc													*/
+/* 関数名   : 表示周期処理												*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.07.24 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* 表示周期処理															*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+STATIC void disp_cyc(void)
+{
+	UW time = 0;
+	
+	// センサー中は赤色LED制御は避ける
+	if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
+		return;
+	}
+	
+	if( s_unit.disp.last_ptn != s_unit.disp.ptn ){
+		s_unit.disp.seq = 0;
+		// OFF 処理
+		// RD8001暫定：LEDを光らせる為のダック設定の最適値とは？
+		if( DISP_PTN_OFF == s_unit.disp.ptn ){
+			R_DAC1_Stop();			// □DAC  OFF
+//			R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
+			R_AMP2_Stop();			// □AMP2  OFF
+			R_DAC1_Set_ConversionValue( 0x0500 );
+		}
+		if( DISP_PTN_OFF == s_unit.disp.last_ptn ){
+			R_DAC1_Start();			// ■DAC        ON
+//			R_PGA_DSAD_Start();		// ■PGA0_DSAD  ON
+			R_AMP2_Start();			// ■AMP2       ON
+			R_DAC1_Set_ConversionValue( 0x0500 );
+		}
+	}
+	
+	if( DISP_PTN_FLASH_100MS == s_unit.disp.ptn ){
+		drv_o_port_sekishoku( OFF );
+		time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+		if( 0 == time ){
+			time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_100MS );
+			INC_MAX_INI( s_unit.disp.seq, DISP_PTN_FLASH_100MS_SEQ_MAX, 0 );
+		}
+		if( 0 == s_unit.disp.seq ){
+			drv_o_port_sekishoku( ON );
+		}else{
+			drv_o_port_sekishoku( OFF );
+		}
+		
+	}else if( DISP_PTN_DENCH_ZANRYO_1 == s_unit.disp.ptn ){
+		if( 0 == s_unit.disp.seq ){
+			drv_o_port_sekishoku( OFF );
+			time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_500MS );
+			s_unit.disp.seq = 1;
+		}else if( 1 == s_unit.disp.seq ){
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( ON );
+				time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_3S );
+				s_unit.disp.seq = 2;
+			}
+		}else{
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( OFF );
+			}
+		}
+	}else if( DISP_PTN_DENCH_ZANRYO_2 == s_unit.disp.ptn ){
+		if( 0 == s_unit.disp.seq ){
+			drv_o_port_sekishoku( OFF );
+			time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_500MS );
+			s_unit.disp.seq = 1;
+		}else if( 1 == s_unit.disp.seq ){
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( ON );
+				time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_1S );
+				s_unit.disp.seq = 2;
+			}
+		}else if( 2 == s_unit.disp.seq ){
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( OFF );
+				time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_1S );
+				s_unit.disp.seq = 3;
+			}
+		}else if( 3 == s_unit.disp.seq ){
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( ON );
+				time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_1S );
+				s_unit.disp.seq = 4;
+			}
+		}else{
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( OFF );
+			}
+		}
+	}else if( DISP_PTN_DENCH_ZANRYO_3 == s_unit.disp.ptn ){
+		if( 0 == s_unit.disp.seq ){
+			drv_o_port_sekishoku( OFF );
+			time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_500MS );
+			s_unit.disp.seq = 1;
+		}else if( s_unit.disp.seq < DISP_PTN_FLASH_DENCH_ZANRYO_3_SEQ_MAX ){
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_50MS );
+				INC_MAX( s_unit.disp.seq, DISP_PTN_FLASH_DENCH_ZANRYO_3_SEQ_MAX );
+				if( s_unit.disp.seq & 0x01 ){
+					drv_o_port_sekishoku( ON );
+				}else{
+					drv_o_port_sekishoku( OFF );
+				}
+			}
+		}else{
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				drv_o_port_sekishoku( OFF );
+			}
+		}
+	}else if( DISP_PTN_FLASH_GET == s_unit.disp.ptn ){
+		if( 0 == s_unit.disp.seq ){
+			drv_o_port_sekishoku( OFF );
+			time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_1S );
+			s_unit.disp.seq = 1;
+		}else if( s_unit.disp.seq < DISP_PTN_FLASH_GET_SEQ_MAX ){
+			time_soft_get_10ms( TIME_TYPE_10MS_DISP_FLASH, &time );
+			if( 0 == time ){
+				time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_100MS );
+				INC_MAX( s_unit.disp.seq, DISP_PTN_FLASH_GET_SEQ_MAX );
+				if( s_unit.disp.seq & 0x01 ){
+					drv_o_port_sekishoku( ON );
+				}else{
+					drv_o_port_sekishoku( OFF );
+				}
+			}
+		}else{
+			if( 0 == time ){
+				s_unit.disp.seq = 0;
+				drv_o_port_sekishoku( OFF );
+			}
+		}
+	}else if( DISP_PTN_ON == s_unit.disp.ptn ){
+		drv_o_port_sekishoku( ON );
+//		drv_o_port_sekigai( ON );
+	}else{
+		drv_o_port_sekishoku( OFF );
+//		drv_o_port_sekigai( OFF );
+	}
+	
+	// 前回パターン格納
+	s_unit.disp.last_ptn = s_unit.disp.ptn;
 }
 
 void set_req_main_cyc(void)
@@ -703,7 +896,7 @@ void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len )
 
 void getmode_in(void)
 {
-	s_unit.system_mode = SYSTEM_MODE_GET_MODE;
+	s_unit.system_mode = SYSTEM_MODE_GET;
 }
 
 void wait_ms( int ms )
@@ -792,8 +985,20 @@ void main_acl_write(void)
 }
 
 
-
-static void stop_in( void )
+/************************************************************************/
+/* 関数     : stop_in													*/
+/* 関数名   : CPUストップモード											*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.07.26 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* CPUストップモード													*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+STATIC void stop_in( void )
 {
 	//RD8001暫定：突入復帰処理に関して要検討
 #if 0
@@ -801,67 +1006,54 @@ static void stop_in( void )
 	wait_ms( 10 );
 #endif
 	
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	
 	// 割り込み止める処理
-//	TMKAMK = 1U;    	  /* disable INTIT interrupt */
-//	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
-
+	if( SYSTEM_MODE_INITAL == s_unit.system_mode ){
+		// 10msタイマー停止
+		TMKAMK = 1U;    	  /* disable INTIT interrupt */
+		TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+	}
+	
 	STOP();
 	
 	// STOPモード解除時間(クロック供給停止+ウェイト)　※CPUマニュアル　Page 1066 of 1325
 	// クロック供給停止：18 μs ～65 μs
 	// ウエイト：ベクタ割り込み処理を行う場合(7クロック)
 	//             ベクタ割り込み処理を行わない場合(1クロック)
-	wait_ms( 1 );
-//	TMKAMK = 0U;    	  /* disable INTIT interrupt */
-//	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+	Nop5();Nop1();Nop1();
+	
+	stop_restore_ram();		//RAM復旧
+	
+	if( SYSTEM_MODE_INITAL == s_unit.system_mode ){
+		// 10msタイマー開始
+		TMKAMK = 0U;    	/* enable INTIT interrupt */
+		TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+	}
 
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
 #if 0
 	com_srv_puts( (const B *__near)"STOP OUT\r\n" );
 #endif
 }
 
-static void halt_in( void )
+/************************************************************************/
+/* 関数     : stop_restore_ram											*/
+/* 関数名   : CPUストップからのRAM復旧処理								*/
+/* 引数     : なし														*/
+/* 戻り値   : なし														*/
+/* 変更履歴 : 2018.07.26 Axia Soft Design 西島 稔	初版作成			*/
+/************************************************************************/
+/* 機能 :																*/
+/* CPUストップからの復旧処理											*/
+/************************************************************************/
+/* 注意事項 :															*/
+/* なし																	*/
+/************************************************************************/
+STATIC void stop_restore_ram( void )
 {
-	com_srv_puts( (const B *__near)"HALT IN\r\n" );
-	wait_ms( 10 );
-	//RD8001暫定：突入復帰処理に関して要検討
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
 	
-	// 割り込み止める処理
-	TMKAMK = 1U;    	  /* disable INTIT interrupt */
-	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
-
-	HALT();
-	// ウェイト　※CPUマニュアル　Page 1060 of 1325
-	// ベクタ割り込み処理を行う場合
-	// メイン・システム・クロック時 ：15～16クロック
-	// ベクタ割り込み処理を行わない場合
-	// メイン・システム・クロック時 ：9～10クロック
-	wait_ms( 1 );
-	TMKAMK = 0U;    	  /* disable INTIT interrupt */
-	TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
-
-	com_srv_puts( (const B *__near)"HALT OUT\r\n" );
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	NOP();
+	if( SYSTEM_MODE_INITAL == s_unit.system_mode ){
+		s_unit.pow_sw_last = OFF;	//電源ボタンの押下をOFFに変更
+	}
+	
 }
 
 
@@ -938,7 +1130,7 @@ STATIC void main_cpu_com_rcv_sts( void )
 	bcd2bin(&rtc_val_bin.min, &rtc_val.min);
 	bcd2bin(&rtc_val_bin.sec, &rtc_val.sec);
 
-	if( SYSTEM_MODE_NON == s_unit.system_mode ){
+	if( SYSTEM_MODE_NON != s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
 		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
@@ -953,8 +1145,9 @@ STATIC void main_cpu_com_rcv_sts( void )
 
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
-		s_unit.system_mode_chg_req = SYSTEM_MODE_HD_CHG_NON;
-	}else if( SYSTEM_MODE_SENSOR == s_unit.system_mode ){
+		s_unit.system_mode_chg_req = SYSTEM_MODE_NON;
+#if 0
+	}else if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
 		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
@@ -969,7 +1162,8 @@ STATIC void main_cpu_com_rcv_sts( void )
 		
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
-		s_unit.system_mode_chg_req = SYSTEM_MODE_HD_CHG_NON;
+		s_unit.system_mode_chg_req = SYSTEM_MODE_NON;
+#endif
 	}else{
 		// 何もしない
 		
@@ -1010,6 +1204,8 @@ STATIC void main_cpu_com_rcv_date_set( void )
 
 STATIC void main_cpu_com_rcv_pc_log( void )
 {
+#if 0
+	//何の処理？
 	UB	state;			/* レコード有効/無効				*/
 	UH	ibiki_val;
 	UB	myaku_val;
@@ -1034,6 +1230,19 @@ STATIC void main_cpu_com_rcv_pc_log( void )
 															  , dummy);
 
 	com_srv_send( tx_data, len );
+#else
+	int len;
+	UB tx_data[UART1_STR_MAX] = {0};
+
+	memcpy( &tx_data[0], &s_ds.cpu_com.input.rcv_data[0], CPU_COM_RCV_DATA_SIZE_PC_LOG );
+	
+	len = strlen( tx_data );
+	tx_data[len]		= '\r';
+	tx_data[len + 1]	= '\n';
+	
+	// PC側にスルー出力
+	com_srv_send( tx_data, len + 2 );
+#endif
 }
 
 STATIC void main_cpu_com_rcv_mode_chg( void )
@@ -1042,8 +1251,8 @@ STATIC void main_cpu_com_rcv_mode_chg( void )
 	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_MODE_CHG;
 	
 	// センシング開始時のタイマー
-	if(( SYSTEM_MODE_SENSOR != s_unit.system_mode ) &&
-	   ( SYSTEM_MODE_SENSOR == s_ds.cpu_com.input.rcv_data[0] )){
+	if(( SYSTEM_MODE_SENSING != s_unit.system_mode ) &&
+	   ( SYSTEM_MODE_SENSING == s_ds.cpu_com.input.rcv_data[0] )){
 		time_soft_set_10ms( TIME_TYPE_10MS_SENSING_DELAY, TIME_10MS_CNT_SENSING_DELAY );
 		s_unit.sensing_end_flg = OFF;
 		s_unit.sensing_cnt_50ms = 0;
@@ -1055,6 +1264,26 @@ STATIC void main_cpu_com_rcv_mode_chg( void )
 		s_unit.system_mode = s_ds.cpu_com.input.rcv_data[0];
 		// 正常応答
 		s_ds.cpu_com.order.snd_data[0] = 0;		// 正常応答
+		
+		
+		// モード変更時は一旦OFF
+		s_unit.disp.ptn = DISP_PTN_OFF;
+		
+		if( SYSTEM_MODE_IDLE_REST == s_unit.system_mode ){
+			if( 1 == s_unit.dench_sts ){
+				s_unit.disp.ptn = DISP_PTN_DENCH_ZANRYO_1;
+			}else if( 2 == s_unit.dench_sts ){
+				s_unit.disp.ptn = DISP_PTN_DENCH_ZANRYO_2;
+			}else if( 3 == s_unit.dench_sts ){
+				s_unit.disp.ptn = DISP_PTN_DENCH_ZANRYO_3;
+			}else{
+				
+			}
+		}
+		
+		if( SYSTEM_MODE_GET == s_unit.system_mode ){
+			s_unit.disp.ptn = DISP_PTN_FLASH_GET;
+		}
 	}else{
 		s_ds.cpu_com.order.snd_data[0] = 1;		// 異常応答
 	}
@@ -1086,6 +1315,25 @@ STATIC void main_cpu_com_rcv_prg_hd_check(void)
 	s_ds.cpu_com.order.snd_data[2] = version_product_tbl[2];
 	s_ds.cpu_com.order.snd_data[3] = version_product_tbl[3];
 	s_ds.cpu_com.order.data_size = 4;
+}
+
+/* 表示指示 */
+STATIC void main_cpu_com_rcv_disp(void)
+{
+	switch( s_ds.cpu_com.input.rcv_data[0] ){
+		case CPU_COM_DISP_ORDER_NON:
+			s_unit.disp.ptn = DISP_PTN_OFF;
+			break;
+		case CPU_COM_DISP_ORDER_SELF_CHECK_ERR:
+			s_unit.disp.ptn = DISP_PTN_FLASH_100MS;
+			break;
+		case CPU_COM_DISP_ORDER_SELF_CHECK_FIN:
+			s_unit.disp.ptn = DISP_PTN_ON;
+			break;
+		default:
+		
+		break;
+	}
 }
 
 /************************************************************************/

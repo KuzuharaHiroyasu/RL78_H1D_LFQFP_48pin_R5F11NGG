@@ -10,9 +10,20 @@
 
 
 // システムモード
-#define			SYSTEM_MODE_NON						0
-#define			SYSTEM_MODE_SENSOR					1
-#define			SYSTEM_MODE_GET_MODE				2
+typedef enum{
+	SYSTEM_MODE_INITAL,						// イニシャル
+	SYSTEM_MODE_IDLE_REST,					// アイドル_残量表示 ※RD8001暫定：IDLEを統合するか要検討
+	SYSTEM_MODE_IDLE_COM,					// アイドル_通信待機 ※RD8001暫定：IDLEを統合するか要検討
+	SYSTEM_MODE_SENSING,					// センシング
+	SYSTEM_MODE_GET,						// データ取得
+	SYSTEM_MODE_PRG_H1D,					// H1Dプログラム更新
+	SYSTEM_MODE_PRG_G1D,					// G1Dプログラム更新
+	SYSTEM_MODE_SELF_CHECK,					// 自己診断
+	//↑↑↑機能仕様上の上限↑↑↑
+	SYSTEM_MODE_MOVE,						// 移行
+	SYSTEM_MODE_NON,						// なし
+	SYSTEM_MODE_MAX
+}SYSTEM_MODE;
 
 
 
@@ -35,6 +46,8 @@
 
 // 加速度センサ
 #define ACL_DEVICE_ADR			0x1C				// 加速度センサデバイスアドレス
+#define ACL_TIMING_VAL			10					// 加速度センサ処理タイミング
+
 
 // 30秒[20ms]
 #define SEC_30_CNT				( 30 * 1000 / 20 )
@@ -63,6 +76,31 @@ typedef struct{
 	}info;
 }MEAS;
 
+#define			DISP_PTN_OFF						0		// 消灯
+#define			DISP_PTN_ON							1		// 点灯
+#define			DISP_PTN_FLASH_100MS				2		// 点滅(100ms)
+#define			DISP_PTN_DENCH_ZANRYO_1				3		// 電池残量1
+#define			DISP_PTN_DENCH_ZANRYO_2				4		// 電池残量2
+#define			DISP_PTN_DENCH_ZANRYO_3				5		// 電池残量3
+#define			DISP_PTN_FLASH_GET					6		// GETモード
+
+
+#define			DISP_PTN_FLASH_100MS_SEQ_MAX		1				// シーケンス最大
+
+#define			DISP_PTN_FLASH_DENCH_ZANRYO_3_SEQ_MAX		61		// シーケンス最大
+
+#define			DISP_PTN_FLASH_GET_SEQ_MAX		5		// シーケンス最大
+
+typedef struct{
+	UB seq;					// シーケンス
+	UB ptn;					// パターン
+	UB last_ptn;			// 前回パターン
+
+
+}DISP;
+
+
+
 typedef struct{
 	UB main_cyc_req;		/* メイン周期要求(20ms) */
 
@@ -72,20 +110,37 @@ typedef struct{
 	
 	MEAS meas;				/* 計測値(50ms) */
 	UH dench_sts;			/* 電池残量状態 */
+	UB bat_chg;				/* 充電状態 */
+	UB kensa;				/* 検査状態 */
 	
 	UB hour;
 	UB min;
 	UB sec;
 	
-	UB sensing_start_trig;		// センシング開始トリガ
+	// イベント
+	UB event_sw_long;			// SW押下(長)
+	UB event_sw_short;			// SW押下(短)
+	
+	
+
 	UB sensing_end_flg;			// センシング終了
+	
+	
+	
+	
 
 	UW sensing_cnt_50ms;		// センシング終了[50ms]
-	
-	UB pow_sw_last;				// 電源ボタン状態(前回)
+	UB acl_sensor_timing;			// 加速度センサタイミング
 	
 	
 	UB non_wdt_refresh;			// WDTリフレッシュなし
+	
+	DISP disp;					// 表示	
+	
+	// ワーク
+	UB pow_sw_last;				// 電源ボタン状態(前回)
+	UB bat_chg_last;			// 充電状態(前回)
+	UB kensa_last;				/* 検査状態(前回) */
 	
 	UW err_cnt;			//異常回数(デバッグ用途)
 }T_UNIT;

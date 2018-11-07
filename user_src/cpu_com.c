@@ -65,6 +65,7 @@ STATIC const T_CPU_COM_CMD_INFO s_tbl_cmd_info[CPU_COM_CMD_MAX] = {
 	{	0xD0	},	/* プログラム転送データ		*/
 	{	0xD1	},	/* プログラム転送結果		*/
 	{	0xD3	},	/* プログラム転送確認		*/
+	{	0xB2	},	/* 表示指示					*/
 };
 
 
