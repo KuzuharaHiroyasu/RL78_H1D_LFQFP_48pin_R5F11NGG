@@ -71,8 +71,13 @@ void R_SAU0_Create(void)
     NOP();
     NOP();
 #if 1	//new
+#if 0
 	// 76800bps    19200bps
     SPS0 = _0000_SAU_CK01_FCLK_0 | _0002_SAU_CK00_FCLK_2;
+#else
+	// 76800bps    9600bps
+    SPS0 = _0000_SAU_CK01_FCLK_0 | _0003_SAU_CK00_FCLK_3;
+#endif
 #else
 #if BAUDRATE == BPS_38400
     SPS0 = _0010_SAU_CK01_fCLK_1 | _0001_SAU_CK00_fCLK_1;		//38400bps

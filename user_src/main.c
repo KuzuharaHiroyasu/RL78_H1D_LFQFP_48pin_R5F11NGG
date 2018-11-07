@@ -17,7 +17,6 @@ static void main_init(void);
 static void sw_cyc(void);
 static void mode_cyc(void);
 void set_req_main_cyc(void);
-void main_send_uart1(void);
 void main_send_uart1_rtc(void);
 void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg );
 void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len );
@@ -32,6 +31,7 @@ STATIC void stop_in( void );
 STATIC void stop_restore_ram( void );STATIC void main_cpu_com_snd_sensor_data( void );
 STATIC void main_cpu_com_proc(void);
 STATIC void main_cpu_com_rcv_sts( void );
+STATIC void main_cpu_com_rcv_sensing_order( void );
 STATIC void main_cpu_com_rcv_date_set( void );
 STATIC void main_cpu_com_rcv_pc_log( void );
 STATIC void main_cpu_com_rcv_mode_chg( void );
@@ -42,6 +42,7 @@ STATIC void disp_cyc(void);
 STATIC void main_cpu_com_rcv_prg_hd_ready(void);
 STATIC void main_cpu_com_rcv_prg_hd_check(void);
 STATIC void main_cpu_com_rcv_disp(void);
+STATIC void main_cpu_com_rcv_version(void);
 
 /************************************************************/
 /* 変数定義													*/
@@ -66,12 +67,16 @@ STATIC DS s_ds;
 /************************************************************/
 /* テーブル定義												*/
 /************************************************************/
-const B		version_product_tbl[]= {0, 0, 0, 18};				/* ソフトウェアバージョン */
+// バージョン(APL)
+const B		version_product_tbl[]= {0, 0, 0, 19};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
 																/* ③リビジョン：[0 ～ 9] */
 																/* ④ビルドバージョン：[0 ～ 9] */
+
+// バージョンのアドレス(BOOT)  //RD8001暫定
+const UB	* const version_boot_tbl= (const UB*)0x00006EF0;	/* ブートバージョンアドレス */
 
 /* 受信データ処理 関数テーブル */
 STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
@@ -79,6 +84,7 @@ STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
 	{	0x00,			NULL,							OFF	},	/* 【CPU間通信コマンド】コマンド無し				*/
 	{	0xE0,			main_cpu_com_rcv_sts,			OFF	},	/* 【CPU間通信コマンド】ステータス要求				*/
 	{	0xA0,			NULL,							OFF	},	/* 【CPU間通信コマンド】センサーデータ更新			*/
+	{	0xA1,			main_cpu_com_rcv_sensing_order,	OFF	},	/* 【CPU間通信コマンド】センサーデータ更新			*/
 	{	0xB0,			main_cpu_com_rcv_mode_chg,		OFF	},	/* 【CPU間通信コマンド】状態変更(G1D)				*/
 	{	0xF0,			main_cpu_com_rcv_pc_log,		OFF	},	/* 【CPU間通信コマンド】PCログ送信(内部コマンド)	*/
 	{	0xB1,			main_cpu_com_rcv_date_set,		OFF	},	/* 【CPU間通信コマンド】日時設定					*/
@@ -87,7 +93,9 @@ STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
 	{	0xD4,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送消去			*/
 	{	0xD0,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送データ		*/
 	{	0xD1,			NULL,							OFF	},	/* 【CPU間通信コマンド】プログラム転送結果			*/
-	{	0xB2,			main_cpu_com_rcv_disp,			OFF	},	/* 【CPU間通信コマンド】プログラム転送確認			*/
+	{	0xD3,			main_cpu_com_rcv_prg_hd_check,	OFF	},	/* 【CPU間通信コマンド】プログラム転送確認			*/
+	{	0xB2,			main_cpu_com_rcv_disp,			OFF	},	/* 【CPU間通信コマンド】表示指示					*/
+	{	0xB3,			main_cpu_com_rcv_version,		OFF	},	/* 【CPU間通信コマンド】バージョン					*/
 };
 
 extern void test_uart_0_send( void );
@@ -119,6 +127,7 @@ void user_main(void)
 //    int cnt_30sec = 0;
 	rtc_counter_value_t rtc;
 //	char com_data[10];
+	UW time = 0;
     
 	vect_set_tbl_apl();	
 
@@ -159,7 +168,13 @@ void user_main(void)
 			if(( OFF == drv_intp_read_g1d_int() ) &&
 			   ( OFF == s_unit.pow_sw_last )  &&
 			   ( OFF == drv_uart0_get_send() )){
-				stop_in();
+				// RD8001暫定：通信の受信対応時間を待つ10MSではNG(リトライが発生する)
+				time_soft_get_10ms( TIME_TYPE_10MS_WAIT_SLEEP, &time );
+				if( 0 == time ){
+					stop_in();
+				}
+			}else{
+				time_soft_set_10ms( TIME_TYPE_10MS_WAIT_SLEEP, TIME_10MS_CNT_WAIT_SLEEP );
 			}
 		}else if( SYSTEM_MODE_GET == s_unit.system_mode ){
 			drv_o_port_mike( OFF );		//RD8001暫定
@@ -262,25 +277,38 @@ static void user_main_mode_sensor(void)
 		wait_ms( 2 );
 
 		// 赤外光ON
-		drv_o_port_sekigai( ON );
-		drv_o_port_sekishoku( OFF );
+		if( ON == s_unit.sensing_sekigai_flg ){
+			drv_o_port_sekigai( ON );
+			drv_o_port_sekishoku( OFF );
 
-		R_DAC1_Set_ConversionValue( 0x0B00 );
-		wait_ms( 2 );
-		pga_do();
-//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
-		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		s_unit.meas.info.dat.sekigaival = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
-		
-		R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
-		R_AMP2_Stop();		// □AMP2  OFF
-		
-		wait_ms( 2 );
-		// 赤外光,赤色光OFF
-		drv_o_port_sekigai( OFF );
-		drv_o_port_sekishoku( OFF );
-		
-		R_DAC1_Stop();		// □DAC  OFF
+			R_DAC1_Set_ConversionValue( 0x0B00 );
+			wait_ms( 2 );
+			pga_do();
+	//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
+			R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
+			s_unit.meas.info.dat.sekigaival = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
+			
+			R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
+			R_AMP2_Stop();			// □AMP2  OFF
+			
+			wait_ms( 2 );
+			// 赤外光,赤色光OFF
+			drv_o_port_sekigai( OFF );
+			drv_o_port_sekishoku( OFF );
+			
+			R_DAC1_Stop();			// □DAC  OFF
+		}else{
+			// 無効時はデータクリアして止める。待ち不要
+			s_unit.meas.info.dat.sekigaival = 0;
+			R_PGA_DSAD_Stop();		// □PGA0_DSAD  OFF
+			R_AMP2_Stop();			// □AMP2  OFF
+			
+			// 赤外光,赤色光OFF
+			drv_o_port_sekigai( OFF );
+			drv_o_port_sekishoku( OFF );
+			
+			R_DAC1_Stop();		// □DAC  OFF
+		}
 		
 		// 加速度センサ取得
 		// RD8001暫定：30msかかるが50ms毎に取得
@@ -310,19 +338,21 @@ static void user_main_mode_sensor(void)
 #endif
 		
 #endif
-
-		main_cpu_com_snd_sensor_data();
 		
 		s_unit.main_cyc_req  = OFF;
 		
 		// 赤外、赤色OFF
 		drv_o_port_sekigai( OFF );
 		drv_o_port_sekishoku( OFF );
-
+		
+		// 送信完了待ち
+		cpu_com_send_end_wait();		// 送信完了待ち
 		// RD8001暫定：stopモード無効
 #if 1
 		stop_in();
 #endif
+		// データ送信開始 ※ストップモード前だとストップモードへの突入が出来ないからセンシングしながら送信を並行して行う。
+		main_cpu_com_snd_sensor_data();	
 	}
 
 }
@@ -516,6 +546,8 @@ STATIC void main_cyc(void)
 	UH dench_val;
 	UB bat_chg;
 	UB kensa;
+	UB bat_chg_off_trig = OFF;
+	UW time = 0;
 	
 	
 	// 電池残量
@@ -533,15 +565,31 @@ STATIC void main_cyc(void)
 		s_unit.dench_sts = 4;
 	}
 	
-	// 充電状態
+	// 充電状態(ポート)
 	bat_chg = drv_i_port_bat_chg();
-	
 	if( s_unit.bat_chg_last == bat_chg ){
 		// 2回一致で更新
 		s_unit.bat_chg = bat_chg;
 	}
 	s_unit.bat_chg_last = bat_chg;
 	
+	// 充電完了チェック
+	if( ON == s_unit.bat_chg ){
+		time_soft_set_10ms( TIME_TYPE_10MS_DISP_FLASH, TIME_10MS_CNT_DISP_FLASH_100MS );
+		// OFFエッジの規定時間後なのでONの場合は一旦充電完了状態は未定とする
+		s_unit.bat_chg_fin_state = BAT_CHG_FIN_STATE_UNKNOWN;
+	}else{
+		if( 0 == time ){
+			if( BAT_CHG_FIN_STATE_UNKNOWN == s_unit.bat_chg_fin_state ){
+				// 充電完了状態が未定(OFFエッジ)の場合に充電完了状態を確定させる
+				if( dench_val >= DENCH_BAT_CHG_FIN_VAL ){
+					s_unit.bat_chg_fin_state = BAT_CHG_FIN_STATE_ON;
+				}else{
+					s_unit.bat_chg_fin_state = BAT_CHG_FIN_STATE_OFF;
+				}
+			}
+		}
+	}
 	
 	// 検査状態
 	kensa = drv_i_port_kensa();
@@ -724,66 +772,6 @@ void set_req_main_cyc(void)
 //================================
 
 #define UART1_STR_MAX		150
-void main_send_uart1(void)
-{
-#if 0
-	uint8_t tx_data[UART1_STR_MAX] = {0};
-	int len;
-	
-#if 0
-	s_unit.sekishoku_val = 1;
-	s_unit.sekigaival = 2;
-	s_unit.kokyu_val = 3;
-	s_unit.ibiki_val = 4;
-#endif
-
-#if 0		//EEP無効
-#if 1
-	len = sprintf((char*)tx_data, "%ld,%ld,%d,%d,%d,%d,%d\r\n", s_unit.eep.record.data.sekishoku_val
-															  , s_unit.eep.record.data.sekigaival
-															  , s_unit.eep.record.data.kokyu_val
-															  , s_unit.eep.record.data.ibiki_val
-															  , s_unit.eep.record.data.acl_x
-															  , s_unit.eep.record.data.acl_y
-															  , s_unit.eep.record.data.acl_z );
-
-
-
-
-#else
-	len = sprintf((char*)tx_data, "%d,%f,%f,%f,%f,%f,%d,%d,%d\r\n", s_unit.eep.record.data.state_flg,					/* フラグ(呼吸状態,睡眠ステージ,いびき有無 */
-															 s_unit.eep.record.data.ibiki_val,					/* いびき */
-															 s_unit.eep.record.data.myaku_val_sekishoku,		/* 脈拍_赤外 */
-															 s_unit.eep.record.data.myaku_val_sekigai,			/* 脈拍_赤色 */
-															 s_unit.eep.record.data.spo2_val_normal,			/* SPO2_通常 */
-															 s_unit.eep.record.data.spo2_val_konica,			/* SPO2 */
-															 s_unit.eep.record.data.acl_x,
-															 s_unit.eep.record.data.acl_y,
-															 s_unit.eep.record.data.acl_z );
-	
-//	main_acl_read();
-//	len = sprintf(tx_data, "%d,%d,%d\r\n", s_unit.acl_x, s_unit.acl_y, s_unit.acl_z );		//加速度
-#endif
-#endif
-	
-	
-	com_srv_send( &tx_data[0], len );
-
-
-#if 0
-	len = sprintf((char*)tx_data, "%d,%d,%d\r\n", s_unit.hour,
-												  s_unit.min,
-												  s_unit.sec );
-	com_srv_send( &tx_data[0], len );
-#endif
-
-
-
-
-//	com_srv_send( s, len );
-#endif
-}
-
 // debug
 void main_send_uart1_rtc(void)
 {
@@ -1069,8 +1057,7 @@ STATIC void main_cpu_com_snd_sensor_data( void )
 	memcpy( &s_ds.cpu_com.order.snd_data[0], &s_unit.meas.info.byte[0], CPU_COM_SND_DATA_SIZE_SENSOR_DATA );
 	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_SENSOR_DATA;
 	
-	// 以降スリープ処理の為に送信終了までの処理を呼ぶ
-	cpu_com_send_end();
+	cpu_com_send_start();
 }
 
 /************************************************************************/
@@ -1117,6 +1104,9 @@ STATIC void main_cpu_com_rcv_sts( void )
 {
 	rtc_counter_value_t rtc_val;
 	rtc_counter_value_t rtc_val_bin;
+	H1D_INFO h1d;
+	h1d.info.byte = 0;
+	
 	if( MD_OK != R_RTC_Get_CounterValue( &rtc_val ) ){
 		err_info( 13 );
 	}
@@ -1129,12 +1119,21 @@ STATIC void main_cpu_com_rcv_sts( void )
 	bcd2bin(&rtc_val_bin.hour, &rtc_val.hour);
 	bcd2bin(&rtc_val_bin.min, &rtc_val.min);
 	bcd2bin(&rtc_val_bin.sec, &rtc_val.sec);
-
+	
+	// h1D情報作成
+	if( ON == s_unit.bat_chg ){
+		h1d.info.bit.bat_chg = 1;	//充電検知ポート
+	}
+	if( BAT_CHG_FIN_STATE_ON == s_unit.bat_chg_fin_state ){
+		h1d.info.bit.bat_chg_fin = 1;	//充電完了イベント
+		s_unit.bat_chg_fin_state = BAT_CHG_FIN_STATE_OFF;	//RD8001暫定：１回通知
+	}
+	
 	if( SYSTEM_MODE_NON != s_unit.system_mode ){
 		s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_STATUS;
 		s_ds.cpu_com.order.snd_data[0] = s_unit.system_mode_chg_req;
 		s_ds.cpu_com.order.snd_data[1] = s_unit.system_mode;
-		s_ds.cpu_com.order.snd_data[2] = s_unit.info_data;
+		s_ds.cpu_com.order.snd_data[2] = h1d.info.byte;
 		s_ds.cpu_com.order.snd_data[3] = rtc_val_bin.year;
 		s_ds.cpu_com.order.snd_data[4] = rtc_val_bin.month;
 		s_ds.cpu_com.order.snd_data[5] = rtc_val_bin.week;
@@ -1142,6 +1141,7 @@ STATIC void main_cpu_com_rcv_sts( void )
 		s_ds.cpu_com.order.snd_data[7] = rtc_val_bin.hour;
 		s_ds.cpu_com.order.snd_data[8] = rtc_val_bin.min;
 		s_ds.cpu_com.order.snd_data[9] = rtc_val_bin.sec;
+		s_ds.cpu_com.order.snd_data[10] = s_unit.dench_sts;
 
 		s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_STATUS_REQ;
 		
@@ -1169,6 +1169,13 @@ STATIC void main_cpu_com_rcv_sts( void )
 		
 	}
 }
+
+STATIC void main_cpu_com_rcv_sensing_order( void )
+{
+	s_unit.sensing_sekigai_flg = s_ds.cpu_com.input.rcv_data[0];
+}
+
+
 
 STATIC void main_cpu_com_rcv_date_set( void )
 {
@@ -1334,6 +1341,26 @@ STATIC void main_cpu_com_rcv_disp(void)
 		
 		break;
 	}
+}
+
+/* バージョン */
+STATIC void main_cpu_com_rcv_version(void)
+{
+	UB	boot_ver[4];				/* Boot部バージョン情報 */
+	
+	// アプリが保持しているアドレスからブートバージョンを生成
+	memcpy((UB *)boot_ver, (UB *)version_boot_tbl, sizeof(boot_ver));
+
+	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_VERSION;
+	s_ds.cpu_com.order.snd_data[0] = version_product_tbl[0];	// アプリバージョン
+	s_ds.cpu_com.order.snd_data[1] = version_product_tbl[1];
+	s_ds.cpu_com.order.snd_data[2] = version_product_tbl[2];
+	s_ds.cpu_com.order.snd_data[3] = version_product_tbl[3];
+	s_ds.cpu_com.order.snd_data[4] = boot_ver[0];				// ブートバージョン
+	s_ds.cpu_com.order.snd_data[5] = boot_ver[1];
+	s_ds.cpu_com.order.snd_data[6] = boot_ver[2];
+	s_ds.cpu_com.order.snd_data[7] = boot_ver[3];
+	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_VERSION;
 }
 
 /************************************************************************/

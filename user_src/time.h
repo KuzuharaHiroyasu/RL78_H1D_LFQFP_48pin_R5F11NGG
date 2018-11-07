@@ -29,6 +29,8 @@ typedef enum{
 	TIME_TYPE_10MS_CPU_COM_RETRY			,			/* CPU間通信リトライ待ちタイマ */
 	TIME_TYPE_10MS_SENSING_DELAY			,			/* センシング開始待ち */
 	TIME_TYPE_10MS_DISP_FLASH				,			/* 表示点滅 */
+	TIME_TYPE_10MS_WAIT_SLEEP				,			/* sleep待ち */
+	TIME_TYPE_10MS_BAT_CHG_FIN				,			/* 充電完了チェック */
 	TIME_TYPE_10MS_NUM									/* ソフトウェアタイマの数(10ms) */
 }TIME_TYPE_10MS;
 
@@ -38,9 +40,13 @@ typedef enum{
 
 
 
-#define	TIME_10MS_CNT_STATE_STOP			1000			/* 休止状態遷移時間(10秒) */
+#define	TIME_10MS_CNT_STATE_STOP			1000		/* 休止状態遷移時間(10秒) */
 
-#define	TIME_10MS_CNT_SENSING_DELAY				100			/* センシング開始待(1秒) */
+#define	TIME_10MS_CNT_SENSING_DELAY			100			/* センシング開始待(1秒) */
+
+#define	TIME_10MS_CNT_WAIT_SLEEP			( 2 + 1 )	/* sleep待ち[10ms以上] */
+
+#define	TIME_10MS_CNT_BAT_CHG_FIN			( 50 + 1 )	/* 充電完了チェック[500ms以上] */
 
 // 表示点滅
 #define	TIME_10MS_CNT_DISP_FLASH_50MS		5				/* 表示点滅(50ms) */

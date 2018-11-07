@@ -17,6 +17,7 @@
 #define CPU_COM_SND_DATA_SIZE_MODE_CHG				1				/* 状態変更(G1D)			*/
 #define CPU_COM_SND_DATA_SIZE_PC_LOG				7				/* PCログ送信(内部コマンド)	*/
 #define CPU_COM_SND_DATA_SIZE_SENSOR_DATA			15				/* センサーデータ	*/
+#define CPU_COM_SND_DATA_SIZE_VERSION				8				/* バージョン	*/
 
 // 受信データサイズ
 #define CPU_COM_RCV_DATA_SIZE_PC_LOG				10				/* PCログ */
@@ -60,10 +61,10 @@ typedef enum _CPU_COM_CMD_ID{
 	CPU_COM_CMD_NONE=0,							/* 【CPU間通信コマンド】コマンド無し				*/
 	CPU_COM_CMD_STATUS,							/* 【CPU間通信コマンド】ステータス要求				*/
 	CPU_COM_CMD_SENSOR_DATA,					/* 【CPU間通信コマンド】センサーデータ更新			*/
+	CPU_COM_CMD_SENSING_ORDER,					/* 【CPU間通信コマンド】センシング指示				*/
 	CPU_COM_CMD_MODE_CHG,						/* 【CPU間通信コマンド】状態変更(G1D)				*/
 	CPU_COM_CMD_PC_LOG,							/* 【CPU間通信コマンド】PCログ送信(内部コマンド)	*/
 	CPU_COM_CMD_DATE_SET,						/* 【CPU間通信コマンド】日時設定	*/
-	
 	CPU_COM_CMD_PRG_DOWNLORD_READY,				/* 【CPU間通信コマンド】プログラム転送準備		*/
 	CPU_COM_CMD_PRG_DOWNLORD_START,				/* 【CPU間通信コマンド】プログラム転送開始		*/
 	CPU_COM_CMD_PRG_DOWNLORD_ERASE,				/* 【CPU間通信コマンド】プログラム転送消去		*/
@@ -71,6 +72,7 @@ typedef enum _CPU_COM_CMD_ID{
 	CPU_COM_CMD_PRG_DOWNLORD_RESLUT,			/* 【CPU間通信コマンド】プログラム転送結果		*/
 	CPU_COM_CMD_PRG_DOWNLORD_CHECK,				/* 【CPU間通信コマンド】プログラム転送確認		*/
 	CPU_COM_CMD_DISP_ORDER,						/* 【CPU間通信コマンド】表示指示				*/
+	CPU_COM_CMD_VERSION,						/* 【CPU間通信コマンド】バージョン				*/
 	CPU_COM_CMD_MAX								/* 【CPU間通信コマンド】最大値					*/
 }CPU_COM_CMD_ID;
 
@@ -135,7 +137,8 @@ typedef struct{
 /******************/
 extern void cpu_com_init(void);
 extern void cpu_com_proc(void);
-extern void cpu_com_send_end( void );
+extern void cpu_com_send_start( void );
+extern void cpu_com_send_end_wait( void );
 extern void test_cpu_com_send( void );
 
 #endif

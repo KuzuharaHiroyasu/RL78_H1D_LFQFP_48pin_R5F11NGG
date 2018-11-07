@@ -28,9 +28,12 @@ typedef enum{
 
 
 // 電池残量閾値
-#define DENCH_ZANRYO_1_VAL			(UH)( 1023.0 * (1.95 / 3.0 ))		// 1.95V以上
-#define DENCH_ZANRYO_2_VAL			(UH)( 1023.0 * (1.72 / 3.0 ))		// 1.72V以上
-#define DENCH_ZANRYO_3_VAL			(UH)( 1023.0 * (1.5 / 3.0 ))		// 1.5V以上
+#define DENCH_ZANRYO_1_VAL						(UH)( 1023.0 * (1.95 / 3.0 ))		// 1.95V以上
+#define DENCH_ZANRYO_2_VAL						(UH)( 1023.0 * (1.72 / 3.0 ))		// 1.72V以上
+#define DENCH_ZANRYO_3_VAL						(UH)( 1023.0 * (1.5 / 3.0 ))		// 1.5V以上
+
+#define DENCH_BAT_CHG_FIN_VAL					(UH)( 1023.0 * (2.0 / 3.0 ))		// 2.0V以上
+
 
 
 #define			HOUR12_CNT_50MS		(UW)( 12L * 60L * 60L * (1000L / 50L))	//12時間のカウント値[50ms]
@@ -99,6 +102,29 @@ typedef struct{
 
 }DISP;
 
+// 充電完了状態
+#define BAT_CHG_FIN_STATE_OFF			0		// なし ※起動直後はOFF確定
+#define BAT_CHG_FIN_STATE_ON			1		// あり
+#define BAT_CHG_FIN_STATE_UNKNOWN		2		// 不明 ※一度充電検知ポートがONになると不明状態になる
+
+
+typedef struct{
+	union {
+		UB	byte;
+		/*呼出ランプ状態*/
+		struct{
+			UB	bat_chg			:1;		/* 1  充電検知ポート */
+			UB	bat_chg_fin		:1;		/* 2  充電完了イベント */
+			UB	dummy1			:1;		/* 3  未定義 */
+			UB	dummy2			:1;		/* 4  未定義 */
+			UB	dummy3			:1;		/* 5  未定義 */
+			UB	dummy4			:1;		/* 6  未定義 */
+			UB	dummy5			:1;		/* 7  未定義 */
+			UB	dummy6			:1;		/* 8  未定義 */
+		}bit;
+	}info;				/* 3  呼出ランプ状態	Byte	1バイト */
+}H1D_INFO;				/* 3  呼出ランプ状態	Byte	1バイト */
+
 
 
 typedef struct{
@@ -106,11 +132,11 @@ typedef struct{
 
 	UB system_mode;			/* システムモード */
 	UB system_mode_chg_req;	/* システムモード変更要求 */
-	UB info_data;			/* H1D情報 */
 	
 	MEAS meas;				/* 計測値(50ms) */
 	UH dench_sts;			/* 電池残量状態 */
-	UB bat_chg;				/* 充電状態 */
+	UB bat_chg;				/* 充電検知ポート */
+	UB bat_chg_fin_state;	/* 充電完了イベント */
 	UB kensa;				/* 検査状態 */
 	
 	UB hour;
@@ -124,7 +150,7 @@ typedef struct{
 	
 
 	UB sensing_end_flg;			// センシング終了
-	
+	UB sensing_sekigai_flg;		// 赤外フラグ(ON:有効、OFF:無効)
 	
 	
 	

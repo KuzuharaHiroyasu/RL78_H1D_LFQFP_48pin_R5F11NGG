@@ -44,6 +44,8 @@ static COM_SRV_ANA	s_com_srv_ana;
 /*     外部参照     */
 /********************/
 extern const B		version_product_tbl[];				/* ソフトウェアバージョン */
+extern const UB	* const version_boot_tbl;				/* ブートバージョンアドレス */
+
 extern void getmode_in( void );
 extern void drv_uart1_data_init( void );
 
@@ -81,11 +83,22 @@ void com_srv_init( void )
 void com_srv_log_title( void )
 {
 #if FUNC_DEBUG_LOG == ON
+	UB	boot_ver[4];				/* Boot部バージョン情報 */
+	
+
 	int len;
 	UB tx_data[COM_STR_MAX] = {0};
 	
-	len = sprintf((char*)tx_data, "RD8001 POW_ON Ver.%d.%d.%d.%d\r\n", version_product_tbl[0], version_product_tbl[1],
+	len = sprintf((char*)tx_data, "RD8001 POW_ON APL Ver.%d.%d.%d.%d\r\n", version_product_tbl[0], version_product_tbl[1],
 																	   version_product_tbl[2], version_product_tbl[3] );
+	
+	com_srv_send( tx_data, len );
+
+	// アプリが保持しているアドレスからブートバージョンを生成
+	memcpy((UB *)boot_ver, (UB *)version_boot_tbl, sizeof(boot_ver));
+
+	len = sprintf((char*)tx_data, "RD8001 POW_ON BOOT Ver.%d.%d.%d.%d\r\n", boot_ver[0], boot_ver[1],
+																	   boot_ver[2], boot_ver[3] );
 	
 	com_srv_send( tx_data, len );
 #endif
@@ -133,6 +146,7 @@ void com_srv_cyc( void )
 /************************************************************************/
 /* 注意事項 : なし                                                      */
 /************************************************************************/
+//RD8001暫定：途中リリース用コマンド
 STATIC void com_srv_command( UB data )
 {
 #if FUNC_DEBUG_LOG == ON
