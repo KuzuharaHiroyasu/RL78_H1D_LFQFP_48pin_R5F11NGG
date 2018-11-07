@@ -11,36 +11,30 @@
 /************************************************************/
 /* ƒvƒƒgƒ^ƒCƒvéŒ¾											*/
 /************************************************************/
-void user_main(void);
-static void user_main_mode_sensor(void);
-static void main_init(void);
-static void sw_cyc(void);
-static void mode_cyc(void);
-void set_req_main_cyc(void);
-void main_send_uart1_rtc(void);
-void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg );
-void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len );
-void getmode_in(void);
-void wait_ms( int ms );
-void err_info( int id );
-void main_acl_start(void);
-void main_acl_stop(void);
-void main_acl_read(void);
-void main_acl_write(void);
+STATIC UB main_sleep_check(void);
+STATIC void user_main_mode_sensor(void);
 STATIC W main_ad24_to_w( UH bufferH, UH bufferL );
+STATIC void main_init(void);
+STATIC void sw_cyc(void);
+STATIC void mode_cyc(void);
+STATIC void main_cyc(void);
+STATIC void disp_cyc(void);
+STATIC void disp_ptn_order( void );
+STATIC void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg );
+STATIC void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len );
+STATIC void main_acl_init(void);
+STATIC void main_acl_stop(void);
+STATIC void main_acl_start(void);
+STATIC void main_acl_read(void);
 STATIC void stop_in( void );
-STATIC void stop_restore_ram( void );STATIC void main_cpu_com_snd_sensor_data( void );
+STATIC void stop_restore_ram( void );
+STATIC void main_cpu_com_snd_sensor_data( void );
 STATIC void main_cpu_com_proc(void);
 STATIC void main_cpu_com_rcv_sts( void );
 STATIC void main_cpu_com_rcv_sensing_order( void );
 STATIC void main_cpu_com_rcv_date_set( void );
 STATIC void main_cpu_com_rcv_pc_log( void );
 STATIC void main_cpu_com_rcv_mode_chg( void );
-void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data );
-void ds_set_cpu_com_input( DS_CPU_COM_INPUT *p_data );
-STATIC void main_cyc(void);
-STATIC void disp_cyc(void);
-STATIC void disp_ptn_order( void );
 STATIC void main_cpu_com_rcv_prg_hd_ready(void);
 STATIC void main_cpu_com_rcv_prg_hd_check(void);
 STATIC void main_cpu_com_rcv_disp(void);
@@ -49,20 +43,6 @@ STATIC void main_cpu_com_rcv_version(void);
 /************************************************************/
 /* •Ï”’è‹`													*/
 /************************************************************/
-
-UH bufferH_dbg_ave;
-UH bufferL_dbg_ave;
-UH bufferH_dbg;
-UH bufferL_dbg;
-UH tx_num;
-UB wait;
-
-int i2c_cmplete;
-
-UB dbg_set_clock = 0;
-
-
-
 STATIC T_UNIT s_unit;
 STATIC DS s_ds;
 
@@ -70,7 +50,7 @@ STATIC DS s_ds;
 /* ƒe[ƒuƒ‹’è‹`												*/
 /************************************************************/
 // ƒo[ƒWƒ‡ƒ“(APL)
-const B		version_product_tbl[]= {0, 0, 0, 22};				/* ƒ\ƒtƒgƒEƒFƒAƒo[ƒWƒ‡ƒ“ */
+const B		version_product_tbl[]= {0, 0, 0, 23};				/* ƒ\ƒtƒgƒEƒFƒAƒo[ƒWƒ‡ƒ“ */
 																/* ƒo[ƒWƒ‡ƒ“•\‹Lƒ‹[ƒ‹ */
 																/* ‡@ƒƒWƒƒ[ƒo[ƒWƒ‡ƒ“F[0 ` 9] */
 																/* ‡Aƒ}ƒCƒi[ƒo[ƒWƒ‡ƒ“F[0 ` 9]  */
@@ -82,26 +62,24 @@ const UB	* const version_boot_tbl= (const UB*)0x00006EF0;	/* ƒu[ƒgƒo[ƒWƒ‡ƒ“ƒAƒ
 
 /* óMƒf[ƒ^ˆ— ŠÖ”ƒe[ƒuƒ‹ */
 STATIC const CPU_COM_RCV_CMD_TBL s_cpu_com_rcv_func_tbl[CPU_COM_CMD_MAX] = {
-	/* ƒRƒ}ƒ“ƒh */		/* ŠÖ”  */					/* ‰“š—L–³ */
-	{	0x00,			NULL,							OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒRƒ}ƒ“ƒh–³‚µ				*/
-	{	0xE0,			main_cpu_com_rcv_sts,			OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒXƒe[ƒ^ƒX—v‹				*/
-	{	0xA0,			NULL,							OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒZƒ“ƒT[ƒf[ƒ^XV			*/
-	{	0xA1,			main_cpu_com_rcv_sensing_order,	OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒZƒ“ƒT[ƒf[ƒ^XV			*/
-	{	0xB0,			main_cpu_com_rcv_mode_chg,		OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzó‘Ô•ÏX(G1D)				*/
-	{	0xF0,			main_cpu_com_rcv_pc_log,		OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzPCƒƒO‘—M(“à•”ƒRƒ}ƒ“ƒh)	*/
-	{	0xB1,			main_cpu_com_rcv_date_set,		OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhz“úİ’è					*/
-	{	0xD5,			main_cpu_com_rcv_prg_hd_ready,	OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—€”õ			*/
-	{	0xD2,			NULL,							OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—ŠJn			*/
-	{	0xD4,			NULL,							OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Á‹			*/
-	{	0xD0,			NULL,							OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—ƒf[ƒ^		*/
-	{	0xD1,			NULL,							OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Œ‹‰Ê			*/
-	{	0xD3,			main_cpu_com_rcv_prg_hd_check,	OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Šm”F			*/
-	{	0xB2,			main_cpu_com_rcv_disp,			OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhz•\¦w¦					*/
-	{	0xB3,			main_cpu_com_rcv_version,		OFF	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒo[ƒWƒ‡ƒ“					*/
+	/* ƒRƒ}ƒ“ƒh */		/* ŠÖ”  */					
+	{	0x00,			NULL							},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒRƒ}ƒ“ƒh–³‚µ				*/
+	{	0xE0,			main_cpu_com_rcv_sts			},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒXƒe[ƒ^ƒX—v‹				*/
+	{	0xA0,			NULL							},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒZƒ“ƒT[ƒf[ƒ^XV			*/
+	{	0xA1,			main_cpu_com_rcv_sensing_order	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒZƒ“ƒTƒVƒ“ƒOw¦			*/
+	{	0xB0,			main_cpu_com_rcv_mode_chg		},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzó‘Ô•ÏX(G1D)				*/
+	{	0xF0,			main_cpu_com_rcv_pc_log			},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzPCƒƒO‘—M(“à•”ƒRƒ}ƒ“ƒh)	*/
+	{	0xB1,			main_cpu_com_rcv_date_set		},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhz“úİ’è					*/
+	{	0xD5,			main_cpu_com_rcv_prg_hd_ready	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—€”õ			*/
+	{	0xD2,			NULL							},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—ŠJn			*/
+	{	0xD4,			NULL							},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Á‹			*/
+	{	0xD0,			NULL							},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—ƒf[ƒ^		*/
+	{	0xD1,			NULL							},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Œ‹‰Ê			*/
+	{	0xD3,			main_cpu_com_rcv_prg_hd_check	},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Šm”F			*/
+	{	0xB2,			main_cpu_com_rcv_disp			},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhz•\¦w¦					*/
+	{	0xB3,			main_cpu_com_rcv_version		},	/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒo[ƒWƒ‡ƒ“					*/
 };
 
-extern void test_uart_0_send( void );
-extern void test_cpu_com_send( void );
 
 #if 0
 rtc_counter_value_t dbg_rtc;
@@ -124,29 +102,27 @@ UB dbg_rtc_flg = 0;
 /************************************************************************/
 void user_main(void)
 {
-//	UW sleep_cnt = 0;
-//    int cnt_20ms = 0;
-//    int cnt_30sec = 0;
-	rtc_counter_value_t rtc;
-//	char com_data[10];
-	UW time = 0;
+//	UW time = 0;
     
 	vect_set_tbl_apl();	
 
     main_init();
-    /* Start user code. Do not edit comment generated here */
 	
+#if 0
 	// RTCİ’è
-#if 1
-	if( dbg_set_clock == 7 ){
-//		R_RTC_Set_CounterValue( rtc );
+	{
+		rtc_counter_value_t rtc;
+		
+		if( dbg_set_clock == 7 ){
+	//		R_RTC_Set_CounterValue( rtc );
+		}
+		R_RTC_Get_CounterValue( &rtc );
+		s_unit.hour = rtc.hour;
+		s_unit.min = rtc.min;
+		s_unit.sec = rtc.sec;
+	//	R_RTC_Start();
 	}
 #endif
-	R_RTC_Get_CounterValue( &rtc );
-	s_unit.hour = rtc.hour;
-	s_unit.min = rtc.min;
-	s_unit.sec = rtc.sec;
-//	R_RTC_Start();
 	
 	// ‹N“®ƒƒO
 	com_srv_log_title();
@@ -161,77 +137,116 @@ void user_main(void)
 		main_cyc();
 		disp_cyc();
 		
-		if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
-			/* ‰½‚à‚µ‚È‚¢ */
-			// ƒXƒŠ[ƒv“Ë“üğŒŒŸ“¢@¦ŠÖ”‰»‚àŠÜ‚ß‚Ä
-			if(( OFF == drv_intp_read_g1d_int() ) &&
-			   ( OFF == s_unit.pow_sw_last )  &&
-			   ( OFF == drv_uart0_get_send() ) &&
-			   ( DISP_PTN_OFF == s_unit.disp.ptn )){
-				// RD8001b’èF’ÊM‚ÌóM‘Î‰ŠÔ‚ğ‘Ò‚Â10MS‚Å‚ÍNG(ƒŠƒgƒ‰ƒC‚ª”­¶‚·‚é)
-				time_soft_get_10ms( TIME_TYPE_10MS_WAIT_SLEEP, &time );
-				if( 0 == time ){
-					stop_in();
-				}
-			}else{
-				time_soft_set_10ms( TIME_TYPE_10MS_WAIT_SLEEP, TIME_10MS_CNT_WAIT_SLEEP );
-			}
-		}else if( SYSTEM_MODE_GET == s_unit.system_mode ){
-			// ƒQƒbƒgƒ‚[ƒh
-			
-//			get_mode();
-			
-			
-			NOP();
-		
-		}else if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
+		if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
 			user_main_mode_sensor();
+		}else if( SYSTEM_MODE_IDLE_REST == s_unit.system_mode ){
+			// ƒXƒŠ[ƒv‚µ‚È‚¢
+			// RD8001b’èFc—Ê•\¦‚Ìˆê•”‚Í•\¦ŠÔŠu‚ª×‚©‚¢ˆ×‚ÉƒXƒŠ[ƒv‚·‚é‚Æ³í‚É“®ì‚µ‚È‚¢B•\¦‚Ì•ÏX‚ğŠó–]‚·‚éB
 		}else{
-			// ‚ ‚è‚¦‚È‚¢
-			
+			if( ON == main_sleep_check() ){
+					stop_in();
+			}
 		}
+
 		if( OFF == s_unit.non_wdt_refresh ){
 			wdt_refresh();		//WDTƒŠƒtƒŒƒbƒVƒ…
 		}
-    }
-    /* End user code. Do not edit comment generated here */
+	}
 }
 
-//#define IBIKI_COUNT			//RD8001b’èF‚¢‚Ñ‚«ƒJƒEƒ“ƒgƒAƒbƒv
-#ifdef	IBIKI_COUNT
-UH dbg_ibiki_cnt = 0;
+
+/************************************************************************/
+/* ŠÖ”     : main_sleep_check											*/
+/* ŠÖ”–¼   : ƒXƒŠ[ƒvƒ`ƒFƒbƒN											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ON		sleep—LŒø										*/
+/*          : OFF		sleep–³Œø										*/
+/* •ÏX—š—ğ : 2018.09.12  Axia Soft Design ¼“‡	‰”Åì¬				*/
+/************************************************************************/
+/* ‹@”\ :																*/
+/* ƒXƒŠ[ƒvƒ`ƒFƒbƒN														*/
+/************************************************************************/
+/* ’ˆÓ–€ :															*/
+/************************************************************************/
+STATIC UB main_sleep_check(void)
+{
+	UB ret = OFF;
+	
+	// ƒXƒŠ[ƒv“Ë“üğŒŒŸ“¢
+	if(( OFF == drv_intp_read_g1d_int() ) &&		// G1D‚©‚ç‚ÌŠ„‚è‚İ
+#if FUNC_DEBUG_LOG == ON 
+	   ( OFF == drv_uart0_get_send() )    &&		// ƒƒO’ÊM
 #endif
+	   ( CPU_COM_CMD_NONE == s_ds.cpu_com.order.snd_cmd_id ) &&		// CPUŠÔƒ~ƒhƒ‹‘—M
+	   ( CPU_COM_CMD_NONE == s_ds.cpu_com.input.rcv_cmd ) &&		// CPUŠÔƒ~ƒhƒ‹óM
+		   ( OFF == drv_uart1_get_send() )){						// CPUŠÔƒhƒ‰ƒCƒo‘—M
+		ret = ON;
+	}
+	return ret;
+}
+
+
+
+
+/************************************************************************/
+/* ŠÖ”     : user_main_mode_sensor										*/
+/* ŠÖ”–¼   : ƒZƒ“ƒVƒ“ƒOˆ—											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.12  Axia Soft Design ¼“‡	‰”Åì¬				*/
+/************************************************************************/
+/* ‹@”\ :																*/
+/* ƒZƒ“ƒVƒ“ƒOˆ—														*/
+/************************************************************************/
+/* ’ˆÓ–€ :															*/
+/************************************************************************/
 #if FUNC_DEBUG_RAW_VAL_OUT == ON
 UB dbg_send_cnt;
 char dbg_tx_data[50] = {0};
 int dbg_len;
 #endif
-
-static void user_main_mode_sensor(void)
+// RD8001b’èFˆ—ƒ^ƒCƒ~ƒ“ƒO‚Ì§Œäd—l–¢’è
+STATIC void user_main_mode_sensor(void)
 {
 	UW time;
+//	UH bufferH_ave;		// •½‹Ï—p
+//	UH bufferL_ave;		// •½‹Ï—p		
+	UH bufferH;
+	UH bufferL;
 	
 	
 //	MEAS meas;
 	
-#ifdef	IBIKI_COUNT
-	dbg_ibiki_cnt = 0;
-#endif
+	// ƒZƒ“ƒVƒ“ƒO’x‰„ ¦‚Ü‚¾ƒXƒŠ[ƒv‚µ‚È‚¢‚Ì‚Åƒ\ƒtƒgƒ^ƒCƒ}[‚Í—LŒø
+	time_soft_get_10ms( TIME_TYPE_10MS_SENSING_DELAY, &time );
+	if( 0 != time ){
+		return;
+	}
 	
 	if( s_unit.sensing_cnt_50ms++ >= HOUR12_CNT_50MS ){
 		s_unit.sensing_end_flg = ON;
+	}
+	
+	// ƒZƒ“ƒVƒ“ƒO’†SW‰Ÿ‰ºˆ—
+	if( ON == drv_intp_read_pow_sw() ){
+		INC_MAX( s_unit.sensing_sw_on_cnt, UCHAR_MAX );
+	}else{
+		if( SENSING_SW_LONG_CNT_50MS <= s_unit.sensing_sw_on_cnt ){
+			// ‹K’èŠÔˆÈã˜A‘±‰Ÿ‰º‚Æ”»’f
+			s_unit.system_evt = EVENT_POW_SW_LONG;
+			s_unit.sensing_end_flg = ON;
+		}
+		s_unit.sensing_sw_on_cnt = 0;
 	}
 	
 	if( ON == s_unit.sensing_end_flg ){
 		return;
 	}
 	
-	time_soft_get_10ms( TIME_TYPE_10MS_SENSING_DELAY, &time );
-	if( 0 != time ){
-		return;
-	}
 	
-	//RD8001b’èFƒZƒ“ƒT[‚ª“®ì‚µ‚È‚¢
+	
+	
+	
 	// ƒZƒ“ƒT[ƒ‚[ƒh
 	// ƒƒCƒ“üŠú(50ms)
 	if( ON == s_unit.main_cyc_req ){
@@ -245,12 +260,8 @@ static void user_main_mode_sensor(void)
 		wait_ms( 2 );
 		adc_ibiki_kokyu( &s_unit.meas.info.dat.ibiki_val, &s_unit.meas.info.dat.kokyu_val );
 		
-		// RD8001b’èF‚¢‚Ñ‚«ƒf[ƒ^‚ğƒfƒoƒbƒO—pƒJƒEƒ“ƒg
-#ifdef	IBIKI_COUNT
-		s_unit.meas.info.dat.ibiki_val = dbg_ibiki_cnt++;
-#endif
 		wait_ms( 2 );
-#if 0	// RD8001b’èFAMP0,PGA1‚ğOFF‚·‚é‚Æ³í‚ÉƒCƒrƒL“™‚ªæ“¾‚Å‚«‚È‚¢
+#if 0	// RD8001b’èFAMP0,PGA1‚ğOFF‚·‚é‚Æ³í‚ÉƒCƒrƒL“™‚ªæ“¾‚Å‚«‚È‚¢B§Œäd—l
 		R_AMP0_Stop();		//  AMP0 OFF
 		R_PGA1_Stop();		//  PGA1 OFF
 #endif
@@ -259,7 +270,6 @@ static void user_main_mode_sensor(void)
 		R_PGA_DSAD_Start();		// ¡PGA0_DSAD  ON
 		R_AMP2_Start();			// ¡AMP2       ON
 		
-//RD8001b’èF‰Šú‰»‚ğs‚¤‚Æ“®ì‚µ‚È‚¢
 #if FUNC_VALID_AMP == ON
 		R_DAC1_Set_ConversionValue( 0x0500 );
 		// ÔFŒõON
@@ -269,9 +279,9 @@ static void user_main_mode_sensor(void)
 		
 
 		pga_do();
-//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//•½‹Ï
-		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-		s_unit.meas.info.dat.sekishoku_val = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
+//		R_PGA_DSAD_Get_AverageResult(&bufferH_ave, &bufferL_ave);		//•½‹Ï
+		R_PGA_DSAD_Get_Result(&bufferH, &bufferL);
+		s_unit.meas.info.dat.sekishoku_val = main_ad24_to_w( bufferH, bufferL );
 		wait_ms( 2 );
 
 		// ÔŠOŒõON
@@ -282,9 +292,9 @@ static void user_main_mode_sensor(void)
 			R_DAC1_Set_ConversionValue( 0x0B00 );
 			wait_ms( 2 );
 			pga_do();
-	//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//•½‹Ï
-			R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
-			s_unit.meas.info.dat.sekigaival = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
+	//		R_PGA_DSAD_Get_AverageResult(&bufferH_ave, &bufferL_ave);		//•½‹Ï
+			R_PGA_DSAD_Get_Result(&bufferH, &bufferL);
+			s_unit.meas.info.dat.sekigaival = main_ad24_to_w( bufferH, bufferL );
 			
 			R_PGA_DSAD_Stop();		//  PGA0_DSAD  OFF
 			R_AMP2_Stop();			//  AMP2  OFF
@@ -308,8 +318,7 @@ static void user_main_mode_sensor(void)
 			R_DAC1_Stop();		//  DAC  OFF
 		}
 		
-		// ‰Á‘¬“xƒZƒ“ƒTæ“¾
-		// RD8001b’èF30ms‚©‚©‚é‚ª50ms–ˆ‚Éæ“¾
+		// ‰Á‘¬“xƒZƒ“ƒTæ“¾(10‰ñ(500ms–ˆ)‚É1‰ñ)
 #if FUNC_DEBUG_RAW_VAL_OUT == OFF
 		if( ++s_unit.acl_sensor_timing >= ACL_TIMING_VAL ){
 			s_unit.acl_sensor_timing = 0;
@@ -320,7 +329,6 @@ static void user_main_mode_sensor(void)
 		//¶’lƒfƒoƒbƒOo—Í@¦‰Á‘¬“x‚Í–³Œø
 		if( dbg_send_cnt++ >= 0 ){	
 			dbg_send_cnt = 0;
-//			printf( "kokyu%d", s_unit.meas.info.dat.kokyu_val );		//ƒRƒ“ƒ\[ƒ‹ƒfƒoƒbƒO—p@¦Œ»óƒRƒ“ƒ\[ƒ‹‚Ìg‚¢•û‚ª•s–¾
 			{
 				
 				
@@ -345,9 +353,8 @@ static void user_main_mode_sensor(void)
 		
 		// ‘—MŠ®—¹‘Ò‚¿
 		cpu_com_send_end_wait();		// ‘—MŠ®—¹‘Ò‚¿
-		// RD8001b’èFstopƒ‚[ƒh–³Œø
 #if 1
-		stop_in();
+		stop_in();		//@ƒXƒgƒbƒvƒ‚[ƒh
 #endif
 		// ƒf[ƒ^‘—MŠJn ¦ƒXƒgƒbƒvƒ‚[ƒh‘O‚¾‚ÆƒXƒgƒbƒvƒ‚[ƒh‚Ö‚Ì“Ë“ü‚ªo—ˆ‚È‚¢‚©‚çƒZƒ“ƒVƒ“ƒO‚µ‚È‚ª‚ç‘—M‚ğ•Às‚µ‚Äs‚¤B
 		main_cpu_com_snd_sensor_data();	
@@ -414,18 +421,16 @@ STATIC W main_ad24_to_w( UH bufferH, UH bufferL )
 /* ’ˆÓ–€ :															*/
 /* ‚È‚µ																	*/
 /************************************************************************/
-static void main_init(void)
+STATIC void main_init(void)
 {
 	wdt_refresh();		//WDTƒŠƒtƒŒƒbƒVƒ…
 
 	//ƒf[ƒ^‰Šú‰»
 	memset( &s_unit, 0, sizeof(s_unit) );
-	/* Start user code. Do not edit comment generated here */
+	memset( &s_ds, 0, sizeof(s_ds) );
 	
 	//ƒf[ƒ^‰Šú‰»(0ˆÈŠO)
 	s_unit.disp.last_ptn = 0xFF;
-	
-	
 	
 	// ƒ~ƒhƒ‹‰Šú‰»
 	com_srv_init();
@@ -433,6 +438,8 @@ static void main_init(void)
 	time_init();
 	
 	EI();
+	main_acl_init();	// ‰Á‘¬“xƒZƒ“ƒT‰Šú‰»(Š„‚è‚İg—p)
+
 }
 
 /************************************************************************/
@@ -443,15 +450,20 @@ static void main_init(void)
 /* •ÏX—š—ğ : 2018.03.02 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
 /************************************************************************/
 /* ‹@”\ :																*/
-/* ‰Šú‰»																*/
+/* SWüŠúˆ—															*/
 /************************************************************************/
 /* ’ˆÓ–€ :															*/
 /* ‚È‚µ																	*/
 /************************************************************************/
-static void sw_cyc(void)
+STATIC void sw_cyc(void)
 {
 	UB pow_sw;
 	UW time = 0;
+	
+	if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
+		// ƒZƒ“ƒVƒ“ƒO’†‚Íƒ\ƒtƒgƒEƒFƒAƒ^ƒCƒ}[‚ªg—p‚Å‚«‚È‚¢ƒZƒ“ƒVƒ“ƒOˆ—“à‚ÅSW‚ğs‚¤
+		return;
+	}
 	
 	pow_sw = drv_intp_read_pow_sw();
 	
@@ -470,12 +482,13 @@ static void sw_cyc(void)
 			if( time <= ( TIME_10MS_CNT_POW_SW_INITIAL_DISP - TIME_10MS_CNT_POW_SW_LONG )){
 				// ‹K’èŠÔˆÈã˜A‘±‰Ÿ‰º‚Æ”»’f
 				s_unit.system_evt = EVENT_POW_SW_LONG;
-				s_unit.disp.ptn_sw_long_order = ON;		// ’·‰Ÿ‚µ•\¦w¦
+//				s_unit.disp.ptn_sw_long_order = ON;		// ’·‰Ÿ‚µ•\¦w¦ ¦‰e•‘22FG1D‚©‚ç‚Ì’Ê’m‚É•ÏX
 				// “dŒ¹SW‰Ÿ‰ºƒ^ƒCƒ}[ÄƒXƒ^[ƒg 
-				time_soft_set_10ms( TIME_TYPE_10MS_SW_LONG_DISP, TIME_10MS_CNT_POW_SW_LONG_DISP );
-				if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
-					s_unit.sensing_end_flg = ON;
-				}
+//				time_soft_set_10ms( TIME_TYPE_10MS_SW_LONG_DISP, TIME_10MS_CNT_POW_SW_LONG_DISP );
+				// ƒZƒ“ƒVƒ“ƒO‚Ìˆ—‚ÉˆÚs
+//				if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
+//					s_unit.sensing_end_flg = ON;
+//				}
 			}else if( time <= ( TIME_10MS_CNT_POW_SW_INITIAL_DISP - TIME_10MS_CNT_POW_SW_SHORT )){
 				s_unit.system_evt = EVENT_POW_SW_SHORT;
 			}else{
@@ -506,7 +519,7 @@ static void sw_cyc(void)
 /* ’ˆÓ–€ :															*/
 /* ‚È‚µ																	*/
 /************************************************************************/
-static void mode_cyc(void)
+STATIC void mode_cyc(void)
 {
 	
 	// ƒVƒXƒeƒ€ƒ‚[ƒh•ÏXˆ—
@@ -648,7 +661,7 @@ STATIC void disp_cyc(void)
 	if( s_unit.disp.last_ptn != s_unit.disp.ptn ){
 		s_unit.disp.seq = 0;
 		// OFF ˆ—
-		// RD8001b’èFLED‚ğŒõ‚ç‚¹‚éˆ×‚Ìƒ_ƒbƒNİ’è‚ÌÅ“K’l‚Æ‚ÍH
+		// RD8001b’èFLED‚ğŒõ‚ç‚¹‚éˆ×‚Ìƒ_ƒbƒNİ’è‚ÌÅ“K’l‚Æ‚ÍH§Œäd—l–¢’è‹`
 		if( DISP_PTN_OFF == s_unit.disp.ptn ){
 			R_DAC1_Stop();			//  DAC  OFF
 //			R_PGA_DSAD_Stop();		//  PGA0_DSAD  OFF
@@ -683,6 +696,8 @@ STATIC void disp_cyc(void)
 			drv_o_port_sekishoku( OFF );
 		}
 		
+	}else if( DISP_PTN_SELF_CHECK_ON == s_unit.disp.ptn ){
+		drv_o_port_sekishoku( ON );
 	}else if( DISP_PTN_DENCH_ZANRYO_1 == s_unit.disp.ptn ){
 		if( 0 == s_unit.disp.seq ){
 			drv_o_port_sekishoku( OFF );
@@ -818,13 +833,25 @@ STATIC void disp_cyc(void)
 }
 
 
-// ƒVƒXƒeƒ€ƒ‚[ƒh‚È‚Ç‚Ìî•ñ‚Å•\¦ƒpƒ^[ƒ“‚ğŒˆ’è
+/************************************************************************/
+/* ŠÖ”     : disp_ptn_order											*/
+/* ŠÖ”–¼   : •\¦ƒpƒ^[ƒ“w¦											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.07.24 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ :																*/
+/* •\¦ƒpƒ^[ƒ“w¦														*/
+/************************************************************************/
+/* ’ˆÓ–€ :															*/
+/* ‚È‚µ																	*/
+/************************************************************************/
 STATIC void disp_ptn_order( void )
 {
 	s_unit.disp.ptn = DISP_PTN_OFF;
 	
 	
-	// —Dæ“x‡‚Éƒpƒ^ƒ“İ’è
+	// —Dæ“x‡‚Éƒpƒ^[ƒ“İ’è
 	if( SYSTEM_MODE_SELF_CHECK == s_unit.system_mode ){
 		s_unit.disp.ptn = s_unit.disp.ptn_g1d_order;
 	}else if( ON == s_unit.bat_chg ){
@@ -857,236 +884,364 @@ STATIC void disp_ptn_order( void )
 }
 
 
+/************************************************************************/
+/* ŠÖ”     : set_req_main_cyc											*/
+/* ŠÖ”–¼   : ƒƒCƒ“ƒTƒCƒNƒ‹ƒ^ƒCƒ~ƒ“ƒOİ’è								*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.07.24 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ :																*/
+/* ƒƒCƒ“ƒTƒCƒNƒ‹ƒ^ƒCƒ~ƒ“ƒOİ’è											*/
+/************************************************************************/
+/* ’ˆÓ–€ :															*/
+/* ‚È‚µ																	*/
+/************************************************************************/
 void set_req_main_cyc(void)
 {
 	s_unit.main_cyc_req = ON;
 }
 
-//================================
-//UARTŠÖ˜A
-//================================
 
-#define UART1_STR_MAX		150
-// debug
-void main_send_uart1_rtc(void)
+
+/************************************************************************/
+/* ŠÖ”     : err_info													*/
+/* ŠÖ”–¼   : ˆÙí’Ê’m													*/
+/* ˆø”     : ˆÙíID(10i2Œ…)											*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.07  Axia Soft Design ¼“‡ ‰”Åì¬				*/
+/************************************************************************/
+/* ‹@”\ : ˆÙí‚ğƒƒOo—Í(ƒfƒoƒbƒO‹@”\)									*/
+/************************************************************************/
+/* ’ˆÓ–€ :															*/
+/* ‡@ƒfƒoƒbƒO‹@”\‚Å‚·BƒGƒ‰[o—Ío—ˆ‚È‚¢‰Â”\«‚ª‚ ‚è‚Ü‚·B				*/
+/************************************************************************/
+void err_info( ERR_ID id )
 {
-	int len;
-	UB tx_data[UART1_STR_MAX] = {0};
-	rtc_counter_value_t rtc;
+#if FUNC_DEBUG_LOG == ON
+	UB tx[COM_STR_MAX] = {0};
+
+	tx[0] = 'H';
+	tx[1] = '1';
+	tx[2] = 'E';
+	tx[3] = 'R';
+	tx[4] = 'R';
+	tx[5] = (id / 10 ) + 0x30;
+	tx[6] = (id % 10 ) + 0x30;
+	tx[7] = '\r';
+	tx[8] = '\n';
 	
-	R_RTC_Get_CounterValue( &rtc );
-	s_unit.hour = rtc.hour;
-	s_unit.min = rtc.min;
-	s_unit.sec = rtc.sec;
-	
-	len = sprintf((char*)tx_data, "CLOCK %x,%x,%x\r\n", s_unit.hour, s_unit.min, s_unit.sec );
-
-	com_srv_send( tx_data, len );
-
-//	wait_ms(5);			//RD8001b’èF‚·‚®‚É‘‚«‚Ş‚Æ‘—M‚ª—‚ê‚é
-
-}
-
-//================================
-//EEPŠÖ˜A
-//================================
-#define			EEP_WAIT		255		//RD8001b’è’l
-
-void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg )
-{
-	i2c_cmplete = 0;
-	if( 0 != R_IICA0_Master_Send( device_adrs, wr_data, len, EEP_WAIT)){
-		err_info(2);
-	}else{
-		while(1){
-			if( 1 == i2c_cmplete ){
-				break;
-			}
-		}
-		R_IICA0_StopCondition();
-	}
-	while(0U == SPD0)
-
-	/* ƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“Œã‚Ì‘Ò‚¿ */
-	if( wait_flg == ON ){
-		wait_ms(5);
-	}
-}
-
-void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len )
-{
-	UB adrs[2];
-	UB adrs_size = 0;
-	UW lcok_cnt = 0;
-
-#if 1		// ƒXƒgƒbƒvƒrƒbƒg‚È‚µ
-	
-	if( EEP_DEVICE_ADR == device_adrs ){
-		// EEP
-		adrs[0] = (UB)(( read_adrs >> 8 ) & 0xff );		//ƒAƒhƒŒƒXãˆÊ
-		adrs[1] = (UB)( read_adrs & 0x00ff );			//ƒAƒhƒŒƒX‰ºˆÊ
-		adrs_size  = 2;
-	}else if( ACL_DEVICE_ADR == device_adrs ){
-		// ‰Á‘¬“xƒZƒ“ƒT[
-		adrs[0] = (UB)( read_adrs & 0x00ff );			//ƒAƒhƒŒƒX
-		adrs_size  = 1;
+	// PC‘¤‚ÉƒXƒ‹[o—Í
+	if( s_unit.last_err_id != id ){
+		com_srv_send( tx, 9 );
 	}
 
-	i2c_cmplete = 0;
-	if( 0 != R_IICA0_Master_Send( device_adrs, &adrs[0], adrs_size, EEP_WAIT )){
-		err_info(3);
-	}else{
-#if 1
-		while(1){
-			if(( 1 == i2c_cmplete ) || ( lcok_cnt++ >= 10000 )){		//RD8001b’è
-//			if( 1 == i2c_cmplete ){		//RD8001b’è
-				break;
-			}
-		}
-//		R_IICA0_StopCondition();
-#endif
-	}
-	/* ƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“Œã‚Ì‘Ò‚¿ */
-//	WAIT_5US();		//RD8001b’è
-//	WAIT_5US();		//RD8001b’è
-//	wait_ms(5);
-	R_IICA0_Stop();
-	R_IICA0_Create();
-#else
-	// ƒXƒgƒbƒvƒrƒbƒg‚ ‚è
-	//RD8001b’èFƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“‚ğ‘—‚ç‚È‚¢‚Æ“Ç‚İo‚µ¸”s‚·‚é
-	adrs[0] = (UB)(( read_adrs >> 8 ) & 0xff );		//ƒAƒhƒŒƒXãˆÊ
-	adrs[1] = (UB)( read_adrs & 0x00ff );		//ƒAƒhƒŒƒX‰ºˆÊ
-		
-	i2c_write_sub(device_adrs, &adrs[0], 2 , OFF );
-#endif
-	i2c_cmplete = 0;
-	if( 0 != R_IICA0_Master_Receive(device_adrs, read_data, len, EEP_WAIT)){
-		err_info(4);
-	}else{
-		while(1){
-			if( 1 == i2c_cmplete ){
-				break;
-			}
-		}
-		R_IICA0_StopCondition();
-	}
-	while(0U == SPD0)
-	/* ƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“Œã‚Ì‘Ò‚¿ */
-	wait_ms(5);
-	WAIT_5US();		//RD8001b’è
-}
 
-void getmode_in(void)
-{
-	s_unit.system_mode = SYSTEM_MODE_GET;
-}
-
-void wait_ms( int ms )
-{
-	int i,j;
-	
-	for(i = 0; i < ms; i++ ){
-		for(j = 0; j < 100; j++ ){
-			WAIT_10US()
-		}
-	}
-}
-
-
-
-//void err_info( ERR_ID id )
-void err_info( int id )
-{
-	s_unit.err_cnt++;
 #if 0
 	while(1){
 		// ˆÙí‚É‚æ‚é‰i‹vƒ‹[ƒv
 	}
 #endif
+#endif
+	s_unit.err_cnt++;
+	s_unit.last_err_id = id;
 }
 
-void main_acl_stop(void)
+//================================
+//ACLŠÖ˜A
+//================================
+
+/************************************************************************/
+/* ŠÖ”     : i2c_write_sub												*/
+/* ŠÖ”–¼   : I2C‘‚«‚İƒTƒu											*/
+/* ˆø”     : device_adrs	ƒfƒoƒCƒXƒAƒhƒŒƒX							*/
+/*          : wr_data		‘‚«‚İƒf[ƒ^								*/
+/*          : len			ƒf[ƒ^’·									*/
+/*          : wait_flg		‘‚«‚İŒã‚Ì‘Ò‚¿ƒtƒ‰ƒO[–¢g—p]				*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : I2C‘‚«‚İƒTƒu												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+STATIC void i2c_write_sub( UB device_adrs, UB* wr_data, UH len, UB wait_flg )
+{
+	UW lock_cnt = 0;
+
+	if( 0 != R_IICA0_Master_Send( device_adrs, wr_data, len, I2C_WAIT)){
+		err_info(ERR_ID_I2C);
+	}else{
+		while(1){
+			if( OFF == s_unit.acl_info.i2c_snd_flg ){
+				// ‘—MŠ®—¹
+				break;
+			}
+			if( lock_cnt++ >= I2C_LOCK_ERR_VAL ){
+				// ˆÙí
+				err_info(ERR_ID_I2C);
+				s_unit.acl_info.i2c_err_flg = ON;
+				break;
+			}
+		}
+		if( OFF == s_unit.acl_info.i2c_err_flg ){
+			R_IICA0_StopCondition();		//@ˆÙí”­¶‚Í—\Šú‚¹‚Ê‘‚«‚İ‚ğ–h~‚·‚éˆ×‚ÉƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“”­s‚µ‚È‚¢
+		}
+	}
+	while(0U == SPD0){}
+
+	if( ON == s_unit.acl_info.i2c_err_flg ){
+		s_unit.acl_info.i2c_err_flg = OFF;
+		R_IICA0_Create();		// I2C‰Šú‰»
+	}
+}
+
+
+/************************************************************************/
+/* ŠÖ”     : i2c_read_sub												*/
+/* ŠÖ”–¼   : I2C“Ç‚İo‚µƒTƒu											*/
+/* ˆø”     : device_adrs	ƒfƒoƒCƒXƒAƒhƒŒƒX							*/
+/*          : read_adrs		“Ç‚İo‚µƒAƒhƒŒƒX							*/
+/*          : read_data		“Ç‚İo‚µƒf[ƒ^								*/
+/*          : len			ƒf[ƒ^’·									*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : I2C“Ç‚İo‚µƒTƒu												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+STATIC void i2c_read_sub( UB device_adrs, UH read_adrs, UB* read_data, UH len )
+{
+	UB adrs[2];
+	UB adrs_size = 0;
+	UW lock_cnt = 0;
+
+	// ‰Á‘¬“xƒZƒ“ƒT[
+	adrs[0] = (UB)( read_adrs & 0x00ff );			//ƒAƒhƒŒƒX
+	adrs_size  = 1;
+
+	if( 0 != R_IICA0_Master_Send( device_adrs, &adrs[0], adrs_size, I2C_WAIT )){
+		err_info(ERR_ID_I2C);
+	}else{
+		while(1){
+			if( OFF == s_unit.acl_info.i2c_snd_flg ){
+				// óMŠ®—¹
+				break;
+			}
+			if( lock_cnt++ >= I2C_LOCK_ERR_VAL ){
+				// ˆÙí
+				err_info(ERR_ID_I2C);
+				s_unit.acl_info.i2c_err_flg = ON;
+				break;
+			}
+		}
+// RD8001b’èF‚Ç‚Ì—l(ƒoƒXŠJ•úorƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“)‚É‘Î‰‚·‚é‚©–â‡‚¹’†
+#if 0
+	//ƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“‚ ‚è
+		R_IICA0_StopCondition();
+	}
+	/* ƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“Œã‚Ì‘Ò‚¿ */
+	while(0U == SPD0){}
+//	WAIT_5US();
+//	WAIT_5US();
+//	wait_ms(5);
+#else
+	}
+	//ƒoƒXŠJ•ú
+	R_IICA0_Stop();
+	R_IICA0_Create();
+	
+#endif
+
+	if( 0 != R_IICA0_Master_Receive(device_adrs, read_data, len, I2C_WAIT)){
+		err_info(ERR_ID_I2C);
+	}else{
+		while(1){
+			if( OFF == s_unit.acl_info.i2c_rcv_flg ){
+				break;
+			}
+			if( lock_cnt++ >= I2C_LOCK_ERR_VAL ){
+				// ˆÙí
+				err_info(ERR_ID_I2C);
+				s_unit.acl_info.i2c_err_flg = ON;
+				break;
+			}
+		}
+		if( OFF == s_unit.acl_info.i2c_err_flg ){
+			R_IICA0_StopCondition();		//@ˆÙí”­¶‚Í—\Šú‚¹‚Ê‘‚«‚İ‚ğ–h~‚·‚éˆ×‚ÉƒXƒgƒbƒvƒRƒ“ƒfƒBƒVƒ‡ƒ“”­s‚µ‚È‚¢
+		}
+	}
+	while(0U == SPD0){}
+	
+	if( ON == s_unit.acl_info.i2c_err_flg ){
+		s_unit.acl_info.i2c_err_flg = OFF;
+		R_IICA0_Create();		// I2C‰Šú‰»
+	}
+}
+
+/************************************************************************/
+/* ŠÖ”     : i2c_set_snd_flg											*/
+/* ŠÖ”–¼   : ‘—Mƒtƒ‰ƒOİ’è											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.07 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ‘—Mƒtƒ‰ƒOİ’è												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+void i2c_set_snd_flg( UB data )
+{
+	s_unit.acl_info.i2c_snd_flg = data;
+}
+
+/************************************************************************/
+/* ŠÖ”     : i2c_set_snd_flg											*/
+/* ŠÖ”–¼   : óMƒtƒ‰ƒOİ’è											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.07 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : óMƒtƒ‰ƒOİ’è												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+void i2c_set_rcv_flg( UB data )
+{
+	s_unit.acl_info.i2c_rcv_flg = data;
+}
+
+/************************************************************************/
+/* ŠÖ”     : i2c_set_err_flg											*/
+/* ŠÖ”–¼   : ƒGƒ‰[ƒtƒ‰ƒOİ’è											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.07 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒGƒ‰[ƒtƒ‰ƒOİ’è												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+void i2c_set_err_flg( UB data )
+{
+	s_unit.acl_info.i2c_err_flg = data;
+}
+
+/************************************************************************/
+/* ŠÖ”     : main_acl_init												*/
+/* ŠÖ”–¼   : ‰Á‘¬“xƒZƒ“ƒT‰Šú‰»										*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.13 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ‰Á‘¬“xƒZƒ“ƒT‰Šú‰» ¦‰Šúó‘Ô‚Í’â~‚É‚µ‚Ä‚¨‚­					*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+STATIC void main_acl_init(void)
+{
+	UB rd_data[2];
+	
+	i2c_read_sub( ACL_DEVICE_ADR, ACL_REG_ADR_WHO_AM_I, &rd_data[0], 1 );
+	if( rd_data[0] != ACL_REG_RECOGNITION_CODE ){
+		err_info( ERR_ID_ACL );
+	}
+	
+	main_acl_stop();
+}
+
+/************************************************************************/
+/* ŠÖ”     : main_acl_stop												*/
+/* ŠÖ”–¼   : ‰Á‘¬“xƒZƒ“ƒT’â~											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ‰Á‘¬“xƒZƒ“ƒT’â~												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+STATIC void main_acl_stop(void)
 {
 	UB rd_data[2];
 	UB wr_data[2];
 	
-	i2c_read_sub( ACL_DEVICE_ADR, 0x0F, &rd_data[0], 1 );
-	if( rd_data[0] != 0x35 ){
-		err_info( 5 );
-	}
-	
-	wr_data[0] = 0x1B;
+	wr_data[0] = ACL_REG_ADR_CTRL_REG1;
 	wr_data[1] = 0x00;
 	// “®ìƒ‚[ƒhİ’è
 	i2c_write_sub( ACL_DEVICE_ADR, &wr_data[0], 2, ON );
 	
-	i2c_read_sub( ACL_DEVICE_ADR, 0x1B, &rd_data[0], 1 );
+	i2c_read_sub( ACL_DEVICE_ADR, ACL_REG_ADR_CTRL_REG1, &rd_data[0], 1 );
 	if( rd_data[0] != 0x00 ){
-		err_info( 7 );
+		err_info( ERR_ID_ACL );
 	}
 }
 
-void main_acl_start(void)
+/************************************************************************/
+/* ŠÖ”     : main_acl_stop												*/
+/* ŠÖ”–¼   : ‰Á‘¬“xƒZƒ“ƒTƒXƒ^[ƒg										*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ‰Á‘¬“xƒZƒ“ƒTƒXƒ^[ƒg											*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+STATIC void main_acl_start(void)
 {
-	UB rd_data[2];
 	UB wr_data[2];
 	
-	i2c_read_sub( ACL_DEVICE_ADR, 0x0F, &rd_data[0], 1 );
-	if( rd_data[0] != 0x35 ){
-		err_info( 5 );
-	}
-	
-	wr_data[0] = 0x1B;
+	// “®ìƒ‚[ƒh‰Šú‰»
+	wr_data[0] = ACL_REG_ADR_CTRL_REG1;
 	wr_data[1] = 0x00;
-	// “®ìƒ‚[ƒhİ’è
 	i2c_write_sub( ACL_DEVICE_ADR, &wr_data[0], 2, ON );
 	
-	wr_data[0] = 0x1B;
-	wr_data[1] = 0x20;
 	// “®ìƒ‚[ƒhİ’è
+	wr_data[0] = ACL_REG_ADR_CTRL_REG1;
+	wr_data[1] = 0x20;
 	i2c_write_sub( ACL_DEVICE_ADR, &wr_data[0], 2, ON );
 
-	wr_data[0] = 0x1F;
-	wr_data[1] = 0xBF;
-	// “®ìƒ‚[ƒhİ’è
-//	i2c_write_sub( ACL_DEVICE_ADR, &wr_data[0], 2, ON );
-	
-	
-	
-	wr_data[0] = 0x1B;
+	// “®ìƒ‚[ƒhŠJn
+	wr_data[0] = ACL_REG_ADR_CTRL_REG1;
 	wr_data[1] = 0xA0;
-	// “®ìƒ‚[ƒhİ’è
 	i2c_write_sub( ACL_DEVICE_ADR, &wr_data[0], 2, ON );
 	
 	
 }
 
-
-void main_acl_read(void)
+/************************************************************************/
+/* ŠÖ”     : main_acl_stop												*/
+/* ŠÖ”–¼   : ‰Á‘¬“xƒZƒ“ƒT“Ço‚µ										*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ‰Á‘¬“xƒZƒ“ƒTƒX“Ço‚µ											*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
+STATIC void main_acl_read(void)
 {
 	UB rd_data[10];
 	
 	// INT_SOURCE1		
-	i2c_read_sub( ACL_DEVICE_ADR, 0x16, &rd_data[0], 1 );
-	if( 0 == ( rd_data[0] & 0x10 )){
+	i2c_read_sub( ACL_DEVICE_ADR, ACL_REG_ADR_INT_SRC1, &rd_data[0], 1 );
+	if( 0 == ( rd_data[0] & BIT04 )){
 		// ƒf[ƒ^–¢’B
+		err_info( ERR_ID_ACL );
 		return;
 	}
 	
 	// ƒf[ƒ^æ“¾
-	i2c_read_sub( ACL_DEVICE_ADR, 0x06, &rd_data[0], 6 );
+	i2c_read_sub( ACL_DEVICE_ADR, ACL_REG_ADR_DATA_XYZ, &rd_data[0], 6 );
 	s_unit.meas.info.dat.acl_x = rd_data[1];
 	s_unit.meas.info.dat.acl_y = rd_data[3];
 	s_unit.meas.info.dat.acl_z = rd_data[5];
 	
 	// INT_REL“Ç‚İo‚µ@¦Š„‚è‚İ—v‹ƒNƒŠƒA
-	i2c_read_sub( ACL_DEVICE_ADR, 0x1A, &rd_data[0], 1 );
-}
-
-void main_acl_write(void)
-{
-//	main_acl_read_sub( ACL_DEVICE_ADR, 0x0C, &rd_data[0], 1 );
+	i2c_read_sub( ACL_DEVICE_ADR, ACL_REG_ADR_INT_REL, &rd_data[0], 1 );
 }
 
 
@@ -1112,8 +1267,11 @@ STATIC void stop_in( void )
 #endif
 	
 	// Š„‚è‚İ~‚ß‚éˆ—
-	if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
+	if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
 		// 10msƒ^ƒCƒ}[’â~
+		R_IT8Bit0_Channel0_Stop();
+	}else{
+		// 50msƒ^ƒCƒ}[’â~
 		R_IT_Stop();
 	}
 	
@@ -1127,12 +1285,14 @@ STATIC void stop_in( void )
 	
 	stop_restore_ram();		//RAM•œ‹Œ
 	
-	if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
+	if( SYSTEM_MODE_SENSING == s_unit.system_mode ){
 		// 10msƒ^ƒCƒ}[ŠJn
-//		R_IT_Stop();
-//		R_IT_Start();
+		R_IT8Bit0_Channel0_Create();
+	}else{
+		// 50msƒ^ƒCƒ}[ŠJn
 		R_IT_Create();
 	}
+//	R_SAU0_Create();
 
 #if FUNC_LOG_STOP == ON
 	com_srv_puts( (const B *__near)"STOP OUT\r\n" );
@@ -1154,21 +1314,31 @@ STATIC void stop_in( void )
 /************************************************************************/
 STATIC void stop_restore_ram( void )
 {
+	// ˆ—‚ª•K—v‚Å‚ ‚ê‚Î’Ç‰Á
 	
-	if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
-		s_unit.pow_sw_last = OFF;	//“dŒ¹ƒ{ƒ^ƒ“‚Ì‰Ÿ‰º‚ğOFF‚É•ÏX
-	}
+//	if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
+//		s_unit.pow_sw_last = OFF;	//“dŒ¹ƒ{ƒ^ƒ“‚Ì‰Ÿ‰º‚ğOFF‚É•ÏX
+//	}
 	
 }
 
 
-// CPUŠÔ’ÊMƒT[ƒrƒX
 // =============================================================
 // CPU’ÊMŠÖ˜A
 // =============================================================
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_snd_sensor_data								*/
+/* ŠÖ”–¼   : ƒZƒ“ƒT[ƒf[ƒ^‘—M										*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒZƒ“ƒT[ƒf[ƒ^‘—M											*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_snd_sensor_data( void )
 {
-	drv_o_port_g1d_int( ON );
 
 	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_SENSOR_DATA;
 	memcpy( &s_ds.cpu_com.order.snd_data[0], &s_unit.meas.info.byte[0], CPU_COM_SND_DATA_SIZE_SENSOR_DATA );
@@ -1182,10 +1352,7 @@ STATIC void main_cpu_com_snd_sensor_data( void )
 /* ŠÖ”–¼   : CPUŠÔ’ÊMüŠúˆ—											*/
 /* ˆø”     : ‚È‚µ														*/
 /* –ß‚è’l   : ‚È‚µ														*/
-/* •ÏX—š—ğ : 2014.06.05  Axia Soft Design ‹{–{		‰”Åì¬			*/
-/*          : 2014.06.27  Axia Soft Design ‹g‹							*/
-/*          :						ó‘Ô‚É‰‚¶‚Ä‘—MƒgƒŠƒK‚ğØ‚èŠ·‚¦‚é	*/
-/* 			: 2016.05.19  Axia Soft Design ¼“‡@ƒŠƒgƒ‰ƒCƒAƒEƒg‚Ìˆ—’Ç‰Á(CPUŠÔ’ÊMˆÙí‘Î‰) */
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
 /************************************************************************/
 /* ‹@”\ : üŠúˆ—														*/
 /************************************************************************/
@@ -1206,17 +1373,27 @@ STATIC void main_cpu_com_proc(void)
 				/* óMƒRƒ}ƒ“ƒh‚ÆƒRƒ}ƒ“ƒhƒe[ƒuƒ‹‚ªˆê’v */
 				if( NULL != s_cpu_com_rcv_func_tbl[i].func ){
 					/* óMˆ——L‚è */
-//					s_cpu_com_rcv_func_tbl[i].func(&s_ds.cpu_com.input.rcv_data[0]);
 					s_cpu_com_rcv_func_tbl[i].func();
 				}
 			}
 		}
-		// óMƒRƒ}ƒ“ƒhƒNƒŠƒA ¦b’è
+		// óMƒRƒ}ƒ“ƒhƒNƒŠƒA
 		s_ds.cpu_com.input.rcv_cmd = 0x00;
 	}
 	
 }
 
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_sts										*/
+/* ŠÖ”–¼   : ƒXƒe[ƒ^ƒX—v‹óM										*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒXƒe[ƒ^ƒX—v‹óM											*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_sts( void )
 {
 	rtc_counter_value_t rtc_val;
@@ -1229,7 +1406,7 @@ STATIC void main_cpu_com_rcv_sts( void )
 	
 	// ‘—M
 	if( MD_OK != R_RTC_Get_CounterValue( &rtc_val ) ){
-		err_info( 13 );
+		err_info( ERR_ID_MAIN );
 	}
 	
 	// BCD¨ƒoƒCƒiƒŠ•ÏŠ·
@@ -1250,10 +1427,9 @@ STATIC void main_cpu_com_rcv_sts( void )
 	}
 
 	
-	// RD8001b’èFƒCƒxƒ“ƒg‚Íƒoƒbƒtƒ@ƒŠƒ“ƒO‚Å‚«‚é‚×‚«
 	if(( BAT_CHG_FIN_STATE_ON == s_unit.bat_chg_fin_state ) && ( EVENT_NON == s_unit.system_evt )){
 		s_unit.system_evt = EVENT_CHG_FIN;	//[“dŠ®—¹ƒCƒxƒ“ƒg
-		s_unit.bat_chg_fin_state = EVENT_CHG_FIN;			//RD8001b’èF‚P‰ñ’Ê’m
+		s_unit.bat_chg_fin_state = EVENT_CHG_FIN;
 	}
 	
 	if( SYSTEM_MODE_NON != s_unit.system_mode ){
@@ -1279,13 +1455,34 @@ STATIC void main_cpu_com_rcv_sts( void )
 	}
 }
 
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_sensing_order							*/
+/* ŠÖ”–¼   : ƒZƒ“ƒVƒ“ƒOw¦											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒZƒ“ƒVƒ“ƒOw¦												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_sensing_order( void )
 {
 	s_unit.sensing_sekigai_flg = s_ds.cpu_com.input.rcv_data[0];
 }
 
 
-
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_date_set									*/
+/* ŠÖ”–¼   : “úİ’èóM												*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : “úİ’èóM													*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_date_set( void )
 {
 	rtc_counter_value_t rtc_val;
@@ -1309,46 +1506,30 @@ STATIC void main_cpu_com_rcv_date_set( void )
 	
 	
 	if( MD_OK != R_RTC_Set_CounterValue( rtc_val ) ){
-		err_info( 12 );
+		err_info( ERR_ID_MAIN );
 	}
 	
 	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_DATE_SET;
 	s_ds.cpu_com.order.snd_data[0] = 0;
-	s_ds.cpu_com.order.data_size = 1;
+	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_DATE;
 }
 
-
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_pc_log									*/
+/* ŠÖ”–¼   : PCƒƒOóM												*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : PCƒƒOóM													*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_pc_log( void )
 {
-#if 0
-	//‰½‚Ìˆ—H
-	UB	state;			/* ƒŒƒR[ƒh—LŒø/–³Œø				*/
-	UH	ibiki_val;
-	UB	myaku_val;
-	UB	spo2_val;
-	UB	kubi;
-	UB	dummy;
+#if FUNC_DEBUG_LOG == ON
 	int len;
-	UB tx_data[UART1_STR_MAX] = {0};
-	
-	state = s_ds.cpu_com.input.rcv_data[0];			/* ƒŒƒR[ƒh—LŒø/–³Œø				*/
-	ibiki_val = (( s_ds.cpu_com.input.rcv_data[2] << 8 )  | s_ds.cpu_com.input.rcv_data[1] );
-	myaku_val = s_ds.cpu_com.input.rcv_data[3];
-	spo2_val = s_ds.cpu_com.input.rcv_data[4];
-	kubi = s_ds.cpu_com.input.rcv_data[5];
-	dummy = s_ds.cpu_com.input.rcv_data[6];
-	
-	len = sprintf((char*)tx_data, "%d,%u,%d,%d,%d,%d\r\n"    , state
-															  , ibiki_val
-															  , myaku_val
-															  , spo2_val
-															  , kubi
-															  , dummy);
-
-	com_srv_send( tx_data, len );
-#else
-	int len;
-	UB tx_data[UART1_STR_MAX] = {0};
+	UB tx_data[COM_STR_MAX] = {0};
 
 	memcpy( &tx_data[0], &s_ds.cpu_com.input.rcv_data[0], CPU_COM_RCV_DATA_SIZE_PC_LOG );
 	
@@ -1361,40 +1542,66 @@ STATIC void main_cpu_com_rcv_pc_log( void )
 #endif
 }
 
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_pc_log									*/
+/* ŠÖ”–¼   : ƒ‚[ƒh•ÏXóM											*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒ‚[ƒh•ÏXóM												*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_mode_chg( void )
 {
 	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_MODE_CHG;
 	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_MODE_CHG;
 	
-	// RD8001b’èFˆÙíƒP[ƒX‚ÍH
-	if( 1 ){
-		// ó‘Ô•ÏX
-		s_unit.system_mode = (SYSTEM_MODE)s_ds.cpu_com.input.rcv_data[0];
-		// ³í‰“š
-		s_ds.cpu_com.order.snd_data[0] = 0;		// ³í‰“š
-	}else{
-		s_ds.cpu_com.order.snd_data[0] = 1;		// ˆÙí‰“š
-	}
-	
+	// ó‘Ô•ÏX
+	s_unit.system_mode = (SYSTEM_MODE)s_ds.cpu_com.input.rcv_data[0];
+	// ³í‰“š
+	s_ds.cpu_com.order.snd_data[0] = 0;		// ³í‰“š
+	// RD8001‘Î‰Fó‘ÔŠÇ—‚ÍG1D‚Ås‚Á‚Ä‚¢‚é‚Ì‚ÅAŒ»İˆÙíƒP[ƒX‚Í–³‚µ
 	
 }
 
-/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—ŠJn€”õ		*/
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_pc_log									*/
+/* ŠÖ”–¼   : ƒvƒƒOƒ‰ƒ€“]‘—ŠJn€”õóM								*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒvƒƒOƒ‰ƒ€“]‘—ŠJn€”õóM									*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_prg_hd_ready(void)
 {
 	// ¯•ÊƒR[ƒhÁ‹
 	download_change_boot();
 
-	// RD8001b’èFƒu[ƒg‚Ö‚ÌØ‘Öˆ—(WDT‚É‚æ‚é–ŒÌƒŠƒZƒbƒg)
+	// RD8001‘Î‰Fƒu[ƒg‚Ö‚ÌØ‘Öˆ—(WDT‚É‚æ‚é©ŒÈƒŠƒZƒbƒg)
 	s_unit.non_wdt_refresh = ON;
 	
 	// ‰“š
 	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_PRG_DOWNLORD_READY;
 	s_ds.cpu_com.order.snd_data[0] = 0;
-	s_ds.cpu_com.order.data_size = 1;
+	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_PRG_READY;
 }
 
-/* yCPUŠÔ’ÊMƒRƒ}ƒ“ƒhzƒvƒƒOƒ‰ƒ€“]‘—Šm”F		*/
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_pc_log									*/
+/* ŠÖ”–¼   : ƒvƒƒOƒ‰ƒ€“]‘—Šm”FóM									*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒvƒƒOƒ‰ƒ€“]‘—Šm”FóM										*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_prg_hd_check(void)
 {
 	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_PRG_DOWNLORD_CHECK;
@@ -1402,14 +1609,26 @@ STATIC void main_cpu_com_rcv_prg_hd_check(void)
 	s_ds.cpu_com.order.snd_data[1] = version_product_tbl[1];
 	s_ds.cpu_com.order.snd_data[2] = version_product_tbl[2];
 	s_ds.cpu_com.order.snd_data[3] = version_product_tbl[3];
-	s_ds.cpu_com.order.data_size = 4;
+	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_PRG_CHECK;
 }
 
-/* •\¦w¦ */
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_disp										*/
+/* ŠÖ”–¼   : •\¦w¦													*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : •\¦w¦														*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_disp(void)
 {
+	UB result = OK;
+	
 	switch( s_ds.cpu_com.input.rcv_data[0] ){
-		case CPU_COM_DISP_ORDER_NON:
+		case CPU_COM_DISP_ORDER_SELF_CHECK_NON:
 			s_unit.disp.ptn_g1d_order = DISP_PTN_OFF;
 			break;
 		case CPU_COM_DISP_ORDER_SELF_CHECK_ERR:
@@ -1418,13 +1637,34 @@ STATIC void main_cpu_com_rcv_disp(void)
 		case CPU_COM_DISP_ORDER_SELF_CHECK_FIN:
 			s_unit.disp.ptn_g1d_order = DISP_PTN_SELF_CHECK_ON;
 			break;
+		case CPU_COM_DISP_TRG_LONG_SW_RECEPTION:
+				s_unit.disp.ptn_sw_long_order = ON;		// ’·‰Ÿ‚µ•\¦w¦
+				// “dŒ¹SW‰Ÿ‰ºƒ^ƒCƒ}[ÄƒXƒ^[ƒg 
+				time_soft_set_10ms( TIME_TYPE_10MS_SW_LONG_DISP, TIME_10MS_CNT_POW_SW_LONG_DISP );
+			break;
 		default:
 			// ‚ ‚è‚¦‚È‚¢
+			result = NG;
 		break;
 	}
+	
+	s_ds.cpu_com.order.snd_cmd_id = CPU_COM_CMD_DISP_ORDER;
+	s_ds.cpu_com.order.snd_data[0] = result;
+	s_ds.cpu_com.order.data_size = CPU_COM_SND_DATA_SIZE_DISP_OREDER;
+	
 }
 
-/* ƒo[ƒWƒ‡ƒ“ */
+/************************************************************************/
+/* ŠÖ”     : main_cpu_com_rcv_version									*/
+/* ŠÖ”–¼   : ƒo[ƒWƒ‡ƒ“												*/
+/* ˆø”     : ‚È‚µ														*/
+/* –ß‚è’l   : ‚È‚µ														*/
+/* •ÏX—š—ğ : 2018.09.11 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
+/************************************************************************/
+/* ‹@”\ : ƒo[ƒWƒ‡ƒ“													*/
+/************************************************************************/
+/* ’ˆÓ–€ : ‚È‚µ														*/
+/************************************************************************/
 STATIC void main_cpu_com_rcv_version(void)
 {
 	UB	boot_ver[4];				/* Boot•”ƒo[ƒWƒ‡ƒ“î•ñ */
@@ -1449,7 +1689,7 @@ STATIC void main_cpu_com_rcv_version(void)
 /* ŠÖ”–¼   : CPUŠÔ’ÊM—pƒf[ƒ^æ“¾										*/
 /* ˆø”     : ‚È‚µ														*/
 /* –ß‚è’l   : ‚È‚µ														*/
-/* •ÏX—š—ğ : 2014.05.15 Axia Soft Design ‹g‹ ‹v˜a	‰”Åì¬			*/
+/* •ÏX—š—ğ : 2018.03.02 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
 /************************************************************************/
 /* ‹@”\ :																*/
 /* CPUŠÔ’ÊM—pƒf[ƒ^æ“¾												*/
@@ -1466,8 +1706,7 @@ void ds_get_cpu_com_order( DS_CPU_COM_ORDER **p_data )
 /* ŠÖ”–¼   : CPUŠÔ’ÊMƒf[ƒ^ƒZƒbƒg										*/
 /* ˆø”     : CPUŠÔ’ÊMƒf[ƒ^Ši”[ƒ|ƒCƒ“ƒ^								*/
 /* –ß‚è’l   : ‚È‚µ														*/
-/* •ÏX—š—ğ : 2014.06.05 Axia Soft Design ‹{–{ ˜aŠ²	‰”Åì¬			*/
-/*          : 2014.06.12 Axia Soft Design ‹g‹							*/
+/* •ÏX—š—ğ : 2018.03.02 Axia Soft Design ¼“‡ –«	‰”Åì¬			*/
 /************************************************************************/
 /* ‹@”\ :																*/
 /* CPUŠÔ’ÊMƒ~ƒhƒ‹ƒf[ƒ^ƒZƒbƒgæ“¾										*/
@@ -1478,6 +1717,4 @@ void ds_set_cpu_com_input( DS_CPU_COM_INPUT *p_data )
 {
 	s_ds.cpu_com.input = *p_data;
 }
-
-
 

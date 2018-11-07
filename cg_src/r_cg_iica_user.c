@@ -29,6 +29,8 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "header.h"
+
 #include "r_cg_macrodriver.h"
 #include "r_cg_iica.h"
 /* Start user code for include. Do not edit comment generated here */
@@ -54,9 +56,6 @@ extern volatile uint8_t * gp_iica0_tx_address;         /* iica0 send buffer addr
 extern volatile uint16_t  g_iica0_tx_cnt;              /* iica0 send data count */
 /* Start user code for global. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
-
-extern int i2c_cmplete;
-extern void err_info( int id );
 
 /***********************************************************************************************************************
 * Function Name: r_iica0_interrupt
@@ -181,12 +180,10 @@ static void r_iica0_callback_master_error(MD_STATUS flag)
 {
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-    NOP();
-    NOP();
-    NOP();
-    err_info(1);
-    i2c_cmplete = 1;
+    err_info(ERR_ID_I2C);
+	i2c_set_err_flg( ON );		//ユーザーコード
 }
+
 /***********************************************************************************************************************
 * Function Name: r_iica0_callback_master_receiveend
 * Description  : This function is a callback function when IICA0 finishes master reception.
@@ -195,11 +192,10 @@ static void r_iica0_callback_master_error(MD_STATUS flag)
 ***********************************************************************************************************************/
 static void r_iica0_callback_master_receiveend(void)
 {
+//    SPT0 = 1U;
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-//    SPT0 = 1U;      /* stop condition is generated */
-//    NOP();
-    i2c_cmplete = 1;
+	i2c_set_rcv_flg( OFF );		//ユーザーコード
 }
 /***********************************************************************************************************************
 * Function Name: r_iica0_callback_master_sendend
@@ -209,11 +205,10 @@ static void r_iica0_callback_master_receiveend(void)
 ***********************************************************************************************************************/
 static void r_iica0_callback_master_sendend(void)
 {
+//    SPT0 = 1U;
     /* Start user code. Do not edit comment generated here */
     /* End user code. Do not edit comment generated here */
-//    SPT0 = 1U;      /* stop condition is generated */
-//    NOP();
-    i2c_cmplete = 1;
+	i2c_set_snd_flg( OFF );		//ユーザーコード
 }
 
 /* Start user code for adding. Do not edit comment generated here */

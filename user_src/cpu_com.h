@@ -15,19 +15,23 @@
 // 送信データサイズ
 #define CPU_COM_SND_DATA_SIZE_STATUS_REQ			13				/* ステータス要求			*/
 #define CPU_COM_SND_DATA_SIZE_MODE_CHG				1				/* 状態変更(G1D)			*/
-#define CPU_COM_SND_DATA_SIZE_PC_LOG				7				/* PCログ送信(内部コマンド)	*/
 #define CPU_COM_SND_DATA_SIZE_SENSOR_DATA			15				/* センサーデータ	*/
 #define CPU_COM_SND_DATA_SIZE_VERSION				8				/* バージョン	*/
+#define CPU_COM_SND_DATA_SIZE_DATE					1				/* 日時設定	*/
+#define CPU_COM_SND_DATA_SIZE_PRG_READY				1				/* プログラム準備 */
+#define CPU_COM_SND_DATA_SIZE_PRG_CHECK				4				/* プログラム確認 */
+#define CPU_COM_SND_DATA_SIZE_DISP_OREDER			1				/* 表示指示 */
+
 
 // 受信データサイズ
 #define CPU_COM_RCV_DATA_SIZE_PC_LOG				10				/* PCログ */
 
 
-/* データ長範囲 */								// RD8001暫定
-#define CPU_COM_DATA_SIZE_MAX					(262+1)		/* データの最大長 */
-															/* 最大データ 表示データ更新 詳細スランプグラフ 種別No(2)+データ長(2)+データ(308) */
+/* データ長 */
+#define CPU_COM_DATA_SIZE_MAX					( 20 )			/* データの最大長 */
+																/* 最大データ プログラムデータ アドレス(4) + 書き込みデータ(16) */
 
-// 各データサイズ
+// 各ヘッダサイズ
 #define CPU_COM_CMD_SIZE						(1)			/* コマンドデータサイズ 1byte */
 #define CPU_COM_SEQ_SIZE						(1)			/* SEQNoデータサイズ 1byte */
 #define CPU_COM_CRC_SIZE						(2)			/* CRCデータサイズ 2byte */
@@ -41,9 +45,16 @@
 												  CPU_COM_STX_SIZE + \
 												  CPU_COM_ETX_SIZE )
 
+/* メッセージの最大[送受共通] ※ヘッダ＋最大データ,DLE伸長なし */
+#define CPU_COM_MSG_SIZE_MAX					( CPU_COM_DATA_SIZE_MAX + CPU_COM_MSG_SIZE_MIN )
 
-/* メッセージの最大 コマンド(1)+SEQ(2)+データ(262)+SUM(2)+CRC(2) */
-#define CPU_COM_MSG_SIZE_MAX					(CPU_COM_DATA_SIZE_MAX + CPU_COM_MSG_SIZE_MIN)
+/* バッファの最大[送受共通] ※DLE伸長考慮で2倍,リングバッファ用に+1 */
+#define CPU_COM_BUF_SIZE_MAX					(( CPU_COM_MSG_SIZE_MAX * 2 ) + 1 )
+
+
+// ドライバのリングバッファ定義
+#define	DRV_UART0_RCV_RING_LENGTH				( CPU_COM_BUF_SIZE_MAX )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
+#define	DRV_UART0_SND_RING_LENGTH				( CPU_COM_BUF_SIZE_MAX )		/* リングバッファ長(1メッセージ分＋１) ※＋１の理由はリングバッファの注意事項参照 */
 
 
 /* CPU間通信 コマンド種別 */
@@ -99,28 +110,31 @@ typedef enum{
 // データ種別
 // =========================
 // 表示指示
-#define CPU_COM_DISP_ORDER_NON				0	// 表示なし
-#define CPU_COM_DISP_ORDER_SELF_CHECK_ERR	1	// 異常
-#define CPU_COM_DISP_ORDER_SELF_CHECK_FIN	2	// 完了
+#define CPU_COM_DISP_ORDER_SELF_CHECK_NON	0	// 自己診断中表示(表示なし)
+#define CPU_COM_DISP_ORDER_SELF_CHECK_ERR	1	// 自己診断中表示(異常)
+#define CPU_COM_DISP_ORDER_SELF_CHECK_FIN	2	// 自己診断中表示(完了)
+
+#define CPU_COM_DISP_TRG_LONG_SW_RECEPTION	3	// SW長押し(受付)
 
 /******************/
 /*   構造体定義   */
 /******************/
 typedef struct _T_CPU_COM_CMD_INFO {
-	UB cmd;					/* コマンド */
+	UB cmd;					/* コマンド[マスター/スレーブ] */
 //	UB cmd_type;			/* コマンドタイプ[マスター] */
 //	UB retry_cnt;			/* リトライ回数[マスター] */
 //	UW retry_time;			/* リトライ間隔[マスター] */
 //	UB rensou_cnt;			/* 連送回数[マスター] */
 } T_CPU_COM_CMD_INFO;
-
+// 送信用コマンド情報
 
 typedef struct{
-	UB buf[CPU_COM_MSG_SIZE_MAX];		/* バッファ */
+	UB buf[CPU_COM_MSG_SIZE_MAX];		/* バッファ[DLEなし] */
 	UH pos;								/* 受信位置 */
 	UB last_dle_flg;					/* 前回受信データがDLE */
 	UB state;							/* 前回受信データがDLE */
-}CPU_COM_RCV_MSG;
+}CPU_COM_ANA_RCV_MSG;
+// 解析用受信メッセージ
 
 
 /******************/
@@ -130,7 +144,6 @@ extern void cpu_com_init(void);
 extern void cpu_com_proc(void);
 extern void cpu_com_send_start( void );
 extern void cpu_com_send_end_wait( void );
-extern void test_cpu_com_send( void );
 
 #endif
 /************************************************************************/

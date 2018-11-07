@@ -22,6 +22,7 @@ typedef struct st_vect_func {
 	void (*func)(void);
 }ST_VECT_FUNC;
 
+typedef void (*VECT_FUNC)();
 
 /******************/
 /*    ŒöŠJ’è”    */

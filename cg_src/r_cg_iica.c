@@ -29,6 +29,8 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
+#include "header.h"
+
 #include "r_cg_macrodriver.h"
 #include "r_cg_iica.h"
 /* Start user code for include. Do not edit comment generated here */
@@ -128,6 +130,8 @@ MD_STATUS R_IICA0_Master_Send(uint8_t adr, uint8_t * const tx_buf, uint16_t tx_n
 {
     MD_STATUS status = MD_OK;
 
+	i2c_set_snd_flg( ON );		//ユーザーコード
+
     IICAMK0 = 1U;   /* disable INTIICA0 interrupt */
 
     if (1U == IICBSY0)
@@ -178,6 +182,8 @@ MD_STATUS R_IICA0_Master_Send(uint8_t adr, uint8_t * const tx_buf, uint16_t tx_n
 MD_STATUS R_IICA0_Master_Receive(uint8_t adr, uint8_t * const rx_buf, uint16_t rx_num, uint8_t wait)
 {
     MD_STATUS status = MD_OK;
+
+	i2c_set_rcv_flg( ON );		//ユーザーコード
 
     IICAMK0 = 1U;   /* disable INTIICA0 interrupt */
 

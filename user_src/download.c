@@ -313,6 +313,7 @@ STATIC void download_make_id(UB __far *p_id)
 	UW sum = 0;
 	UW * p_lwork = NULL;
 	UW i;
+	U_ID uid;		// ワーニング除去用の共用体
 
 	//IDコピー
 	for(i=0; i<PRODUCT_ID_SIZE; i++){
@@ -323,7 +324,8 @@ STATIC void download_make_id(UB __far *p_id)
 	sum = calc_sum_32((UB __far *)ProductPrgAddr, ProductPrgSize );
 	
 	//識別コードのsize,sumを4バイト書き込み(エンディアン考慮)
-	p_lwork = (UW *)(&p_id[0]);
+	uid.pc = &p_id[0];		// ワーニング除去するため一旦共用体に入れる
+	p_lwork = uid.pl;
 	*(p_lwork + PRODUCT_ID_OFFSET_SIZE_PTR) = ProductPrgSize;
 	*(p_lwork + PRODUCT_ID_OFFSET_SUM_PTR) = sum;
 

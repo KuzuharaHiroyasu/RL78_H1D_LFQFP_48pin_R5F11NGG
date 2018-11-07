@@ -86,7 +86,7 @@
 #define	Nop120()	Nop40();Nop40();Nop40();										/* 10μs */
 
 #define WAIT_1US()		Nop10();Nop1();Nop1();										/* 約1us待ち */
-#define WAIT_5US()		WAIT_1US();WAIT_1US();WAIT_1US();WAIT_1US();WAIT_1US();		/* 約1us待ち */
+#define WAIT_5US()		WAIT_1US();WAIT_1US();WAIT_1US();WAIT_1US();WAIT_1US();		/* 約5us待ち */
 
 #define WAIT_10US()		WAIT_5US();WAIT_5US();										/* 約10us待ち */
 
@@ -100,10 +100,6 @@
 
 /* CRC関連 */
 #define CRCD_DEFAULT_LIB	((UH)0xFFFF)		/* CRCデータレジスタ 初期値 */
-
-/* エンディアン変換 */
-#define	CHANGE_UB2_UW		0			/* UBx2 → UWx1 */
-#define	CHANGE_UW_UB2		1			/* UWx1 → UBx2 */
 
 /* =====汎用マクロ関数===== */
 /* maxまでdataをインクリメント */
@@ -141,10 +137,6 @@
 		data = ini;						\
 	}									\
 }
-
-/* type別のuhの上位桁もしくは下位桁を返す */
-#define	UH_U		0		/* 上位アドレス取得 */
-#define	UH_D		1		/* 下位アドレス取得 */
 
 /* 単体デバッグ用定義 */
 #define STATIC							static				/* 単体デバッグ実施時はSTATICを無のデファインにしても良い */
@@ -237,54 +229,6 @@ typedef struct{
 	UH	size;					/* サイズ */
 }RING_BUF;
 
-/* リングバッファ(2バイト用) */
-typedef struct{
-	UH*	buf;					/* リングバッファ用ポインタ */
-	UH	wr_pos;					/* 書き込み位置 */
-	UH	rd_pos;					/* 読み出し位置 */
-	UH	size;					/* サイズ */
-}RING_BUF_UH;
-
-/* リモコン用 */
-typedef struct{
-	UW	time;						/* 時間 */
-	UB	key_code;					/* キーコード */
-	UB	kind;						/* リモコン種別(セキュリティ/通常) */
-	UB	staff_code;					/* スタッフコード */
-}REMO;
-
-/* リングバッファ(時間付きバイトデータ) */
-typedef struct{
-	REMO*	buf;			/* リングバッファ用ポインタ */
-	UH	wr_pos;					/* 書き込み位置 */
-	UH	rd_pos;					/* 読み出し位置 */
-	UH	size;					/* サイズ */
-}RING_BUF_REMO;
-
-/* 入出力情報用 */
-typedef struct{
-	UB	sync;					/* 同期用データ */
-	UB	port1;					/* 入出力情報1 */
-	UB	port2;					/* 入出力情報2 */
-	UB	port3;					/* 入出力情報3 */
-}IO_INFO;
-
-/* リングバッファ(3バイト(24bit)用) */
-typedef struct{
-	IO_INFO*	buf;			/* リングバッファ用ポインタ */
-	UH	wr_pos;					/* 書き込み位置 */
-	UH	rd_pos;					/* 読み出し位置 */
-	UH	size;					/* サイズ */
-}RING_BUF_IO;
-
-
-/* 座標位置 */
-typedef struct{
-	H	x;			/* x座標 ポジション情報またはAD変換値 */
-	H	y;			/* y座標 ポジション情報またはAD変換値 */
-}POS_INFO;
-
-
 /* マスカブル割り込み禁止/許可(前回状態への復帰) */
 /* 注意事項：前回状態への復帰となるためかならず同一関数内でセットで使用して下さい */
 /* 注意：iflgはリエントラントを考慮しローカル変数とし参照元で用意する */
@@ -321,21 +265,17 @@ typedef struct{
 /************************************************************/
 /* 外部参照宣言												*/
 /************************************************************/
-void ring_buf_init( RING_BUF* p_ring, UB* p_data, UH size);
-INT read_ring_buf( RING_BUF* p_ring, UB* p_data );
-INT write_ring_buf( RING_BUF* p_ring ,UB data );
-UB	hex2bin(UB num);
-UB	uwhex2bin(UW *bin, UB *pstr);
-UB bcdbin( UB bin );
-INT bcd2bin( UB *bin, const UB *src_bcd );
-void dummy( void );
-
+extern UB calc_sum( UB *p_in, INT len );
+extern void ring_buf_init( RING_BUF* p_ring, UB* p_data, UH size);
+extern INT read_ring_buf( RING_BUF* p_ring, UB* p_data );
+extern INT write_ring_buf( RING_BUF* p_ring ,UB data );
+extern void dummy( void );
 extern UW calc_sum_32( UB __far *p_in, UW len );
 extern void calc_sum_32_any_times(UW *p_sum, UB __far *p_in, UW len );
-UH crc16( UB* p_in, int len );
-
+extern UH crc16( UB* p_in, int len );
 extern UB bin2bcd( UB bin );
 extern INT bcd2bin( UB *bin, const UB *src_bcd );
+extern void wait_ms( int ms );
 
 #endif
 /************************************************************/

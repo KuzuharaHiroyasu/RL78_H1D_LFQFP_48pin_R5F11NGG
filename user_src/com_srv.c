@@ -22,22 +22,12 @@ void com_srv_send( UB* tx_data, UB len );
 /********************/
 /*     内部定数     */
 /********************/
-#define COM_STR_MAX			100
 
-#define COM_ANA_MSG_MAX			10		// 解析最長10バイト
-#define COM_RCV_NON_CNT_MAX		200		// 解析最長10バイト
-
-typedef struct{
-	UB len;
-	UB data[COM_ANA_MSG_MAX];
-	UB rcv_non;
-}COM_SRV_ANA;
-
-static COM_SRV_ANA	s_com_srv_ana;
 
 /********************/
 /*     内部変数     */
 /********************/
+STATIC COM_SRV_ANA	s_com_srv_ana;
 
 
 /********************/
@@ -46,7 +36,6 @@ static COM_SRV_ANA	s_com_srv_ana;
 extern const B		version_product_tbl[];				/* ソフトウェアバージョン */
 extern const UB	* const version_boot_tbl;				/* ブートバージョンアドレス */
 
-extern void getmode_in( void );
 extern void drv_uart1_data_init( void );
 
 /************************************************************************/
@@ -87,20 +76,23 @@ void com_srv_log_title( void )
 	
 
 	int len;
-	UB tx_data[COM_STR_MAX] = {0};
+	UB tx_data[DRV_UART1_DATA_LENGH] = {0};
 	
-	len = sprintf((char*)tx_data, "RD8001 POW_ON APL Ver.%d.%d.%d.%d\r\n", version_product_tbl[0], version_product_tbl[1],
+	len = sprintf((char*)tx_data, "POW ON APL V.%d.%d.%d.%d  ", version_product_tbl[0], version_product_tbl[1],
 																	   version_product_tbl[2], version_product_tbl[3] );
-	
 	com_srv_send( tx_data, len );
-
+	wait_ms(5);
+	
+	
 	// アプリが保持しているアドレスからブートバージョンを生成
 	memcpy((UB *)boot_ver, (UB *)version_boot_tbl, sizeof(boot_ver));
 
-	len = sprintf((char*)tx_data, "RD8001 POW_ON BOOT Ver.%d.%d.%d.%d\r\n", boot_ver[0], boot_ver[1],
+	len = sprintf((char*)tx_data, "BOOT  V.%d.%d.%d.%d\r\n", boot_ver[0], boot_ver[1],
 																	   boot_ver[2], boot_ver[3] );
 	
 	com_srv_send( tx_data, len );
+	wait_ms(5);
+	
 #endif
 }
 
@@ -146,10 +138,11 @@ void com_srv_cyc( void )
 /************************************************************************/
 /* 注意事項 : なし                                                      */
 /************************************************************************/
-//RD8001暫定：途中リリース用コマンド
 STATIC void com_srv_command( UB data )
 {
 #if FUNC_DEBUG_LOG == ON
+#if 0
+	//途中リリース時のコマンド
 	if( 0 == s_com_srv_ana.len ){
 		if( 'G' == data ){
 			s_com_srv_ana.data[s_com_srv_ana.len] = data;
@@ -194,8 +187,21 @@ STATIC void com_srv_command( UB data )
 	}
 #endif
 #endif
+#endif
 }
 
+/************************************************************************/
+/* 関数     : com_srv_send                                              */
+/* 関数名   : 送信処理					                                */
+/* 引数     : tx_data		送信バッファ								*/
+/*          : len			送信長										*/
+/* 戻り値   : なし                                                      */
+/* 変更履歴 : 2018.09.10  Axia Soft Design 西島 稔   初版作成           */
+/************************************************************************/
+/* 機能 : 送信処理									                    */
+/************************************************************************/
+/* 注意事項 : なし                                                      */
+/************************************************************************/
 void com_srv_send( UB* tx_data, UB len )
 {
 #if FUNC_DEBUG_LOG == ON

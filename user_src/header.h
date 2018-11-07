@@ -31,11 +31,11 @@
 #include "r_cg_sau.h"
 #include "r_cg_intp.h"
 #include "r_cg_it.h"
+#include "r_cg_it8bit.h"
 #include "r_cg_iica.h"
 #include "r_cg_rtc.h"
 #include "r_cg_adc.h"
 #include "r_cg_wdt.h"
-#include "r_cg_tau.h"
 #endif
 
 /* ƒ~ƒhƒ‹ */

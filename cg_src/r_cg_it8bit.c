@@ -18,19 +18,19 @@
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-* File Name    : r_cg_tau.c
+* File Name    : r_cg_it8bit.c
 * Version      :  
 * Device(s)    : R5F11NGG
 * Tool-Chain   : CCRL
-* Description  : This file implements device driver for TAU module.
-* Creation Date: 2018/04/10
+* Description  : This file implements device driver for IT8Bit module.
+* Creation Date: 2018/09/12
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
 #include "r_cg_macrodriver.h"
-#include "r_cg_tau.h"
+#include "r_cg_it8bit.h"
 /* Start user code for include. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 #include "r_cg_userdefine.h"
@@ -48,75 +48,51 @@ Global variables and functions
 /* End user code. Do not edit comment generated here */
 
 /***********************************************************************************************************************
-* Function Name: R_TAU0_Create
-* Description  : This function initializes the TAU0 module.
+* Function Name: R_IT8Bit0_Channel0_Create
+* Description  : This function initializes the 8 bit interval timer unit0 channel0.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_TAU0_Create(void)
+void R_IT8Bit0_Channel0_Create(void)
 {
-    TAU0EN = 1U;    /* enables input clock supply */
-    TPS0 = _0000_TAU0_CKM3_fCLK_8 | _0000_TAU0_CKM2_fCLK_1 | _0000_TAU0_CKM1_fCLK_0 | _0001_TAU0_CKM0_fCLK_1;
-    /* Stop all channels */
-    TT0 = _0800_TAU_CH3_H8_STOP_TRG_ON | _0200_TAU_CH1_H8_STOP_TRG_ON | _0080_TAU_CH7_STOP_TRG_ON | 
-          _0040_TAU_CH6_STOP_TRG_ON | _0020_TAU_CH5_STOP_TRG_ON | _0010_TAU_CH4_STOP_TRG_ON | 
-          _0008_TAU_CH3_STOP_TRG_ON | _0004_TAU_CH2_STOP_TRG_ON | _0002_TAU_CH1_STOP_TRG_ON | 
-          _0001_TAU_CH0_STOP_TRG_ON;
-    TMMK00 = 1U;    /* disable INTTM00 interrupt */
-    TMIF00 = 0U;    /* clear INTTM00 interrupt flag */
-    TMMK01 = 1U;    /* disable INTTM01 interrupt */
-    TMIF01 = 0U;    /* clear INTTM01 interrupt flag */
-    TMMK01H = 1U;   /* disable INTTM01H interrupt */
-    TMIF01H = 0U;   /* clear INTTM01H interrupt flag */
-    TMMK02 = 1U;    /* disable INTTM02 interrupt */
-    TMIF02 = 0U;    /* clear INTTM02 interrupt flag */
-    TMMK03 = 1U;    /* disable INTTM03 interrupt */
-    TMIF03 = 0U;    /* clear INTTM03 interrupt flag */
-    TMMK03H = 1U;   /* disable INTTM03H interrupt */
-    TMIF03H = 0U;   /* clear INTTM03H interrupt flag */
-    TMMK04 = 1U;    /* disable INTTM04 interrupt */
-    TMIF04 = 0U;    /* clear INTTM04 interrupt flag */
-    TMMK05 = 1U;    /* disable INTTM05 interrupt */
-    TMIF05 = 0U;    /* clear INTTM05 interrupt flag */
-    TMMK06 = 1U;    /* disable INTTM06 interrupt */
-    TMIF06 = 0U;    /* clear INTTM06 interrupt flag */
-    TMMK07 = 1U;    /* disable INTTM07 interrupt */
-    TMIF07 = 0U;    /* clear INTTM07 interrupt flag */
-    /* Set INTTM00 low priority */
-    TMPR100 = 1U;
-    TMPR000 = 1U;
-    /* Channel 0 used as interval timer */
-    TMR00 = _0000_TAU_CLOCK_SELECT_CKM0 | _0000_TAU_CLOCK_MODE_CKS | _0000_TAU_TRIGGER_SOFTWARE | 
-            _0000_TAU_TIMN_EDGE_FALLING | _0000_TAU_MODE_INTERVAL_TIMER | _0000_TAU_START_INT_UNUSED;
-    TDR00 = _EA5F_TAU_TDR00_VALUE;
-    TO0 &= (uint16_t)~_0001_TAU_CH0_OUTPUT_VALUE_1;
-    TOE0 &= (uint16_t)~_0001_TAU_CH0_OUTPUT_ENABLE;
+	R_IT8Bit0_Channel0_Stop();
+	
+    TRTCR0 |= _10_IT8BIT_CLOCK_SUPPLY;
+    TSTART00 = 0U;  /* counting stops */
+    ITMK00 = 1U;    /* disable INTIT00 interrupt */
+    ITIF00 = 0U;    /* clear INTIT00 interrupt flag */
+    /* Set INTIT00 low priority */
+    ITPR100 = 1U;
+    ITPR000 = 1U;
+    TRTCR0 |= _00_IT8BIT_8BIT_COUNT_MODE;
+    TRTMD0 |= _01_IT8BIT_CLOCK0_2;
+    TRTCMP00 = _A3_IT8BIT_CMP00_VALUE;
     
-    R_TAU0_Channel0_Start();
+    R_IT8Bit0_Channel0_Start();
 }
 /***********************************************************************************************************************
-* Function Name: R_TAU0_Channel0_Start
-* Description  : This function starts TAU0 channel 0 counter.
+* Function Name: R_IT8Bit0_Channel0_Start
+* Description  : This function starts 8 bit interval timer unit0 channel0 operation.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_TAU0_Channel0_Start(void)
+void R_IT8Bit0_Channel0_Start(void)
 {
-    TMIF00 = 0U;    /* clear INTTM00 interrupt flag */
-    TMMK00 = 0U;    /* enable INTTM00 interrupt */
-    TS0 |= _0001_TAU_CH0_START_TRG_ON;
+    ITIF00 = 0U;    /* clear INTIT00 interrupt flag */
+    ITMK00 = 0U;    /* enable INTIT00 interrupt */
+    TSTART00 = 1U;  /* counting starts */
 }
 /***********************************************************************************************************************
-* Function Name: R_TAU0_Channel0_Stop
-* Description  : This function stops TAU0 channel 0 counter.
+* Function Name: R_IT8Bit0_Channel0_Stop
+* Description  : This function stops 8 bit interval timer unit0 channel0 operation.
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void R_TAU0_Channel0_Stop(void)
+void R_IT8Bit0_Channel0_Stop(void)
 {
-    TT0 |= _0001_TAU_CH0_STOP_TRG_ON;
-    TMMK00 = 1U;    /* disable INTTM00 interrupt */
-    TMIF00 = 0U;    /* clear INTTM00 interrupt flag */
+    ITMK00 = 1U;    /* disable INTIT00 interrupt */
+    ITIF00 = 0U;    /* clear INTIT00 interrupt flag */
+    TSTART00 = 0U;  /* counting stops */
 }
 
 /* Start user code for adding. Do not edit comment generated here */

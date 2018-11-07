@@ -33,14 +33,14 @@
         <Path>cg_src\r_cg_sau.c</Path>
         <Path>cg_src\r_cg_sau_user.c</Path>
         <Path>cg_src\r_cg_systeminit.c</Path>
-        <Path>cg_src\r_cg_tau.c</Path>
-        <Path>cg_src\r_cg_tau_user.c</Path>
         <Path>cg_src\r_cg_pclbuz.c</Path>
         <Path>cg_src\r_cg_pclbuz_user.c</Path>
         <Path>cg_src\r_cg_amp.c</Path>
         <Path>cg_src\r_cg_amp_user.c</Path>
         <Path>cg_src\r_cg_wdt.c</Path>
         <Path>cg_src\r_cg_wdt_user.c</Path>
+        <Path>cg_src\r_cg_it8bit.c</Path>
+        <Path>cg_src\r_cg_it8bit_user.c</Path>
       </Category>
       <Path>user_src\com_srv.c</Path>
       <Path>user_src\cpu_com.c</Path>
@@ -89,8 +89,6 @@
           <Path>DefaultBuild\main.obj</Path>
           <Path>DefaultBuild\sys.obj</Path>
           <Path>DefaultBuild\time.obj</Path>
-          <Path>DefaultBuild\r_cg_tau.obj</Path>
-          <Path>DefaultBuild\r_cg_tau_user.obj</Path>
           <Path>DefaultBuild\r_cg_pclbuz.obj</Path>
           <Path>DefaultBuild\r_cg_pclbuz_user.obj</Path>
           <Path>DefaultBuild\r_cg_amp.obj</Path>
@@ -104,6 +102,8 @@
           <Path>DefaultBuild\rom_vect_func.obj</Path>
           <Path>DefaultBuild\vect_func.obj</Path>
           <Path>DefaultBuild\boot_vect_func.obj</Path>
+          <Path>DefaultBuild\r_cg_it8bit.obj</Path>
+          <Path>DefaultBuild\r_cg_it8bit_user.obj</Path>
           <Path>user_src\fsl.lib</Path>
         </LinkOrder>
         <CommonOptions>
@@ -173,15 +173,11 @@
     <Extension_CodePart2>
       <CodeGeneratorData>﻿&lt;SerializableData&gt;
   &lt;SerializableData name="39a9d609-9774-41fe-9e4e-5c50dfa1451e"&gt;
-    &lt;DataElement key="pior35_macroname" value=""&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior14_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior34_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior16_macroname" value=""&gt;
-    &lt;/DataElement&gt;
-    &lt;DataElement key="pior24_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior22_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -197,15 +193,17 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior10_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior27_macroname" value=""&gt;
-    &lt;/DataElement&gt;
     &lt;DataElement key="pior27" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior30_macroname" value=""&gt;
     &lt;/DataElement&gt;
+    &lt;DataElement key="pior33" value="0"&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior01_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior35" value="0"&gt;
+    &lt;DataElement key="pior01" value="0"&gt;
+    &lt;/DataElement&gt;
+    &lt;DataElement key="pior11_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior04_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -223,7 +221,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior31" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior01" value="0"&gt;
+    &lt;DataElement key="pior24_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior11" value="0"&gt;
     &lt;/DataElement&gt;
@@ -247,6 +245,8 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior32_macroname" value=""&gt;
     &lt;/DataElement&gt;
+    &lt;DataElement key="pior03" value="0"&gt;
+    &lt;/DataElement&gt;
     &lt;DataElement key="pior22" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior15_macroname" value=""&gt;
@@ -255,9 +255,9 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior23" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior33" value="0"&gt;
+    &lt;DataElement key="pior35_macroname" value=""&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior03" value="0"&gt;
+    &lt;DataElement key="pior27_macroname" value=""&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior25_macroname" value=""&gt;
     &lt;/DataElement&gt;
@@ -269,7 +269,7 @@
     &lt;/DataElement&gt;
     &lt;DataElement key="pior25" value="0"&gt;
     &lt;/DataElement&gt;
-    &lt;DataElement key="pior11_macroname" value=""&gt;
+    &lt;DataElement key="pior35" value="0"&gt;
     &lt;/DataElement&gt;
     &lt;DataElement key="pior05" value="0"&gt;
     &lt;/DataElement&gt;
