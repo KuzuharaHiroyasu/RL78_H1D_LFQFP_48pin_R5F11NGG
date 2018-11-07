@@ -212,19 +212,19 @@ void dummy( void )
 /* ポインタによるアクセスについても64KB境界をまたいでアクセスすることは */
 /* できないため、unsingned long変数に入れて__far*キャストする。 		*/
 /************************************************************************/
-UW calc_sum_32( UB *p_in, UW len )
+UW calc_sum_32( UB __far *p_in, UW len )
 {
 	UW i;
 	UW sum = CALC_SUM_INIT_UW;
 	UW addr = (UW)p_in;
 	
 	for( i = 0; i < len; i++ ){
-		sum += (UW)(*(UB*)addr++);
-#ifdef PRODUCT_ONLY
+		sum += (UW)(*(UB __far *)addr++);
+ #ifdef PRODUCT_ONLY
 		if((i & 0x00000FFF) == 0){
 			wdt_refresh();			/* WDTリフレッシュ */
 		}
-#endif
+ #endif
 	}
 	
 	return sum;
@@ -245,7 +245,7 @@ UW calc_sum_32( UB *p_in, UW len )
 /* 注意事項 :															*/
 /* チェックサム本体は呼び出し側で準備すること							*/
 /************************************************************************/
-void calc_sum_32_any_times(UW *p_sum, UB *p_in, UW len )
+void calc_sum_32_any_times(UW *p_sum, UB __far *p_in, UW len )
 {
 	UW i;
 	
@@ -253,6 +253,7 @@ void calc_sum_32_any_times(UW *p_sum, UB *p_in, UW len )
 		*p_sum += (UW)(*p_in++);
 	}
 }
+
 
 
 // RD8001暫定：CPUでCRC演算が出来るか未調査

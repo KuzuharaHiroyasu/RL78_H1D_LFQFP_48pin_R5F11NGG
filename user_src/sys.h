@@ -316,6 +316,8 @@ typedef struct{
 
 #define		wdt_refresh()	{		R_WDT_Restart();}
 
+#define 	COMMON_BLOCK_ADJUST_SHIFT		4
+
 /************************************************************/
 /* äOïîéQè∆êÈåæ												*/
 /************************************************************/
@@ -328,8 +330,8 @@ UB bcdbin( UB bin );
 INT bcd2bin( UB *bin, const UB *src_bcd );
 void dummy( void );
 
-extern UW calc_sum_32( UB *p_in, UW len );
-extern void calc_sum_32_any_times(UW *p_sum, UB *p_in, UW len );
+extern UW calc_sum_32( UB __far *p_in, UW len );
+extern void calc_sum_32_any_times(UW *p_sum, UB __far *p_in, UW len );
 UH crc16( UB* p_in, int len );
 
 extern UB bin2bcd( UB bin );

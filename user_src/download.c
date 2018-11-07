@@ -1,9 +1,10 @@
 /********************************************************************************/
-/* システム名   : RD8001 快眠チェッカー												*/
+/* システム名   : RD8001 快眠チェッカー                                         */
 /* ファイル名   : download.c                                                    */
 /* 機能         : プログラム書換処理ミドル                                      */
 /* 変更履歴     : 2012.02.25 Axia Soft Design K.Wada    初版作成(RD1201)        */
 /*              : 2012.12.26 Axia Soft Design K.Wada    RD1201から流用開始      */
+/*              : 2018.04.01 Axia Soft Design S.Shima   RD1215から流用開始      */
 /* 注意事項     : なし                                                          */
 /********************************************************************************/
 
@@ -15,14 +16,12 @@ extern const UB __far ProductIdCode[PRODUCT_ID_SIZE];
 /*     内部定数     */
 /********************/
 /* FROMブロックサイズ */
-#define	PRODUCT_PRG_BLOCK_SIZE	 	(87)
+#define	PRODUCT_PRG_BLOCK_SIZE	 	((99)<<COMMON_BLOCK_ADJUST_SHIFT)
 #define	BOOTLOADER_BLOCK_SIZE	 	(DRV_FROM_BLOCK_PROGRAM_NUM - PRODUCT_PRG_BLOCK_SIZE)
 
 /* FROMブロック番号 */
-#define	PRODUCT_PRG_BLOCK_NUM_TOP	(0x28)
+#define	PRODUCT_PRG_BLOCK_NUM_TOP	(28)
 #define	PRODUCT_PRG_BLOCK_NUM_END	(PRODUCT_PRG_BLOCK_NUM_TOP + PRODUCT_PRG_BLOCK_SIZE -1)
-#define	BOOTLOADER_BLOCK_NUM_TOP	(PRODUCT_PRG_BLOCK_NUM_END +1)
-#define	BOOTLOADER_BLOCK_NUM_END	(BOOTLOADER_BLOCK_NUM_TOP + BOOTLOADER_BLOCK_SIZE -1)
 
 const UW ComBlockNumPerFromBlock = (BLOCK_SIZE / COMM_BLOCK_SIZE);	/* FROMの1ブロックが通信上の何ブロックに当たるか */
 
@@ -32,20 +31,17 @@ const UW ProductIdAddr = (UW)0x01FBF0;		/* 識別コード 先頭アドレス */
 
 
 /* FROMアドレス定義 */
-const UW ProductIdBlockNum = (UW)0x1FB;		/* 識別コードを含む通信ブロック番号 */
+//const UW ProductIdBlockNum = (UW)(0x1FB<<COMMON_BLOCK_ADJUST_SHIFT);		/* 識別コードを含む通信ブロック番号 */
+const UW ProductIdBlockNum = (UW)(0x1FBF);		/* 識別コードを含む通信ブロック番号 */
 
-const UW ProductPrgAddr = (UW)0x00A000;	/* 製品用ファーム先頭アドレス */
-const UW ProductPrgSize = (UW)0x015BF0;	/* 製品用ファームサイズ(87KB-識別コードサイズ) */
+const UW ProductPrgAddr = (UW)0x007000;	/* 製品用ファーム先頭アドレス */
+const UW ProductPrgSize = (UW)0x018BF0;	/* 製品用ファームサイズ(99KB-識別コードサイズ) */
 const UW BootLoaderAddr = (UW)0x000000;	/* ブートローダー先頭アドレス */
-const UW BootLoaderSize = (UW)0x00A000;	/* ブートローダーサイズ(40KB) */
+const UW BootLoaderSize = (UW)0x007000;	/* ブートローダーサイズ(28KB) */
 
 /********************/
 /*     内部変数     */
 /********************/
-
-// ID用に固定のセクションを設定する必要あり！！！
-//#pragma SECTION bss bss_id
-//STATIC UB id_area[PRODUCT_ID_SIZE];
 
 STATIC UB write_buf[COMM_BLOCK_SIZE];	/* 書込み用一時領域 */
 STATIC UB verify_buf[VERIFY_SIZE_MAX];	/* ベリファイ用一時領域 */
@@ -56,8 +52,8 @@ STATIC UB id_temp_buf[PRODUCT_ID_SIZE];	/* 識別ID保存領域 */
 /* プロトタイプ宣言 */
 /********************/
 STATIC void download_delete_id(void);
-STATIC void download_make_id(UB *p_id);
-STATIC BOOL download_verify(UB *addr_src , UB *addr_dest, UW size);
+STATIC void download_make_id(UB __far  *p_id);
+STATIC BOOL download_verify(UB  __far *addr_src , UB  __far  *addr_dest, UW size);
 STATIC UW download_blocknum2addr(UW blocknum);
 STATIC UW download_com_blocknum2from_blocknum(UW blocknum);
 
@@ -91,7 +87,7 @@ void download_init(void)
 /************************************************************************/
 /* 機能 : ブートプログラムのプログラム書換え状態に切り替える            */
 /************************************************************************/
-/* 注意事項 : WDTを利用して自己リセットする                             */
+/* 注意事項 : WDTを利用して自己リセットしない                             */
 /************************************************************************/
 /* 使用するプログラム : 製品プログラム                                  */
 /************************************************************************/
@@ -99,9 +95,7 @@ void download_change_boot(void)
 {
 	download_delete_id();
 
-	/* WDTでリセットする */
-/*	DI();	//割り込み禁止		// RD1201暫定 ここでリセットしない
-/*	while(1){};	*/				// RD1201暫定 ここでリセットしない
+	/* WDTでリセットしないので、呼び出し側でリセットすること */
 }
 
 /************************************************************************/
@@ -118,15 +112,13 @@ void download_change_boot(void)
 /************************************************************************/
 STATIC void download_delete_id(void)
 {
-	
 	UB clr_src[PRODUCT_ID_SIZE] ={0};
-	DRV_FROM_ERROR drv_err;
 	
 	drv_from_init();
 	drv_from_mode_enable();
 	
 	//識別コード削除
-	drv_err = drv_from_write( &clr_src[0],(UB __far *)ProductIdAddr, PRODUCT_ID_SIZE);
+	drv_from_write( &clr_src[0],(UB __far *)ProductIdAddr, PRODUCT_ID_SIZE);
 	
 	drv_from_mode_disable();
 }
@@ -177,6 +169,7 @@ INT download_start(void)
 /* 引数     : p_data 書き込むデータのアドレス                           */
 /*          : blocknum 通信上のブロック番号                             */
 /*          : size 書き込むデータのサイズ (最大 COMM_BLOCK_SIZE)        */
+/*          : p_sum 転送データから計算するサム領域アドレス              */
 /* 戻り値   : 処理結果                                                  */
 /* 変更履歴 : 2012.02.25 Axia Soft Design K.Wada	初版作成(RD1201)    */
 /*          : 2012.12.26 Axia Soft Design K.Wada    初版作成(RD1215)    */
@@ -202,7 +195,7 @@ INT download_set_data(UB *p_data, UW blocknum, UW size, UW *p_sum)
 	
 	/* 書き換える可能性があるので、コピーを使う */
 	if(size <= COMM_BLOCK_SIZE){
-		memcpy(write_buf,p_data,(size_t)size);
+		_COM_memcpy_ff(write_buf,p_data,(size_t)size);
 	}else{
 		return E_GENE;
 	}
@@ -215,20 +208,20 @@ INT download_set_data(UB *p_data, UW blocknum, UW size, UW *p_sum)
 	drv_from_mode_enable();
 	
 	/* 書き込み */
-	drv_err = drv_from_write(write_buf, (UB *)write_addr, size);
+	drv_err = drv_from_write(write_buf, ( UB __far *)write_addr, size);
 	
 	drv_from_mode_disable();
 	
 	if(drv_err == DRV_FROM_ERR_NONE){
 		/* ベリファイ */
-		if(download_verify(write_buf, (UB *)write_addr, size) ){
+		if(download_verify(write_buf, (UB __far *)write_addr, size) ){
 			ret = E_OK;
 			
 			/* チェックサム計算 */
 			/* write_bufはベリファイをクリアしているので、直接FROMを読むのと同意とする */
 			if( blocknum == ProductIdBlockNum ){
 				/* 識別IDの箇所はFROMに書かないので、受信データを上書きして計算する */
-				memcpy((UB*)(write_buf + (COMM_BLOCK_SIZE-PRODUCT_ID_SIZE)) ,(UB*)(p_data + (COMM_BLOCK_SIZE-PRODUCT_ID_SIZE)), PRODUCT_ID_SIZE);
+				_COM_memcpy_ff((UB*)(write_buf + (COMM_BLOCK_SIZE-PRODUCT_ID_SIZE)) ,(UB*)(p_data + (COMM_BLOCK_SIZE-PRODUCT_ID_SIZE)), PRODUCT_ID_SIZE);
 			}
 			calc_sum_32_any_times(p_sum, write_buf, size );
 			
@@ -258,10 +251,7 @@ INT download_set_data(UB *p_data, UW blocknum, UW size, UW *p_sum)
 /************************************************************************/
 void download_finish_ready(void)
 {
-	INT ret = E_OK;
-	
 	download_make_id(id_temp_buf);
-	
 }
 
 /************************************************************************/
@@ -287,11 +277,11 @@ INT download_finish(void)
 	drv_from_mode_enable();
 	
 	/* チェックサム・識別ID書き込み */
-	drv_err = drv_from_write(&id_temp_buf[0], (UB *)ProductIdAddr, PRODUCT_ID_SIZE);
+	drv_err = drv_from_write(&id_temp_buf[0], (const UB __far *)ProductIdAddr, PRODUCT_ID_SIZE);
 
 	if(drv_err == DRV_FROM_ERR_NONE){
 		/* ベリファイ */
-		if(download_verify(&id_temp_buf[0], (UB *)ProductIdAddr, PRODUCT_ID_SIZE) ){
+		if( download_check_product() == TRUE ){
 			ret = E_OK;
 		}else{
 			ret = E_GENE;
@@ -309,16 +299,16 @@ INT download_finish(void)
 /************************************************************************/
 /* 関数     : download_make_id                                          */
 /* 関数名   : チェックサム・識別ID作成処理                              */
-/* 引数     : なし                                                      */
+/* 引数     : p_id 識別IDの取得用ポインタ                               */
 /* 戻り値   : なし                                                      */
 /* 変更履歴 : 2012.02.25 Axia Soft Design K.Wada	初版作成(RD1201)    */
 /*          : 2012.12.26 Axia Soft Design K.Wada    初版作成(RD1215)    */
 /************************************************************************/
-/* 機能 : チェックサムを計算し・識別IDを設定する                        */
+/* 機能 : チェックサムを計算し・識別IDを作成する                        */
 /************************************************************************/
 /* 注意事項 : なし                                                      */
 /************************************************************************/
-STATIC void download_make_id(UB *p_id)
+STATIC void download_make_id(UB __far *p_id)
 {
 	UW sum = 0;
 	UW * p_lwork = NULL;
@@ -330,7 +320,7 @@ STATIC void download_make_id(UB *p_id)
 	}
 
 	//チェックサム計算
-	sum = calc_sum_32((UB *)ProductPrgAddr, ProductPrgSize );
+	sum = calc_sum_32((UB __far *)ProductPrgAddr, ProductPrgSize );
 	
 	//識別コードのsize,sumを4バイト書き込み(エンディアン考慮)
 	p_lwork = (UW *)(&p_id[0]);
@@ -351,7 +341,8 @@ STATIC void download_make_id(UB *p_id)
 /*        ・転送されたプログラム自体が正しいこと                        */
 /*        ・書き込みが正しく書き込まれたこと                            */
 /************************************************************************/
-/* 注意事項 : なし                                                      */
+/* 注意事項 : RD8001では未使用(転送されたチェックサムがFROMの全領域分   */
+/*       ではなく有効なコードの分のみを対象にしたものであるため使用不可)*/
 /************************************************************************/
 /* 使用するプログラム : ブート                                          */
 /************************************************************************/
@@ -360,10 +351,10 @@ BOOL download_check_finish(UW com_sum)
 	UW cal_sum = 0;
 	UW memory_sum = 0;
 
-	memory_sum = *(UW *)(ProductIdAddr + PRODUCT_ID_OFFSET_SUM );
-	
+	memory_sum = *(UW __far *)(ProductIdAddr + PRODUCT_ID_OFFSET_SUM );
+
 	/* プログラムがFROMに正しく書き込まれたことを確認 */
-	cal_sum = calc_sum_32((UB *)ProductPrgAddr, ProductPrgSize );
+	cal_sum = calc_sum_32((UB __far *)ProductPrgAddr, ProductPrgSize );
 	if(cal_sum != memory_sum){
 		return FALSE;
 	}
@@ -387,17 +378,17 @@ BOOL download_check_finish(UW com_sum)
 /************************************************************************/
 /* 注意事項 : なし                                                      */
 /************************************************************************/
-/* 使用するプログラム : 製品プログラム                                  */
+/* 使用するプログラム : ブート・製品プログラム                          */
 /************************************************************************/
 BOOL download_check_checksum(void)
 {
 	UW cal_sum = 0;
 	UW memory_sum = 0;
 
-	memory_sum = *(UW *)(ProductIdAddr + PRODUCT_ID_OFFSET_SUM );
+	memory_sum = *(UW __far *)(ProductIdAddr + PRODUCT_ID_OFFSET_SUM );
 	
 	/* プログラムがFROMに正しく書き込まれたことを確認 */
-	cal_sum = calc_sum_32((UB *)ProductPrgAddr, ProductPrgSize );
+	cal_sum = calc_sum_32((UB __far *)ProductPrgAddr, ProductPrgSize );
 	if(cal_sum != memory_sum){
 		return FALSE;
 	}
@@ -425,7 +416,7 @@ BOOL download_check_product(void)
 	INT i;
 	
 	//識別コード全領域取得
-	UB * p_id_data = (UB *)ProductIdAddr;
+	UB __far * p_id_data = (UB __far *)ProductIdAddr;
 	UB id_buf[PRODUCT_ID_SIZE];
 	
 	for(i=0; i<PRODUCT_ID_SIZE; i++){
@@ -464,7 +455,7 @@ INT download_get_data(UB *p_get_data,UW blocknum ,UW size)
 	UW read_addr = download_blocknum2addr(blocknum);
 	
 	/* 読み込み */
-	drv_err = drv_from_read((UB *)read_addr, p_get_data, size);
+	drv_err = drv_from_read((UB __far *)read_addr, p_get_data, size);
 	if(drv_err == DRV_FROM_ERR_NONE){
 		ret = E_OK;
 	}else{
@@ -477,7 +468,9 @@ INT download_get_data(UB *p_get_data,UW blocknum ,UW size)
 /************************************************************************/
 /* 関数     : download_verify                                           */
 /* 関数名   : ベリファイ処理                                            */
-/* 引数     : なし                                                      */
+/* 引数     : addr_src  ベリファイ元アドレス                            */
+/*          : addr_dest ベリファイ先アドレス                            */
+/*          : size ベリファイするデータのサイズ                         */
 /* 戻り値   : TRUE:一致 / FALSE:不一致                                  */
 /* 変更履歴 : 2012.02.25 Axia Soft Design K.Wada	初版作成(RD1201)    */
 /*          : 2012.12.26 Axia Soft Design K.Wada    初版作成(RD1215)    */
@@ -486,7 +479,7 @@ INT download_get_data(UB *p_get_data,UW blocknum ,UW size)
 /************************************************************************/
 /* 注意事項 : 最大サイズ制限あり                                        */
 /************************************************************************/
-STATIC BOOL download_verify(UB *addr_src , UB *addr_dest, UW size)
+STATIC BOOL download_verify(UB __far *addr_src , UB __far *addr_dest, UW size)
 {
 	DRV_FROM_ERROR drv_err;
 	UW i;

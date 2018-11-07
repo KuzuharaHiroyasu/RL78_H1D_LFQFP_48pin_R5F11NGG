@@ -3,11 +3,11 @@
 /* ファイル名   : fsl_ram.c														*/
 /* 機能         : セルフプログラミングライブラリ使用領域定義					*/
 /* 変更履歴     : 2013.01.17 Axia Soft Design K.Wada	初版作成				*/
+/*              : 2018.04.01 Axia Soft Design S.Shima   RD1215から流用開始		*/
 /* 注意事項     : なし															*/
 /********************************************************************************/
 
 /* 0FFE20H - 0FFEDFH */
-//#pragma section @@DATA FLA AT 0FFE20H
 #pragma section bss   FLA
 unsigned char flash_use_buf[192];
 

@@ -3,6 +3,7 @@
 /* ファイル名   : vect_tbl.c                                                    */
 /* 機能         : ブートプログラム用ベクタテーブル                              */
 /* 変更履歴     : 2013.01.23 Axia Soft Design K.Wada    初版作成                */
+/*              : 2018.04.01 Axia Soft Design S.Shima   RD1215から流用開始      */
 /* 注意事項     : なし                                                          */
 /********************************************************************************/
 
@@ -12,13 +13,12 @@
 /*     内部定数     */
 /********************/
 
-//#pragma section @@CNSTL VCT_TBL AT 9F00H
 #pragma section const   VCT_TBL	//far属性
 
 /* ここにプログラムのベクタ関数を登録する */
 
 const ST_VECT_FUNC	__far  vect_tbl[VECT_NUM_COUNT] = {
-	 0x7000
+	(void __far *)0x7000
 ,	dummy	/*	1	0x0004	INTWDTI	*/
 ,	dummy	/*	2	0x0006	INTLVI	*/
 ,	dummy	/*	3	0x0008	INTP0	*/

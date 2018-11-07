@@ -1,9 +1,10 @@
 /********************************************************************************/
-/* システム名   : RD8001 快眠チェッカー												*/
+/* システム名   : RD8001 快眠チェッカー											*/
 /* ファイル名   : drv_from.c													*/
 /* 機能         : FROMの読み書き												*/
 /* 変更履歴     : 2012.02.18 Axia Soft Design K.Wada	初版作成(RD1201)		*/
 /*              : 2012.12.26 Axia Soft Design K.Wada    RD1201から流用開始      */
+/*              : 2018.04.01 Axia Soft Design S.Shima   RD1215から流用開始      */
 /* 注意事項     : なし															*/
 /********************************************************************************/
 
@@ -45,7 +46,7 @@ const __far fsl_descriptor_t fsl_descriptor_pstr = { 	FSL_DESCRIPTOR1_FULL_SPEED
 /********************/
 STATIC BOOL drv_from_is_true_area(UW addr,UW *p_get_block_no);
 STATIC BOOL drv_from_is_true_block_no(INT no);
-STATIC UW   drv_from_addr2blocknum(UW pFrom);
+//STATIC UW   drv_from_addr2blocknum(UW pFrom);
 
 /************************************************************************/
 /* 関数     : drv_from_init                                             */
@@ -61,8 +62,6 @@ STATIC UW   drv_from_addr2blocknum(UW pFrom);
 /************************************************************************/
 void drv_from_init(void)
 {
-DRV_FROM_ERROR	ercd = DRV_FROM_ERR_NONE;
-
     fsl_u08 dubRetCode;
 
     /* フラッシュ・セルフ・プログラミング・ライブラリ初期化実行 */
@@ -339,6 +338,7 @@ STATIC BOOL drv_from_is_true_block_no(INT no)
 	return FALSE;
 }
 
+#if 0	//RD8001では未使用
 /************************************************************************/
 /* 関数     : drv_from_addr2blocknum                                    */
 /* 関数名   : FROMアドレス→ブロック番号変換処理                        */
@@ -359,3 +359,4 @@ STATIC UW drv_from_addr2blocknum(UW pFrom)
 	
 	return block_num;
 }
+#endif

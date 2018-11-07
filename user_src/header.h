@@ -41,6 +41,7 @@
 #include "cpu_com.h"
 #include "time.h"
 
+#include "download.h"
 #include "drv_from.h"
 #include "vect_func.h"
 

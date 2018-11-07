@@ -25,19 +25,27 @@ typedef enum{
 
 /* タイマ種別[10ms] */
 typedef enum{
-	TIME_TYPE_10MS_POW_SW_LONG = 0			,			/* 電源SW動作開始(1秒) */
+	TIME_TYPE_10MS_POW_SW = 0				,			/* 電源SW動作 */
 	TIME_TYPE_10MS_CPU_COM_RETRY			,			/* CPU間通信リトライ待ちタイマ */
 	TIME_TYPE_10MS_SENSING_DELAY			,			/* センシング開始待ち */
 	TIME_TYPE_10MS_DISP_FLASH				,			/* 表示点滅 */
 	TIME_TYPE_10MS_WAIT_SLEEP				,			/* sleep待ち */
 	TIME_TYPE_10MS_BAT_CHG_FIN				,			/* 充電完了チェック */
+	TIME_TYPE_10MS_SW_LONG_DISP				,			/* 電源SW長押し表示 */
+	TIME_TYPE_10MS_CHG_ON_DISP_IVALID		,			/* 充電表示無効時間 */
 	TIME_TYPE_10MS_NUM									/* ソフトウェアタイマの数(10ms) */
 }TIME_TYPE_10MS;
 
 /* タイマカウント値[10ms] */
-#define	TIME_10MS_CNT_POW_SW_LONG		300				/* 電源SW_長(3秒) */
-#define	TIME_10MS_CNT_POW_SW_SHORT		100				/* 電源SW_短(1秒) */
+#define	TIME_10MS_CNT_POW_SW_INITIAL_DISP	1000			/* 電源SW_初期化リセット表示(10秒) */
+#define	TIME_10MS_CNT_POW_SW_LONG			300				/* 電源SW_長(3秒) */
+#define	TIME_10MS_CNT_POW_SW_SHORT			100				/* 電源SW_短(1秒) */
 
+
+
+#define	TIME_10MS_CNT_POW_SW_LONG_DISP		300				/* 電源SW長押し表示(3秒) */
+
+#define	TIME_10MS_CNT_CHG_ON_DISP_IVALID	100				/* 充電表示無効時間(1秒) */
 
 
 #define	TIME_10MS_CNT_STATE_STOP			1000		/* 休止状態遷移時間(10秒) */
