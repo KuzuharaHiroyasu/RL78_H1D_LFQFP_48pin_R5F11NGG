@@ -287,8 +287,31 @@ typedef struct{
 
 /* マスカブル割り込み禁止/許可(前回状態への復帰) */
 /* 注意事項：前回状態への復帰となるためかならず同一関数内でセットで使用して下さい */
-#define DI_RET		di_ret
-#define EI_RET		ei_ret
+/* 注意：iflgはリエントラントを考慮しローカル変数とし参照元で用意する */
+#define		IFLG_BIT			BIT07			/* PSWのIフラグのビット */
+
+/* 割り込み禁止(前回状態への復帰あり) */
+/* 説明：Iフラグの状態をiflgに入れる */
+#define	DI_RET( iflg )					\
+{										\
+	if( IFLG_BIT & __get_psw() ){		\
+		iflg = ON;						\
+	}else{								\
+		iflg = OFF;						\
+	}									\
+	DI();								\
+}
+
+/* 割り込み許可(前回状態への復帰あり) */
+/* 説明：DIRET()で取得したIフラグの状態をiflgに設定する */
+#define	EI_RET( iflg )					\
+{										\
+	if( ON == iflg ){					\
+		EI();							\
+	}else{								\
+		DI();							\
+	}									\
+}
 
 
 #define		wdt_refresh()	{		R_WDT_Restart();}
@@ -313,8 +336,6 @@ UH crc16( UB* p_in, int len );
 
 extern UB bin2bcd( UB bin );
 extern INT bcd2bin( UB *bin, const UB *src_bcd );
-extern void di_ret( void );
-extern void ei_ret( void );
 
 #endif
 /************************************************************/

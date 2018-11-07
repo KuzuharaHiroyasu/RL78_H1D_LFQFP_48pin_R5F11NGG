@@ -125,12 +125,14 @@ void time_update_elapsed( void )
 /************************************************************************/
 void time_soft_set_1ms( TIME_TYPE_1MS type ,UW cnt )
 {
-	DI_RET();								/* 割り込み禁止 */
+	UB	iflg;
+
+	DI_RET( iflg );								/* 割り込み禁止 */
 	if( 0 != cnt ){
 		cnt ++;
 	}
 	s_time_soft_cnt_1ms[type] = cnt;
-	EI_RET();								/* 割り込み許可 */
+	EI_RET( iflg );								/* 割り込み許可 */
 }
 
 
@@ -156,13 +158,15 @@ void time_soft_set_1ms( TIME_TYPE_1MS type ,UW cnt )
 /************************************************************************/
 void time_soft_set_10ms( TIME_TYPE_10MS type ,UW cnt )
 {
-	DI_RET();						/* 割り込み禁止 */
+	UB	iflg;
+
+	DI_RET( iflg );						/* 割り込み禁止 */
 	if( 0 != cnt ){
 		cnt ++;
 	}
 	s_time_soft_cnt_10ms[type] = cnt;
 	
-	EI_RET();						/* 割り込み許可 */
+	EI_RET( iflg );						/* 割り込み許可 */
 }
 
 
@@ -184,9 +188,11 @@ void time_soft_set_10ms( TIME_TYPE_10MS type ,UW cnt )
 /************************************************************************/
 void time_soft_get_1ms( TIME_TYPE_1MS type, UW* p_cnt )
 {
-	DI_RET();								/* 割り込み禁止 */
+	UB	iflg;
+
+	DI_RET( iflg );								/* 割り込み禁止 */
 	*p_cnt = s_time_soft_cnt_1ms[type];			/* 指定タイマのカウント値を返す */
-	EI_RET();								/* 割り込み許可 */
+	EI_RET( iflg );								/* 割り込み許可 */
 }
 
 
@@ -208,9 +214,11 @@ void time_soft_get_1ms( TIME_TYPE_1MS type, UW* p_cnt )
 /************************************************************************/
 void time_soft_get_10ms( TIME_TYPE_10MS type, UW* p_cnt )
 {
-	DI_RET();								/* 割り込み禁止 */
+	UB	iflg;
+
+	DI_RET( iflg );								/* 割り込み禁止 */
 	*p_cnt = s_time_soft_cnt_10ms[type];		/* 指定タイマのカウント値を返す */
-	EI_RET();								/* 割り込み許可 */
+	EI_RET( iflg );								/* 割り込み許可 */
 }
 
 
