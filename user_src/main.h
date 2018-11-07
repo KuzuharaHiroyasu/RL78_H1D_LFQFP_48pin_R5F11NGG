@@ -67,10 +67,10 @@ typedef enum{
 
 
 // 電池残量状態 ※H1D/G1D共通
-#define DENCH_ZANRYO_STS_MAX					1	// 充電満タン
-#define DENCH_ZANRYO_STS_HIGH					2	// 数日持つ
-#define DENCH_ZANRYO_STS_LOW					3	// 残り１日持たない
-#define DENCH_ZANRYO_STS_MIN					4	// 電池残量なし
+#define DENCH_ZANRYO_STS_MAX					0	// 充電満タン
+#define DENCH_ZANRYO_STS_HIGH					1	// 数日持つ
+#define DENCH_ZANRYO_STS_LOW					2	// 残り１日持たない
+#define DENCH_ZANRYO_STS_MIN					3	// 電池残量なし
 
 
 

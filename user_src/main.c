@@ -50,7 +50,7 @@ STATIC DS s_ds;
 /* テーブル定義												*/
 /************************************************************/
 // バージョン(APL)
-const B		version_product_tbl[]= {0, 0, 0, 23};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 24};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
@@ -216,6 +216,9 @@ STATIC void user_main_mode_sensor(void)
 	
 	
 //	MEAS meas;
+	if( ON == s_unit.sensing_end_flg ){
+		return;
+	}
 	
 	// センシング遅延 ※まだスリープしないのでソフトタイマーは有効
 	time_soft_get_10ms( TIME_TYPE_10MS_SENSING_DELAY, &time );
@@ -223,7 +226,9 @@ STATIC void user_main_mode_sensor(void)
 		return;
 	}
 	
-	if( s_unit.sensing_cnt_50ms++ >= HOUR12_CNT_50MS ){
+	// 12時間判定
+	if( s_unit.sensing_cnt_50ms >= HOUR12_CNT_50MS ){
+		s_unit.system_evt = EVENT_COMPLETE;
 		s_unit.sensing_end_flg = ON;
 	}
 	
@@ -239,17 +244,20 @@ STATIC void user_main_mode_sensor(void)
 		s_unit.sensing_sw_on_cnt = 0;
 	}
 	
-	if( ON == s_unit.sensing_end_flg ){
-		return;
+	// 電池残量低下
+	if( DENCH_ZANRYO_STS_MIN == s_unit.dench_sts ){
+		s_unit.sensing_end_flg = ON;
 	}
-	
-	
-	
-	
+	// 充電ON
+	if( ON == s_unit.bat_chg ){
+		s_unit.sensing_end_flg = ON;
+	}
 	
 	// センサーモード
 	// メイン周期(50ms)
 	if( ON == s_unit.main_cyc_req ){
+		s_unit.sensing_cnt_50ms++;		//12時間カウントアップはこの箇所で行う ※最終リリース時は50ms毎にしかログ等でも起床する為
+
 		R_DAC1_Start();			// ■DAC ON　※共通用途
 
 		// ↓↓マイク用(呼吸、イビキ)開始↓↓
@@ -568,6 +576,11 @@ STATIC void main_cyc(void)
 //	UB bat_chg_off_trig = OFF;
 	UW time = 0;
 	
+	if(( ON == s_unit.sensing_end_flg ) && 
+	   ( SYSTEM_MODE_SENSING == s_unit.system_mode )){
+		// センシング終了待ち時は以下の状態を更新しない ※G1Dとの状態不一致を防ぐため
+		return;
+	}
 	
 	// 電池残量
 	dench_val = DENCH_ZANRYO_1_VAL;
@@ -1143,6 +1156,8 @@ STATIC void main_acl_init(void)
 {
 	UB rd_data[2];
 	
+	wait_ms( 30 );		// 加速度センサ　※電源ON待ち
+
 	i2c_read_sub( ACL_DEVICE_ADR, ACL_REG_ADR_WHO_AM_I, &rd_data[0], 1 );
 	if( rd_data[0] != ACL_REG_RECOGNITION_CODE ){
 		err_info( ERR_ID_ACL );
