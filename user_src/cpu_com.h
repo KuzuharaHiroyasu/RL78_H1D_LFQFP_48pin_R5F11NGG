@@ -23,15 +23,6 @@
 #define CPU_COM_RCV_DATA_SIZE_PC_LOG				10				/* PCログ */
 
 
-
-// モード変更要求
-// RD8001暫定：削除予定
-#if 0
-#define			SYSTEM_MODE_HD_CHG_NON				0		// なし
-#define			SYSTEM_MODE_HD_CHG_SENSING			1		// あり(センシング)
-#define			SYSTEM_MODE_HD_CHG_IDLE				2		// あり(アイドル)
-#endif
-
 /* データ長範囲 */								// RD8001暫定
 #define CPU_COM_DATA_SIZE_MAX					(262+1)		/* データの最大長 */
 															/* 最大データ 表示データ更新 詳細スランプグラフ 種別No(2)+データ長(2)+データ(308) */

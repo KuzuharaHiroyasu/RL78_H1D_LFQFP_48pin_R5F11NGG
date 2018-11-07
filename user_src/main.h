@@ -81,17 +81,6 @@ typedef enum{
 #define ACL_TIMING_VAL			10					// 加速度センサ処理タイミング
 
 
-// 30秒[20ms]
-#define SEC_30_CNT				( 30 * 1000 / 20 )
-//#define SEC_30_CNT				( 30 * 1000 / 200 )	//10倍デバッグ
-
-// 12時間[30秒]
-#define HOUR_12_CNT				( 12 * 60 * 2 )
-//#define HOUR_12_CNT				( 10 )
-
-#define I2C_RCV_SND_SIZE	50		//RD8001暫定：サイズ要調整
-
-
 typedef struct{
 	union{
 		UB	byte[CPU_COM_SND_DATA_SIZE_SENSOR_DATA];
@@ -269,9 +258,8 @@ typedef struct{
 
 
 /************************************************************/
-/* 外部参照宣言												*/
+/* 外部参照宣言 ※無いと正常に動かない						*/
 /************************************************************/
-// 外部参照宣言　※無いと正常に動かない
 extern void R_IICA0_Create(void);
 //extern MD_STATUS com_srv_send(uint8_t * const tx_buf, uint16_t tx_num);
 //extern MD_STATUS R_UART1_Receive(uint8_t * const rx_buf, uint16_t rx_num);

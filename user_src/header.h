@@ -21,6 +21,7 @@
 #include "sys.h"
 
 /* ドライバ */
+#ifndef PG_RELEIF		// 静的解析ツール用定義
 #include "r_cg_macrodriver.h"
 #include "r_cg_cgc.h"
 #include "r_cg_port.h"
@@ -35,6 +36,7 @@
 #include "r_cg_adc.h"
 #include "r_cg_wdt.h"
 #include "r_cg_tau.h"
+#endif
 
 /* ミドル */
 #include "com_srv.h"

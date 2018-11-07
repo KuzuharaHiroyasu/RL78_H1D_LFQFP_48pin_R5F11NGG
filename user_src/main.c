@@ -70,14 +70,14 @@ STATIC DS s_ds;
 /* テーブル定義												*/
 /************************************************************/
 // バージョン(APL)
-const B		version_product_tbl[]= {0, 0, 0, 20};				/* ソフトウェアバージョン */
+const B		version_product_tbl[]= {0, 0, 0, 21};				/* ソフトウェアバージョン */
 																/* バージョン表記ルール */
 																/* ①メジャーバージョン：[0 ～ 9] */
 																/* ②マイナーバージョン：[0 ～ 9]  */
 																/* ③リビジョン：[0 ～ 9] */
 																/* ④ビルドバージョン：[0 ～ 9] */
 
-// バージョンのアドレス(BOOT)  //RD8001暫定
+// バージョンのアドレス(BOOT)
 const UB	* const version_boot_tbl= (const UB*)0x00006EF0;	/* ブートバージョンアドレス */
 
 /* 受信データ処理 関数テーブル */
@@ -124,7 +124,7 @@ UB dbg_rtc_flg = 0;
 /************************************************************************/
 void user_main(void)
 {
-	UW sleep_cnt = 0;
+//	UW sleep_cnt = 0;
 //    int cnt_20ms = 0;
 //    int cnt_30sec = 0;
 	rtc_counter_value_t rtc;
@@ -552,7 +552,7 @@ STATIC void main_cyc(void)
 	
 	UB kensa_1;
 	UB kensa_2;
-	UB bat_chg_off_trig = OFF;
+//	UB bat_chg_off_trig = OFF;
 	UW time = 0;
 	
 	
@@ -1106,7 +1106,7 @@ void main_acl_write(void)
 STATIC void stop_in( void )
 {
 	//RD8001暫定：突入復帰処理に関して要検討
-#if 0
+#if FUNC_LOG_STOP == ON
 	com_srv_puts( (const B *__near)"STOP IN\r\n" );
 	wait_ms( 10 );
 #endif
@@ -1114,8 +1114,7 @@ STATIC void stop_in( void )
 	// 割り込み止める処理
 	if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
 		// 10msタイマー停止
-		TMKAMK = 1U;    	  /* disable INTIT interrupt */
-		TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+		R_IT_Stop();
 	}
 	
 	STOP();
@@ -1130,11 +1129,12 @@ STATIC void stop_in( void )
 	
 	if( SYSTEM_MODE_INITIAL == s_unit.system_mode ){
 		// 10msタイマー開始
-		TMKAMK = 0U;    	/* enable INTIT interrupt */
-		TMKAIF = 0U;  	    /* clear INTIT interrupt flag */
+//		R_IT_Stop();
+//		R_IT_Start();
+		R_IT_Create();
 	}
 
-#if 0
+#if FUNC_LOG_STOP == ON
 	com_srv_puts( (const B *__near)"STOP OUT\r\n" );
 #endif
 }
@@ -1352,7 +1352,7 @@ STATIC void main_cpu_com_rcv_pc_log( void )
 
 	memcpy( &tx_data[0], &s_ds.cpu_com.input.rcv_data[0], CPU_COM_RCV_DATA_SIZE_PC_LOG );
 	
-	len = strlen( tx_data );
+	len = strlen( (const char *)tx_data );		// singed char(B)でも警告が出るのでcharでキャスト
 	tx_data[len]		= '\r';
 	tx_data[len + 1]	= '\n';
 	
@@ -1369,7 +1369,7 @@ STATIC void main_cpu_com_rcv_mode_chg( void )
 	// RD8001暫定：異常ケースは？
 	if( 1 ){
 		// 状態変更
-		s_unit.system_mode = s_ds.cpu_com.input.rcv_data[0];
+		s_unit.system_mode = (SYSTEM_MODE)s_ds.cpu_com.input.rcv_data[0];
 		// 正常応答
 		s_ds.cpu_com.order.snd_data[0] = 0;		// 正常応答
 	}else{

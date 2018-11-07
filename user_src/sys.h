@@ -169,9 +169,12 @@
 																		/* 使用する時はログ通信もOFFする事 */
 #define		FUNC_DEBUG_RAW_VAL_OUT					OFF					/* 生データをPC出力 ※一部ハードではONすると動かない *//* リリース時はOFFする事 */
 
+#define		FUNC_LOG_STOP							OFF					/* ストップ突入復帰ログ *///リリース時はOFFする事
 
 
 #define		FUNC_VALID_AMP							ON					/* アンプ関連 ※一部ハードではONすると動かない *//* リリース時はONする事 */
+
+
 
 
 
@@ -282,37 +285,11 @@ typedef struct{
 }POS_INFO;
 
 
-/* マスカブル割り込み禁止/許可 */
-/* 割込みの禁止/許可は#pragma拡張機能でサポートされている */
-//#ifndef __RL78__
-//#define	DI()	asm("FCLR I")
-//#define	EI()	asm("FSET I")
-//#endif
-
 /* マスカブル割り込み禁止/許可(前回状態への復帰) */
 /* 注意事項：前回状態への復帰となるためかならず同一関数内でセットで使用して下さい */
-#if 0
-#define DI_RET()		\
-{						\
-	__asm("PUSH PSW");	\
-	DI();				\
-}
-#define EI_RET()		\
-{						\
-	__asm("POP  PSW");	\
-}
-#else
-// RD8001暫定 上記でエラーが出る。
-#define DI_RET()		\
-{						\
-}
-#define EI_RET()		\
-{						\
-}
+#define DI_RET		di_ret
+#define EI_RET		ei_ret
 
-
-
-#endif
 
 #define		wdt_refresh()	{		R_WDT_Restart();}
 
@@ -336,6 +313,8 @@ UH crc16( UB* p_in, int len );
 
 extern UB bin2bcd( UB bin );
 extern INT bcd2bin( UB *bin, const UB *src_bcd );
+extern void di_ret( void );
+extern void ei_ret( void );
 
 #endif
 /************************************************************/
