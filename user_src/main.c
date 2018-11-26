@@ -304,21 +304,29 @@ static void user_main_mode_sensor(void)
 		main_acl_read();
 #else
 		//生値デバッグ出力　※加速度は無効
+		main_acl_read();
 		if( dbg_send_cnt++ >= 0 ){	
 			dbg_send_cnt = 0;
 //			printf( "kokyu%d", s_unit.meas.info.dat.kokyu_val );		//コンソールデバッグ用　※現状コンソールの使い方が不明
 			{
 				
 				
-				
-				dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,0,0,0\r\n",		 s_unit.meas.info.dat.sekishoku_val
-																					,s_unit.meas.info.dat.sekigaival
-																					,s_unit.meas.info.dat.kokyu_val
-																					,s_unit.meas.info.dat.ibiki_val);
+/*				
+				dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,0,0,0\r\n", s_unit.meas.info.dat.sekishoku_val
+											       , s_unit.meas.info.dat.sekigaival
+											       , s_unit.meas.info.dat.kokyu_val
+											       , s_unit.meas.info.dat.ibiki_val);
+*/
+				dbg_len = sprintf((char*)dbg_tx_data, "0,0,%d,%d,%d,%d,%d\r\n", s_unit.meas.info.dat.kokyu_val
+											      , s_unit.meas.info.dat.ibiki_val
+											      , s_unit.meas.info.dat.acl_x
+											      , s_unit.meas.info.dat.acl_y
+											      , s_unit.meas.info.dat.acl_z);
+
 				com_srv_send( &dbg_tx_data[0], dbg_len );
 			}
 		}
-		wait_ms( 5 );
+//		wait_ms( 5 );
 #endif
 		
 #endif
