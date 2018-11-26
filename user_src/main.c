@@ -57,7 +57,7 @@ int i2c_cmplete;
 
 UB dbg_set_clock = 0;
 
-
+BOOL auto_sensing_flg = FALSE;
 
 STATIC T_UNIT s_unit;
 STATIC DS s_ds;
@@ -156,28 +156,6 @@ void user_main(void)
 			// RD8001暫定：スリープ突入時間
 			if( sleep_cnt++ > 5000 ){
 				sleep_cnt = 0;
-#if 0			//RTCデバッグ
-				R_RTC_Get_CounterValue( &dbg_rtc );
-				
-				if( 1 == dbg_rtc_flg ){
-					dbg_rtc_flg = 0;
-					dbg_rtc_set.year = 9;
-					dbg_rtc_set.sec = 0;
-					dbg_rtc_set.min = 0;
-					dbg_rtc_set.hour = 5;
-					dbg_rtc_set.day = 0;
-					dbg_rtc_set.week = 0;
-					dbg_rtc_set.month = 0;
-//					R_RTC_Stop();
-					R_RTC_Set_CounterValue( dbg_rtc_set );
-//					R_RTC_Start();
-				}
-#endif
-//				drv_uart1_send_start();
-//				test_cpu_com_send();		//ミドルレベルCPU間通信
-//				test_uart_0_send();			//ドライバレベルCPU間通信
-
-				//stop_in();
 			}
 		}else if( SYSTEM_MODE_GET_MODE == s_unit.system_mode ){
 			drv_o_port_mike( OFF );		//RD8001暫定
@@ -456,6 +434,11 @@ static void sw_cyc(void)
 		}
 		// 電源SW押下タイマー再スタート 
 		time_soft_set_10ms( TIME_TYPE_10MS_POW_SW_ACT_START, TIME_10MS_CNT_POW_SW_ACT_START );
+		
+		if(!auto_sensing_flg){
+			s_unit.sensing_start_trig = ON;
+			auto_sensing_flg = TRUE;
+		}
 	}
 	s_unit.pow_sw_last = pow_sw;
 }
