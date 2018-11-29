@@ -61,6 +61,7 @@ BOOL auto_sensing_flg = FALSE;
 
 STATIC T_UNIT s_unit;
 STATIC DS s_ds;
+int acc_cnt = 0;
 
 /************************************************************/
 /* テーブル定義												*/
@@ -114,27 +115,18 @@ UB dbg_rtc_flg = 0;
 void user_main(void)
 {
 	UW sleep_cnt = 0;
-//    int cnt_20ms = 0;
-//    int cnt_30sec = 0;
 	rtc_counter_value_t rtc;
-//	char com_data[10];
-    
+
 	vect_set_tbl_apl();	
 
-    main_init();
-    /* Start user code. Do not edit comment generated here */
+	main_init();
+    	/* Start user code. Do not edit comment generated here */
 	
 	// RTC設定
-#if 1
-	if( dbg_set_clock == 7 ){
-//		R_RTC_Set_CounterValue( rtc );
-	}
-#endif
 	R_RTC_Get_CounterValue( &rtc );
 	s_unit.hour = rtc.hour;
 	s_unit.min = rtc.min;
 	s_unit.sec = rtc.sec;
-//	R_RTC_Start();
 	
 	// 起動ログ
 	com_srv_log_title();
@@ -193,14 +185,9 @@ int dbg_len;
 static void user_main_mode_sensor(void)
 {
 	UW time;
-	
-	
-//	MEAS meas;
-	
 #ifdef	IBIKI_COUNT
 	dbg_ibiki_cnt = 0;
 #endif
-	
 	if( s_unit.sensing_cnt_50ms++ >= HOUR12_CNT_50MS ){
 		s_unit.sensing_end_flg = ON;
 	}
@@ -229,10 +216,8 @@ static void user_main_mode_sensor(void)
 		drv_o_port_sekigai( OFF );
 		drv_o_port_sekishoku( ON );
 		wait_ms( 2 );
-		
 
 		pga_do();
-//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
 		s_unit.meas.info.dat.sekishoku_val = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
 		wait_ms( 2 );
@@ -244,7 +229,6 @@ static void user_main_mode_sensor(void)
 		R_DAC1_Set_ConversionValue( 0x0B00 );
 		wait_ms( 2 );
 		pga_do();
-//		R_PGA_DSAD_Get_AverageResult(&bufferH_dbg_ave, &bufferL_dbg_ave);		//平均
 		R_PGA_DSAD_Get_Result(&bufferH_dbg, &bufferL_dbg);
 		s_unit.meas.info.dat.sekigaival = main_ad24_to_w( bufferH_dbg, bufferL_dbg );
 		
@@ -271,42 +255,33 @@ static void user_main_mode_sensor(void)
 		wait_ms( 2 );
 		R_DAC1_Stop();		// □DAC  OFF
 
-#if 0	// RD8001暫定：AMP0,PGA1をOFFすると正常にイビキ等が取得できない
-		R_AMP0_Stop();		// □AMP0 OFF
-		R_PGA1_Stop();		// □PGA1 OFF
-#endif
-		
 		// 加速度センサ取得
 		// RD8001暫定：30msかかるが50ms毎に取得
-#if FUNC_DEBUG_RAW_VAL_OUT == OFF
-		main_acl_read();
-#else
 		//生値デバッグ出力　※加速度は無効
-		main_acl_read();
-		if( dbg_send_cnt++ >= 0 ){	
-			dbg_send_cnt = 0;
-//			printf( "kokyu%d", s_unit.meas.info.dat.kokyu_val );		//コンソールデバッグ用　※現状コンソールの使い方が不明
-			{
-				
-				
-/*				
-				dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,0,0,0\r\n", s_unit.meas.info.dat.sekishoku_val
-											       , s_unit.meas.info.dat.sekigaival
-											       , s_unit.meas.info.dat.kokyu_val
-											       , s_unit.meas.info.dat.ibiki_val);
-*/
-				dbg_len = sprintf((char*)dbg_tx_data, "0,0,%d,%d,%d,%d,%d\r\n", s_unit.meas.info.dat.kokyu_val
-											      , s_unit.meas.info.dat.ibiki_val
-											      , s_unit.meas.info.dat.acl_x
-											      , s_unit.meas.info.dat.acl_y
-											      , s_unit.meas.info.dat.acl_z);
-
-				com_srv_send( &dbg_tx_data[0], dbg_len );
-			}
-		}
-//		wait_ms( 5 );
-#endif
 		
+		if(acc_cnt == 0)
+		{
+			main_acl_read();
+			dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,%d,%d,%d\r\n", s_unit.meas.info.dat.sekishoku_val
+											  , s_unit.meas.info.dat.sekigaival
+											  , s_unit.meas.info.dat.kokyu_val
+										          , s_unit.meas.info.dat.ibiki_val
+										          , s_unit.meas.info.dat.acl_x
+										          , s_unit.meas.info.dat.acl_y
+										          , s_unit.meas.info.dat.acl_z);
+		} else {
+			dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,999,0,0\r\n", s_unit.meas.info.dat.sekishoku_val
+											  , s_unit.meas.info.dat.sekigaival
+											  , s_unit.meas.info.dat.kokyu_val
+										          , s_unit.meas.info.dat.ibiki_val);
+		}
+		acc_cnt++;
+		if(acc_cnt == 10)
+		{
+			acc_cnt = 0;
+		}
+
+		com_srv_send( &dbg_tx_data[0], dbg_len );
 #endif
 
 		main_cpu_com_snd_sensor_data();
