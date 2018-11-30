@@ -262,18 +262,14 @@ static void user_main_mode_sensor(void)
 		if(acc_cnt == 0)
 		{
 			main_acl_read();
-			dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,%d,%d,%d\r\n", s_unit.meas.info.dat.sekishoku_val
-											  , s_unit.meas.info.dat.sekigaival
-											  , s_unit.meas.info.dat.kokyu_val
-										          , s_unit.meas.info.dat.ibiki_val
-										          , s_unit.meas.info.dat.acl_x
-										          , s_unit.meas.info.dat.acl_y
-										          , s_unit.meas.info.dat.acl_z);
+			dbg_len = sprintf((char*)dbg_tx_data, "0,0,%d,%d,%d,%d,%d\r\n", s_unit.meas.info.dat.kokyu_val
+										      , s_unit.meas.info.dat.ibiki_val
+										      , s_unit.meas.info.dat.acl_x
+										      , s_unit.meas.info.dat.acl_y
+										      , s_unit.meas.info.dat.acl_z);
 		} else {
-			dbg_len = sprintf((char*)dbg_tx_data, "%ld,%ld,%d,%d,999,0,0\r\n", s_unit.meas.info.dat.sekishoku_val
-											  , s_unit.meas.info.dat.sekigaival
-											  , s_unit.meas.info.dat.kokyu_val
-										          , s_unit.meas.info.dat.ibiki_val);
+			dbg_len = sprintf((char*)dbg_tx_data, "0,0,%d,%d,999,0,0\r\n", s_unit.meas.info.dat.kokyu_val
+										     , s_unit.meas.info.dat.ibiki_val);
 		}
 		acc_cnt++;
 		if(acc_cnt == 10)
